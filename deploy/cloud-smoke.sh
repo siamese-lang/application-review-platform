@@ -49,10 +49,22 @@ headers="$tmp/create.headers"
   --data-urlencode 'title=M4 cloud smoke application' --data-urlencode 'content=Created by the repeatable M4 cloud smoke.' \
   "$BASE_URL/applications"
 location=$(sed -n 's/^[Ll]ocation: *\([^[:space:]]*\).*/\1/p' "$headers" | tr -d '\r' | head -1)
-[[ $location =~ ^/applications/([0-9]+)$ ]]; app_id=${BASH_REMATCH[1]}
+case "$location" in
+  /applications/*)
+    application_path=$location
+    ;;
+  "$BASE_URL"/applications/*)
+    application_path=${location#"$BASE_URL"}
+    ;;
+  *)
+    echo "Unexpected application redirect Location: $location" >&2
+    exit 1
+    ;;
+esac
+[[ $application_path =~ ^/applications/([0-9]+)$ ]]; app_id=${BASH_REMATCH[1]}
 
 stage "load draft application $app_id"
-"${curl_cmd[@]}" --cookie "$appjar" "$BASE_URL$location" -o "$tmp/application.html"
+"${curl_cmd[@]}" --cookie "$appjar" "$BASE_URL$application_path" -o "$tmp/application.html"
 token=$(csrf "$tmp/application.html"); [[ -n $token ]]
 
 stage 'upload attachment'
