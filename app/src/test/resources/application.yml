@@ -18,4 +18,4 @@ storage:
 attachment:
   reconciliation:
     stale-after: PT15M
-    schedule: "0 */10 * * * *"
+    schedule: "-"
