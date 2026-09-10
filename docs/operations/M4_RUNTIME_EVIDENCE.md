@@ -1,8 +1,9 @@
 # M4 Cloud Deployment — Runtime Evidence
 
-Status: VERIFIED_PENDING_MERGE
+Status: VERIFIED_AND_DESTROYED
 
-Verification date: 2026-09-10 UTC
+Verification date: 2026-09-10 UTC  
+Lifecycle closed: 2026-09-10 UTC
 
 This record contains sanitized M4 runtime evidence only. It intentionally omits passwords, access-key values, private keys, session cookies, decrypted SOPS material, and other credentials.
 
@@ -11,8 +12,10 @@ This record contains sanitized M4 runtime evidence only. It intentionally omits 
 - Runtime infrastructure was initially applied from commit `2c7b109b21dad4d538e499fa9cf51bfb2a0ba4f1`.
 - The final application/runtime verification revision was `084b5d74250396d0a9f037b97290a9fe6c5a316c`.
 - The final application artifact deployed to `app-01` was versioned with short SHA `084b5d742503` and the service was active after deployment.
-- GitHub Actions run `34499659298` passed all jobs for exact head `084b5d74250396d0a9f037b97290a9fe6c5a316c`, including repository baseline, application tests, M4 static infrastructure checks, and the detailed-page rendering regression coverage added after runtime smoke exposed a Thymeleaf model-name collision.
-- This evidence document is an evidence-only follow-up commit. No runtime infrastructure or application configuration is changed by this document.
+- GitHub Actions run `34499659298` passed all jobs for exact runtime-verification head `084b5d74250396d0a9f037b97290a9fe6c5a316c`.
+- Evidence-only PR head `9b79c19897da504bf305b807da1e20ae452f5479` passed run `34500986797`.
+- PR #11 merged as `46e076a03419450b8784cbf700e8635ad8217b44`; post-merge `main` run `34501275007` passed.
+- M4 completion/document-state head `eaba5f23c269fc9b40ef2ccc760ed714eb73e094` passed run `34501696357`.
 
 ## Toolchain and infrastructure state
 
@@ -110,6 +113,26 @@ The first full cloud smoke also exposed a Thymeleaf 3.1 context-variable collisi
 
 M4 did not introduce Cloud SQL, GKE, managed Redis, managed application object storage, an external load balancer, CI/CD cloud deployment, backup/PITR implementation, observability, performance tuning, deliberate failure injection, or DR. The frozen IaaS role separation and existing M1–M3 business/attachment semantics were preserved.
 
-## Lifecycle decision
+## Lifecycle closure
 
-The live M4 runtime is retained only through PR merge and the required post-merge `main` workflow verification. After those M4 completion gates are captured, the runtime will be intentionally destroyed with the controlled OpenTofu state to stop unnecessary trial-credit consumption. Repository IaC, this sanitized evidence, and the controlled state backup remain the milestone record. A stopped VM alone is not treated as zero cost.
+After M4 merge and all required `main` CI evidence were captured, the live runtime was intentionally destroyed to stop unnecessary trial-credit consumption.
+
+Before destroy:
+
+- the final runtime state was copied from `ops-01` to a controlled Cloud Shell location outside Git;
+- a separate immutable pre-destroy state snapshot was retained outside the repository;
+- an OpenTofu destroy plan was generated from the controlled state;
+- the plan contained only delete actions: `0 to add, 0 to change, 24 to destroy`.
+
+Destroy verification:
+
+- OpenTofu destroyed all 24 runtime-managed resources;
+- the seven M4 VM instances were absent after destroy;
+- M4 persistent data disks were absent;
+- the reserved edge IPv4 address was absent;
+- the M4 router/NAT, network, and firewall resources were absent;
+- the post-destroy working state contained `0` resources.
+
+The owner-bootstrap IAM/service-account root was intentionally not part of this runtime destroy. It remains separate from runtime state and can support later controlled re-provisioning unless a later lifecycle decision explicitly removes it.
+
+Repository IaC and this sanitized record are the durable M4 evidence. The pre-destroy state snapshot is operational material outside Git and must never be committed.
