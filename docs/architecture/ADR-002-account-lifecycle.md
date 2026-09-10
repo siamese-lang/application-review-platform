@@ -91,7 +91,7 @@ Registration does not weaken those controls. Ownership and role checks remain se
 
 ### Audit boundary
 
-Successful account registration should create a non-secret audit event such as `USER_REGISTERED`. Password values and session/CSRF secrets are never audited or logged.
+Successful account registration creates a non-secret audit event such as `USER_REGISTERED`. ADR-003 generalizes the existing application-only audit target model so this user-subject event is referentially represented without pretending it belongs to an application. Password values and session/CSRF secrets are never audited or logged.
 
 Login success/failure event collection is not required in M5; authentication telemetry belongs to later observability/security work if it becomes useful.
 
