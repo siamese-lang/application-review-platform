@@ -1,0 +1,1 @@
+<!doctype html><html><head><title>My applications</title></head><body><main><h1>My applications</h1><ul><li th:each="a:${applications}"><a th:href="@{/applications/{id}(id=${a.id})}" th:text="${a.title}"></a> — <span th:text="${a.status}"></span></li></ul><a href="/programs">Browse programs</a></main></body></html>
