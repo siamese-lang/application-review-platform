@@ -5,10 +5,21 @@
 ## Current status
 
 - M0 design baseline: frozen
-- Repository bootstrap: complete
-- Next implementation milestone: M1 Business MVP
+- P0-A tool onboarding: complete
+- P0-B repository bootstrap: complete
+- P0-C GCP readiness: complete
+- Current implementation milestone: M1 Business MVP
 
 This project is **production-like**, not a claim of real production operation. All users, organizations, applications, workloads, and measurements are synthetic unless explicitly recorded otherwise.
+
+## GCP readiness baseline
+
+- Project ID: `application-review-platform`
+- Primary region: `asia-northeast3`
+- Primary zone: `asia-northeast3-a`
+- Runtime VM fleet: not provisioned yet
+
+See `docs/operations/GCP_BASELINE.md` for the owner-confirmed readiness record and M4 infrastructure conventions.
 
 ## Core business flow
 
