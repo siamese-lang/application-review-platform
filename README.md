@@ -11,8 +11,9 @@
 - M1 Business MVP: complete
 - M2 Data Integrity: complete
 - M3 Attachment: complete
-- Next implementation milestone: M4 Cloud Deployment
-- No M4 implementation plan is active yet; create and review the M4 plan before implementation.
+- Current implementation milestone: M4 Cloud Deployment
+- M4 execution plan: active at `docs/plans/active/M4-cloud-deployment.md`
+- M4 implementation: not yet started
 
 This project is **production-like**, not a claim of real production operation. All users, organizations, applications, workloads, and measurements are synthetic unless explicitly recorded otherwise.
 
