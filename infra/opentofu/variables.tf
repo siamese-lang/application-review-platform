@@ -47,3 +47,22 @@ variable "machine_types" {
     error_message = "machine_types must define edge, app, db, storage, and ops."
   }
 }
+variable "node_machine_type_overrides" {
+  description = "Optional per-node machine-type overrides for capacity recovery without resizing healthy nodes."
+  type        = map(string)
+  default     = {}
+  validation {
+    condition = alltrue([
+      for name in keys(var.node_machine_type_overrides) : contains([
+        "edge-01",
+        "app-01",
+        "db-01",
+        "storage-01",
+        "storage-02",
+        "storage-03",
+        "ops-01",
+      ], name)
+    ])
+    error_message = "node_machine_type_overrides may contain only known M4 node names."
+  }
+}
