@@ -81,6 +81,48 @@ public class Program {
         this.updatedAt = updatedAt;
     }
 
+    public static Program newDraft(
+            String code,
+            String title,
+            String description,
+            Instant applicationOpenAt,
+            Instant applicationCloseAt,
+            Instant now) {
+        return new Program(
+                code,
+                title,
+                description,
+                ProgramPublicationStatus.DRAFT,
+                applicationOpenAt,
+                applicationCloseAt,
+                now,
+                now);
+    }
+
+    public void updateDraft(
+            String title,
+            String description,
+            Instant applicationOpenAt,
+            Instant applicationCloseAt,
+            Instant now) {
+        this.title = title;
+        this.description = description;
+        this.applicationOpenAt = applicationOpenAt;
+        this.applicationCloseAt = applicationCloseAt;
+        this.updatedAt = now;
+    }
+
+    public void publish(Instant now) {
+        this.publicationStatus = ProgramPublicationStatus.PUBLISHED;
+        this.updatedAt = now;
+    }
+
+    public boolean acceptsApplicationsAt(Instant now) {
+        return publicationStatus == ProgramPublicationStatus.PUBLISHED
+                && !now.isBefore(applicationOpenAt)
+                && now.isBefore(applicationCloseAt);
+    }
+
     public Long getId() { return id; }
     public long getVersion() { return version; }
     public String getCode() { return code; }
