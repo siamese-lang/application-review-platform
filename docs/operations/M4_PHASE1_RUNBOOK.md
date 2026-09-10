@@ -1,6 +1,6 @@
 # M4 Phase 1/2 deployment runbook
 
-Status: PHASE 1 REPOSITORY IMPLEMENTATION — NO CLOUD RESOURCES CREATED
+Status: PHASE 1 REPOSITORY IMPLEMENTATION COMPLETE — PHASE 2 NOT EXECUTED — NO CLOUD RESOURCES CREATED
 
 ## Safety boundary
 
@@ -14,7 +14,7 @@ M4 deliberately uses two local OpenTofu roots/states so the frozen owner-bootstr
 - `infra/opentofu/` is the ongoing runtime root. It manages VPC/firewall/NAT/address/disks/VMs and contains no service-account or project-IAM resources. It refers to the two bootstrap-created service accounts by deterministic project email. Only this runtime state is handed to `ops-01`.
 - Do not grant Owner, Editor, Project IAM Admin, or Service Account Admin to the ops service account merely to make a monolithic state self-manage.
 
-Before the first reviewed apply, initialize both roots normally and commit both generated `.terraform.lock.hcl` files. Do not invent provider checksums.
+Both roots have been initialized during Phase 1 verification and their generated `.terraform.lock.hcl` files are committed. CI initializes from those locks with `-lockfile=readonly` and verifies they are not rewritten. Do not invent or hand-edit provider checksums.
 
 ## Owner-controlled Phase 2 bootstrap
 
