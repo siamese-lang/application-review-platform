@@ -1,4 +1,4 @@
-# DATA — M0 Baseline amended by ADR-001 and ADR-002
+# DATA — M0 Baseline amended by ADR-001, ADR-002, and ADR-003
 
 Status: FROZEN EXCEPT AS AMENDED BY ACCEPTED ADRS
 
@@ -35,11 +35,14 @@ The M1 MVP intentionally started with minimal program/application fields. ADR-00
 
 Program should include at least:
 
-- stable program code;
+- stable unique program code;
 - title;
 - description;
+- publication status (`DRAFT`, `PUBLISHED`);
 - application-open timestamp;
-- application-close timestamp.
+- application-close timestamp;
+- optimistic-lock version;
+- created/updated timestamps.
 
 Application should include at least:
 
@@ -56,17 +59,49 @@ Application should include at least:
 
 All sample values remain synthetic. Do not add real personal, company, or financial data.
 
+## Program lifecycle and admission
+
+`DRAFT` and `PUBLISHED` are the only persisted program lifecycle states in M5.
+
+Applicant-facing scheduled/open/closed intake state is derived from `publication_status`, `application_open_at`, `application_close_at`, and the server clock. Do not persist a second intake status that can drift from the timestamps.
+
+The application window must satisfy `application_open_at < application_close_at`. A new application may be created only when the program is published and `application_open_at <= now < application_close_at`.
+
+Draft programs may be edited. Publication is one-way for M5; ordinary commands do not unpublish or mutate an already published program. Program code is immutable.
+
+Revision/resubmission of an existing application remains allowed after the intake window closes when the application is in the existing `NEEDS_REVISION` workflow, because it is not a new intake.
+
+## Audit subjects
+
+The M2 audit schema is application-specific because `application_id` is mandatory. M5 now has legitimate user and program events, so the schema is generalized while preserving foreign-key integrity.
+
+An audit row has:
+
+- non-null `actor_id`;
+- nullable `application_id`;
+- nullable `program_id`;
+- nullable `subject_user_id`;
+- event type and occurrence timestamp.
+
+A database check constraint requires exactly one of the three subject references to be non-null.
+
+Existing audit rows remain application-target events. M5 adds at least `USER_REGISTERED`, `PROGRAM_CREATED`, `PROGRAM_UPDATED`, and `PROGRAM_PUBLISHED`.
+
+Do not replace explicit subject foreign keys with an untyped polymorphic ID while the known subject set remains small.
+
 ## Migration policy
 
 Prefer additive / expand-contract evolution: `ADD → BACKFILL → TRANSITION → REMOVE later`. Avoid destructive schema changes that make application rollback immediately impossible.
 
-M5 should prefer adding/backfilling user/program/application columns while temporarily retaining compatibility with the previous minimal representation until the API/SPA transition is verified. Any later removal/rename occurs in a separate migration after compatibility is established.
+M5 should prefer adding/backfilling user/program/application columns and generalized audit subject columns while temporarily retaining compatibility with the previous minimal representation until the API/SPA transition is verified. Existing synthetic programs are backfilled as published with deterministic non-expiring verification windows. Any later removal/rename occurs in a separate migration after compatibility is established.
 
 Registration-related database constraints and application validation must agree on username/email uniqueness. API conflict handling must not rely solely on a pre-insert existence check; database uniqueness remains the final concurrency-safe constraint.
 
 ## Concurrency
 
 `applications.version` supports optimistic locking so concurrent review decisions or edits cannot silently overwrite each other.
+
+`programs.version` protects concurrent administrator edits before publication. Stale draft edits fail as conflicts rather than silently overwriting newer program configuration.
 
 The REST API must surface stale writes as an explicit conflict. A client-observed version is part of the edit command contract; frontend state never bypasses server-side optimistic locking.
 
