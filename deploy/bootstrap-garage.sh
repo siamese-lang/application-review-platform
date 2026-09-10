@@ -61,7 +61,8 @@ done
 
 if [[ $needs_layout == true ]]; then
   for host in storage-01 storage-02 storage-03; do
-    run "$primary_ip" layout assign -z "${node_zone[$host]}" -c "$GARAGE_LAYOUT_CAPACITY" -t "$host" "${node_id[$host]}"
+    # Keep the positional node ID before --tag because Garage's --tag accepts one or more values.
+    run "$primary_ip" layout assign "${node_id[$host]}" -z "${node_zone[$host]}" -c "$GARAGE_LAYOUT_CAPACITY" -t "$host"
   done
   current_version=$(run "$primary_ip" layout show | sed -n 's/^Current cluster layout version: \([0-9][0-9]*\)$/\1/p' | head -1)
   [[ -n $current_version ]] || { echo 'Could not determine current Garage layout version.' >&2; exit 1; }
