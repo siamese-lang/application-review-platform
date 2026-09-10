@@ -39,3 +39,11 @@ jobs:
           cache: maven
       - name: Verify application
         run: ./mvnw verify
+      - name: Print Surefire reports on failure
+        if: failure()
+        run: |
+          for report in app/target/surefire-reports/*.txt; do
+            [ -f "$report" ] || continue
+            echo "===== $report ====="
+            cat "$report"
+          done
