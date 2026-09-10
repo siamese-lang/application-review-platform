@@ -1,4 +1,4 @@
-# SECURITY — M0 Baseline amended by ADR-001 and ADR-002
+# SECURITY — M0 Baseline amended by ADR-001, ADR-002, and ADR-003
 
 Status: FROZEN EXCEPT AS AMENDED BY ACCEPTED ADRS
 
@@ -35,9 +35,10 @@ ADR-002 defines asymmetric account creation because the three roles have differe
 
 ### Public/private resource boundary
 
-- Public program list/detail endpoints are intentionally readable without authentication.
+- Only `PUBLISHED` program list/detail resources are intentionally readable without authentication; draft program data is administrator-only.
 - Creating, editing, submitting, or viewing private applications requires an authenticated applicant session.
-- Reviewer and admin APIs remain role-protected.
+- Program create/edit/publish endpoints require `ADMIN` on the server regardless of SPA route visibility.
+- Reviewer and other admin APIs remain role-protected.
 
 ## Browser/API security
 
@@ -67,7 +68,8 @@ If a real cross-origin client is later introduced:
 
 - REST controllers accept explicit validated request DTOs and return explicit response DTOs.
 - JPA entities are not exposed directly as JSON contracts.
-- Client-supplied workflow status, role, owner, reviewer, object key, hash, or other authoritative server facts are ignored/rejected unless the endpoint explicitly owns that transition.
+- Client-supplied workflow status, role, owner, reviewer, program publication state, object key, hash, or other authoritative server facts are ignored/rejected unless the endpoint explicitly owns that transition.
+- Application creation re-checks program publication and the server-side intake window; hiding an Apply button is not an authorization or admission control.
 - Stale application edits fail with a conflict rather than silently overwriting a newer version.
 - Error responses must not leak stack traces, credentials, internal filesystem paths, storage secrets, or unnecessary implementation details.
 
@@ -109,6 +111,6 @@ These are documented product/security gaps, not silently implied capabilities.
 
 Never log passwords, session/CSRF secrets, storage credentials, binary attachments, or sensitive request bodies. Use synthetic identities and business data throughout the project.
 
-Successful applicant registration should produce a non-secret audit event. Passwords and session material are never included. Login telemetry is deferred to later observability work unless needed earlier for a concrete security test.
+Successful applicant registration and administrator program create/update/publish commands should produce non-secret audit events using the generalized user/program/application audit subject model from ADR-003. Passwords and session material are never included. Login telemetry is deferred to later observability work unless needed earlier for a concrete security test.
 
 Later observability may record route template, response status, duration, request correlation identifiers, and synthetic actor/role identifiers only when this can be done without exposing credentials or sensitive payloads.
