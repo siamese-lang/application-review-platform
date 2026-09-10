@@ -1,7 +1,7 @@
 # M0 FREEZE RECORD
 
 Baseline date: 2026-09-09  
-Status: FROZEN
+Status: FROZEN EXCEPT AS AMENDED BY ACCEPTED ADRS
 
 This record resolves the known M0 tensions so later implementation does not reinterpret them silently.
 
@@ -16,8 +16,26 @@ This record resolves the known M0 tensions so later implementation does not rein
 9. **Single backup repository:** simultaneous loss of `backup-01` and the whole region is out of scope.
 10. **Single observability node:** observability HA is out of scope, and `obs-01` failure must not affect the business data path.
 
+## Accepted amendments
+
+### ADR-001 — REST API + React SPA browser boundary (2026-09-11)
+
+The original M0 choice of Spring MVC + Thymeleaf as the final browser presentation and the blanket React-SPA non-goal are superseded.
+
+The accepted replacement is:
+
+- React + TypeScript + Vite static frontend;
+- versioned Spring Boot REST API under `/api/v1`;
+- Nginx serves the static frontend and proxies API traffic on one production origin;
+- Spring Security session authentication, Spring Session JDBC, and CSRF protection remain;
+- no JWT, Node production server, separate frontend VM, or microservice split is introduced without a separate demonstrated requirement.
+
+The detailed rationale and consequences are recorded in `docs/architecture/ADR-001-web-api-spa.md`.
+
+This amendment deliberately occurs after M4 and before future delivery/observability/workload work so those milestones target the final browser/API boundary.
+
 ## ADR boundary
 
-An approved ADR is required before adding or replacing a database, Redis/cache, queue, primary object storage product, Kubernetes, authentication system, microservice split, managed application cloud service, DB failover design, or backup architecture.
+An approved ADR is required before adding or replacing a database, Redis/cache, queue, primary object storage product, Kubernetes, authentication system, microservice split, managed application cloud service, DB failover design, backup architecture, or another change that contradicts an explicit frozen/non-goal architectural boundary.
 
 Bug fixes, UI copy, tests, measured indexes, metrics/dashboards, patch releases, timeout values, and VM-size experiments do not require an ADR unless they change one of the frozen boundaries above.

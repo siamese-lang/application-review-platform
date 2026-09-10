@@ -1,10 +1,10 @@
 # Application Review Platform
 
-지원사업 신청·심사 업무 흐름을 구현하고 GCP IaaS 환경에서 성능, 데이터 정합성, 장애 영향, 백업 및 복구를 측정·검증하는 개인 프로젝트입니다.
+지원사업 신청·심사 업무 흐름을 구현하고, 브라우저/API 경계부터 GCP IaaS 배포·관측·성능·장애·백업·복구까지 단계적으로 검증하는 개인 프로젝트입니다.
 
 ## Current status
 
-- M0 design baseline: frozen
+- M0 design baseline: frozen, with accepted ADR amendments
 - P0-A tool onboarding: complete
 - P0-B repository bootstrap: complete
 - P0-C GCP readiness: complete
@@ -14,36 +14,73 @@
 - M4 Cloud Deployment: complete
 - M4 completed plan: `docs/plans/completed/M4-cloud-deployment.md`
 - M4 runtime evidence: `docs/operations/M4_RUNTIME_EVIDENCE.md`
-- Next implementation milestone: M5 Operations
-- M5 implementation: not started
+- M4 GCP runtime: verified and intentionally destroyed after evidence capture to control cost
+- ADR-001: REST API + React SPA browser boundary accepted
+- Current implementation milestone: M5 Web/API & Product Surface
+- Active plan: `docs/plans/active/M5-web-api-product-surface.md`
 
-This project is **production-like**, not a claim of real production operation. All users, organizations, applications, workloads, and measurements are synthetic unless explicitly recorded otherwise.
+This project is **production-like**, not a claim of real production operation. All users, organizations, applications, documents, workloads, and measurements are synthetic unless explicitly recorded otherwise.
 
-## GCP readiness baseline
+## Current target architecture
+
+```text
+Browser
+  │ HTTPS
+  ▼
+edge-01: Nginx
+  ├─ /, /assets/** → React + TypeScript + Vite static release
+  └─ /api/v1/**    → app-01: Spring Boot REST API
+                          ├─ PostgreSQL
+                          └─ Garage
+```
+
+The production browser/API path is same-origin through Nginx. Spring Security session authentication, Spring Session JDBC, CSRF protection, domain/service authorization, Flyway, PostgreSQL, Garage, and the split-role GCP IaaS boundary remain part of the architecture.
+
+See `docs/architecture/ADR-001-web-api-spa.md` for the decision and rejected alternatives.
+
+## Product workflow
+
+Core state flow:
+
+`DRAFT → SUBMITTED → IN_REVIEW → NEEDS_REVISION → SUBMITTED` or `IN_REVIEW → APPROVED/REJECTED`
+
+Roles:
+
+- `APPLICANT`: browse programs, prepare/edit applications, manage attachments, submit/resubmit, track status/results
+- `REVIEWER`: work a review queue, inspect applications/evidence, start review, request revision, approve/reject
+- `ADMIN`: read-oriented operational visibility into users, applications, histories, audits, and workflow counts
+
+M5 adds the minimum structured program/application fields and business UI required to make these workflows recognizable as a support-program application/review system rather than a generic CRUD interface.
+
+## GCP lifecycle
 
 - Project ID: `application-review-platform`
 - Primary region: `asia-northeast3`
 - Primary zone: `asia-northeast3-a`
-- M4 runtime: provisioned and verified on the frozen seven-role IaaS topology; lifecycle/cleanup decision is recorded in `docs/operations/M4_RUNTIME_EVIDENCE.md`
+- M4 proved the seven-role IaaS topology with HTTPS and end-to-end business/attachment smoke.
+- The live M4 runtime was destroyed after verification/merge to stop unnecessary trial-credit consumption.
+- Repository OpenTofu/Ansible and sanitized M4 evidence remain the reproducible record; later milestones re-provision infrastructure only when required.
 
-See `docs/operations/GCP_BASELINE.md` for the owner-confirmed readiness record and infrastructure conventions. See `docs/operations/M4_RUNTIME_EVIDENCE.md` for the sanitized real-deployment verification record.
-
-## Core business flow
-
-`DRAFT → SUBMITTED → IN_REVIEW → NEEDS_REVISION → SUBMITTED` or `IN_REVIEW → APPROVED/REJECTED`
-
-Roles: `APPLICANT`, `REVIEWER`, `ADMIN`.
+See `docs/operations/GCP_BASELINE.md` and `docs/operations/M4_RUNTIME_EVIDENCE.md`.
 
 ## Source of truth
 
-Read `AGENTS.md` first. The frozen M0 documents under `docs/` define product scope, domain rules, architecture, security, data, recovery, workload, and non-goals. A decision made only in chat is not project state until it is committed to this repository.
+Read `AGENTS.md` first. The M0 documents under `docs/`, accepted ADRs, the current active plan, code/configuration, PRs, and exact-head CI together define project state.
 
-`docs/WORKFLOW.md` defines how ChatGPT, Codex, GitHub, GitHub Actions, external documentation, and later GCP/`ops-01` work together. New sessions should recover project state from the repository before relying on prior conversation context.
+`docs/WORKFLOW.md` defines how ChatGPT, Codex, GitHub, GitHub Actions, external documentation, and GCP/`ops-01` work together. New sessions should recover project state from the repository before relying on prior conversation context.
 
 ## Planned stack
 
-Java 21, Spring Boot 4.1.x, Spring MVC/Thymeleaf, Spring Security, Spring Session JDBC, Spring Data JPA, Flyway, PostgreSQL, Garage, Nginx, Prometheus, Loki, Tempo, Grafana, Alertmanager, Grafana Alloy, pgBackRest, k6, OpenTofu, Ansible, GitHub Actions, GHCR, SOPS + age.
+Java 21, Spring Boot 4.1.x, Spring REST/MVC infrastructure, Spring Security, Spring Session JDBC, Spring Data JPA, Flyway, PostgreSQL, Garage, React, TypeScript, Vite, Nginx, Prometheus, Loki, Tempo, Grafana, Alertmanager, Grafana Alloy, pgBackRest, k6, OpenTofu, Ansible, GitHub Actions, GHCR, SOPS + age.
+
+Thymeleaf is migration-only after ADR-001 and is not the intended final browser presentation.
 
 ## Milestones
 
-M1 Business MVP → M2 Data Integrity → M3 Attachment → M4 Cloud Deployment → M5 Operations → M6 Observability → M7 Workload → M8 Performance → M9 Reliability → M10 DR → M11 Portfolio.
+Completed milestones retain their original numbering:
+
+M1 Business MVP → M2 Data Integrity → M3 Attachment → M4 Cloud Deployment
+
+Future plan after ADR-001:
+
+M5 Web/API & Product Surface → M6 Operations & Delivery → M7 Observability → M8 Workload → M9 Performance → M10 Reliability → M11 DR → M12 Portfolio
