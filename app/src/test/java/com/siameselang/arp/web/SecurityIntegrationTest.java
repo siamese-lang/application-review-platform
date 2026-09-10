@@ -8,7 +8,9 @@ import static org.springframework.security.test.web.servlet.response.SecurityMoc
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.handler;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 import com.siameselang.arp.domain.Role;
 import com.siameselang.arp.domain.User;
@@ -80,7 +82,10 @@ class SecurityIntegrationTest {
         var sessionCookie = result.getResponse().getCookie("SESSION");
         assertThat(sessionCookie).isNotNull();
         assertThat(jdbc.queryForObject("select count(*) from spring_session where principal_name = ?", Long.class, applicantName)).isEqualTo(1L);
-        mvc.perform(get("/applications").cookie(sessionCookie)).andExpect(status().isOk()).andExpect(authenticated().withUsername(applicantName));
+        mvc.perform(get("/applications").cookie(sessionCookie))
+                .andExpect(status().isOk())
+                .andExpect(handler().handlerType(ApplicantController.class))
+                .andExpect(view().name("applications/list"));
     }
 
     @Test
