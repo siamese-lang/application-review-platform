@@ -11,7 +11,7 @@
 - M1 Business MVP: complete
 - Current implementation milestone: M2 Data Integrity
 - M2 execution plan: active at `docs/plans/active/M2-data-integrity.md`
-- M2 implementation has not started yet.
+- M2 implementation: not yet complete
 
 This project is **production-like**, not a claim of real production operation. All users, organizations, applications, workloads, and measurements are synthetic unless explicitly recorded otherwise.
 
