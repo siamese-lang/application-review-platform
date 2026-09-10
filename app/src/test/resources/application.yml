@@ -15,3 +15,7 @@ storage:
     secret-key: ${GARAGE_SECRET_KEY:test-secret-key}
     path-style: true
     managed-prefix: application-review/attachments/
+attachment:
+  reconciliation:
+    stale-after: PT15M
+    schedule: "0 */10 * * * *"
