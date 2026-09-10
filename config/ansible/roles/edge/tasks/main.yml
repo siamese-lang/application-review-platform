@@ -1,0 +1,25 @@
+---
+- name: Install Nginx
+  ansible.builtin.apt: { name: nginx, state: present }
+- name: Require operator-supplied TLS material
+  ansible.builtin.assert:
+    that: ["tls_certificate_source | length > 0", "tls_private_key_source | length > 0"]
+    fail_msg: "Provide ARP_TLS_CERTIFICATE and ARP_TLS_PRIVATE_KEY; Phase 1 never generates or commits certificates."
+- name: Create TLS directory
+  ansible.builtin.file: { path: /etc/nginx/tls, state: directory, owner: root, group: root, mode: '0700' }
+- name: Install TLS certificate
+  ansible.builtin.copy: { src: "{{ tls_certificate_source }}", dest: /etc/nginx/tls/fullchain.pem, owner: root, group: root, mode: '0644' }
+  notify: Reload Nginx
+- name: Install TLS private key
+  ansible.builtin.copy: { src: "{{ tls_private_key_source }}", dest: /etc/nginx/tls/privkey.pem, owner: root, group: root, mode: '0600' }
+  no_log: true
+  notify: Reload Nginx
+- name: Configure HTTPS reverse proxy and HTTP redirect
+  ansible.builtin.template: { src: arp.conf.j2, dest: /etc/nginx/sites-available/arp, mode: '0644' }
+  notify: Reload Nginx
+- name: Enable application site
+  ansible.builtin.file: { src: /etc/nginx/sites-available/arp, dest: /etc/nginx/sites-enabled/arp, state: link }
+  notify: Reload Nginx
+- name: Remove default site
+  ansible.builtin.file: { path: /etc/nginx/sites-enabled/default, state: absent }
+  notify: Reload Nginx

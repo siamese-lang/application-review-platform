@@ -1,0 +1,54 @@
+variable "project_id" {
+  type = string
+}
+variable "region" {
+  type    = string
+  default = "asia-northeast3"
+}
+variable "primary_zone" {
+  type    = string
+  default = "asia-northeast3-a"
+}
+variable "subnet_cidr" {
+  type    = string
+  default = "10.40.0.0/24"
+}
+variable "admin_oslogin_members" {
+  description = "Account-specific user:/group: principals allowed IAP SSH and OS Login. Empty in static validation."
+  type        = set(string)
+  default     = []
+}
+variable "enable_http" {
+  type    = bool
+  default = true
+}
+variable "boot_image" {
+  type    = string
+  default = "projects/ubuntu-os-cloud/global/images/family/ubuntu-2404-lts-amd64"
+}
+variable "boot_disk_size_gb" {
+  type    = number
+  default = 20
+}
+variable "db_data_disk_size_gb" {
+  type    = number
+  default = 30
+}
+variable "garage_data_disk_size_gb" {
+  type    = number
+  default = 30
+}
+variable "machine_types" {
+  type = map(string)
+  default = {
+    edge    = "e2-small"
+    app     = "e2-medium"
+    db      = "e2-medium"
+    storage = "e2-medium"
+    ops     = "e2-small"
+  }
+  validation {
+    condition     = alltrue([for role in ["edge", "app", "db", "storage", "ops"] : contains(keys(var.machine_types), role)])
+    error_message = "machine_types must define edge, app, db, storage, and ops."
+  }
+}

@@ -1,0 +1,4 @@
+project_id = "application-review-platform"
+# Account values belong in an ignored local tfvars file:
+# admin_oslogin_members = ["user:operator@example.invalid"]
+# machine_types and all disk sizes are configurable; see variables.tf.

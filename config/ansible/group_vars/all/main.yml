@@ -1,0 +1,16 @@
+---
+timezone: Etc/UTC
+app_private_ip: 10.40.0.20
+db_private_ip: 10.40.0.30
+garage_endpoint_ip: 10.40.0.41
+garage_rpc_port: 3901
+garage_s3_port: 3900
+garage_replication_factor: 3
+garage_image: dxflrs/garage:v2.4.1
+garage_bucket: application-review
+app_version: "{{ lookup('env', 'ARP_APP_VERSION') | default('m4-local', true) }}"
+app_jar_source: "{{ lookup('env', 'ARP_APP_JAR') }}"
+tls_certificate_source: "{{ lookup('env', 'ARP_TLS_CERTIFICATE') }}"
+tls_private_key_source: "{{ lookup('env', 'ARP_TLS_PRIVATE_KEY') }}"
+opentofu_version: 1.12.6
+sops_version: 3.10.2

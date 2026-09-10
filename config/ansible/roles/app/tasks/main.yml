@@ -1,0 +1,23 @@
+---
+- name: Install Java runtime
+  ansible.builtin.apt: { name: openjdk-21-jre-headless, state: present }
+- name: Create application account
+  ansible.builtin.user: { name: arp, system: true, home: /var/lib/arp, shell: /usr/sbin/nologin }
+- name: Create application paths
+  ansible.builtin.file: { path: "{{ item }}", state: directory, owner: arp, group: arp, mode: '0750' }
+  loop: [/opt/arp/releases, /etc/arp]
+- name: Require a built application artifact
+  ansible.builtin.assert: { that: ["app_jar_source | length > 0"], fail_msg: "Set ARP_APP_JAR to the exact built JAR path." }
+- name: Copy versioned application artifact
+  ansible.builtin.copy: { src: "{{ app_jar_source }}", dest: "/opt/arp/releases/arp-{{ app_version }}.jar", owner: arp, group: arp, mode: '0500' }
+  notify: Restart application
+- name: Link current application artifact
+  ansible.builtin.file: { src: "/opt/arp/releases/arp-{{ app_version }}.jar", dest: /opt/arp/application.jar, state: link, force: true }
+  notify: Restart application
+- name: Write restricted runtime environment
+  ansible.builtin.template: { src: arp.env.j2, dest: /etc/arp/arp.env, owner: root, group: arp, mode: '0640' }
+  notify: Restart application
+  no_log: true
+- name: Install application unit
+  ansible.builtin.template: { src: arp.service.j2, dest: /etc/systemd/system/arp.service, mode: '0644' }
+  notify: Restart application

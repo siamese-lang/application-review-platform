@@ -1,0 +1,24 @@
+---
+- name: Install container runtime
+  ansible.builtin.apt: { name: docker.io, state: present }
+- name: Create Garage directories
+  ansible.builtin.file: { path: "{{ item }}", state: directory, owner: root, group: root, mode: '0700' }
+  loop: [/srv/garage, /etc/garage]
+- name: Format uninitialized Garage disk
+  community.general.filesystem: { fstype: ext4, dev: /dev/disk/by-id/google-arp-data }
+- name: Mount Garage disk
+  ansible.posix.mount: { path: /srv/garage, src: /dev/disk/by-id/google-arp-data, fstype: ext4, opts: defaults,noatime, state: mounted }
+- name: Write node-specific Garage configuration
+  ansible.builtin.template: { src: garage.toml.j2, dest: /etc/garage/garage.toml, owner: root, group: root, mode: '0600' }
+  notify: Restart Garage
+  no_log: true
+- name: Run pinned Garage container
+  community.docker.docker_container:
+    name: garage
+    image: "{{ garage_image }}"
+    pull: missing
+    restart_policy: unless-stopped
+    network_mode: host
+    volumes: [/etc/garage/garage.toml:/etc/garage.toml:ro, /srv/garage:/var/lib/garage]
+    command: /garage -c /etc/garage.toml server
+    state: started
