@@ -3,6 +3,9 @@ package com.siameselang.arp.web;
 import com.siameselang.arp.domain.ApplicationStatus;
 import com.siameselang.arp.service.ApplicationService;
 import com.siameselang.arp.service.CurrentUserService;
+import com.siameselang.arp.service.AttachmentService;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -17,10 +20,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class ReviewerController {
     private final ApplicationService service;
     private final CurrentUserService currentUser;
+    private final AttachmentService attachments;
 
-    public ReviewerController(ApplicationService service, CurrentUserService currentUser) {
+    public ReviewerController(ApplicationService service, CurrentUserService currentUser, AttachmentService attachments) {
         this.service = service;
         this.currentUser = currentUser;
+        this.attachments = attachments;
     }
 
     @GetMapping
@@ -36,8 +41,12 @@ public class ReviewerController {
         var application = service.reviewerDetail(actor, id);
         model.addAttribute("application", application);
         model.addAttribute("history", service.reviewerHistory(actor, id));
+        model.addAttribute("attachments",attachments.listForReviewer(actor,id));
         return "reviewer/detail";
     }
+
+    @GetMapping("/{id}/attachments/{attachmentId}")
+    ResponseEntity<InputStreamResource> download(Authentication authentication,@PathVariable long id,@PathVariable long attachmentId){return ApplicantController.response(attachments.downloadForReviewer(currentUser.require(authentication.getName()),id,attachmentId));}
 
     @PostMapping("/{id}/start")
     String start(Authentication authentication, @PathVariable long id) {

@@ -12,3 +12,16 @@ spring:
   session:
     jdbc:
       initialize-schema: never
+storage:
+  garage:
+    endpoint: ${GARAGE_ENDPOINT:http://localhost:3900}
+    bucket: ${GARAGE_BUCKET:application-review}
+    region: ${GARAGE_REGION:garage}
+    access-key: ${GARAGE_ACCESS_KEY:development-access-key}
+    secret-key: ${GARAGE_SECRET_KEY:development-secret-key}
+    path-style: ${GARAGE_PATH_STYLE:true}
+    managed-prefix: ${GARAGE_MANAGED_PREFIX:application-review/attachments/}
+attachment:
+  reconciliation:
+    stale-after: ${ATTACHMENT_STALE_AFTER:PT15M}
+    schedule: ${ATTACHMENT_RECONCILIATION_SCHEDULE:0 */10 * * * *}
