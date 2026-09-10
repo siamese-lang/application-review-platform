@@ -10,9 +10,9 @@
 - P0-C GCP readiness: complete
 - M1 Business MVP: complete
 - M2 Data Integrity: complete
-- Current implementation milestone: M3 Attachment
-- M3 execution plan: active at `docs/plans/active/M3-attachment.md`
-- M3 implementation: not yet complete
+- M3 Attachment: complete
+- Next implementation milestone: M4 Cloud Deployment
+- No M4 implementation plan is active yet; create and review the M4 plan before implementation.
 
 This project is **production-like**, not a claim of real production operation. All users, organizations, applications, workloads, and measurements are synthetic unless explicitly recorded otherwise.
 
