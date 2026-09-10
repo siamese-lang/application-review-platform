@@ -52,15 +52,15 @@ jobs:
           GARAGE_BUCKET: 'application-review-test'
         shell: bash
         run: |
-          mkdir -p .ci
+          mkdir -p ci-diagnostics
           set -o pipefail
-          ./mvnw verify 2>&1 | tee .ci/maven-verify.log
+          ./mvnw verify 2>&1 | tee ci-diagnostics/maven-verify.log
       - name: Summarize CI failure
         if: failure()
         shell: bash
         run: |
-          mkdir -p .ci
-          docker logs arp-test-garage > .ci/garage.log 2>&1 || true
+          mkdir -p ci-diagnostics
+          docker logs arp-test-garage > ci-diagnostics/garage.log 2>&1 || true
           {
             echo "## CI failure diagnostics"
             echo
@@ -73,21 +73,21 @@ jobs:
               echo '```'
               echo
             fi
-            if [ -f .ci/maven-verify.log ]; then
+            if [ -f ci-diagnostics/maven-verify.log ]; then
               echo "### Maven causal excerpts"
               echo '```text'
-              grep -E '^\[ERROR\]|COMPILATION ERROR|Caused by:|AssertionFailedError|Failed to execute goal|BUILD FAILURE' .ci/maven-verify.log | head -n 120 || true
+              grep -E '^\[ERROR\]|COMPILATION ERROR|Caused by:|AssertionFailedError|Failed to execute goal|BUILD FAILURE' ci-diagnostics/maven-verify.log | head -n 120 || true
               echo '```'
             fi
-          } > .ci/failure-summary.md
-          cat .ci/failure-summary.md >> "$GITHUB_STEP_SUMMARY"
+          } > ci-diagnostics/failure-summary.md
+          cat ci-diagnostics/failure-summary.md >> "$GITHUB_STEP_SUMMARY"
       - name: Upload CI failure diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: ci-failure-diagnostics-${{ github.run_id }}
           path: |
-            .ci/**
+            ci-diagnostics/**
             app/target/surefire-reports/**
             app/target/failsafe-reports/**
           if-no-files-found: ignore
