@@ -9,3 +9,6 @@ spring:
       ddl-auto: validate
   flyway:
     enabled: true
+  session:
+    jdbc:
+      initialize-schema: never

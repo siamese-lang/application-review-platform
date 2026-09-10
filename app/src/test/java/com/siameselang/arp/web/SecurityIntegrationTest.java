@@ -6,6 +6,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.authenticated;
 import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.unauthenticated;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -20,6 +21,8 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.jdbc.core.JdbcTemplate;
+
 import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
@@ -30,9 +33,11 @@ class SecurityIntegrationTest {
     @Autowired private MockMvc mvc;
     @Autowired private UserRepository users;
     @Autowired private PasswordEncoder encoder;
+    @Autowired private JdbcTemplate jdbc;
 
     private String applicantName;
     private String reviewerName;
+    private String adminName;
 
     @BeforeEach
     void setUp() {
@@ -40,6 +45,8 @@ class SecurityIntegrationTest {
         reviewerName = "login-review-" + System.nanoTime();
         users.save(new User(applicantName, encoder.encode("secret-pass"), Role.APPLICANT));
         users.save(new User(reviewerName, encoder.encode("review-pass"), Role.REVIEWER));
+        adminName = "login-admin-" + System.nanoTime();
+        users.save(new User(adminName, encoder.encode("admin-pass"), Role.ADMIN));
     }
 
     @Test
@@ -63,6 +70,24 @@ class SecurityIntegrationTest {
                 .andExpect(status().isOk());
         mvc.perform(get("/review").with(user(reviewerName).roles("REVIEWER")))
                 .andExpect(status().isOk());
+    }
+
+
+    @Test
+    void authenticatedSessionIsPersistedAndReusable() throws Exception {
+        var result = mvc.perform(formLogin().user(applicantName).password("secret-pass"))
+                .andExpect(authenticated()).andReturn();
+        var sessionCookie = result.getResponse().getCookie("SESSION");
+        assertThat(sessionCookie).isNotNull();
+        assertThat(jdbc.queryForObject("select count(*) from spring_session where principal_name = ?", Long.class, applicantName)).isEqualTo(1L);
+        mvc.perform(get("/applications").cookie(sessionCookie)).andExpect(status().isOk()).andExpect(authenticated().withUsername(applicantName));
+    }
+
+    @Test
+    void adminRoutesAreAdminOnlyAndCsrfRemainsEnabled() throws Exception {
+        mvc.perform(get("/admin/users").with(user(applicantName).roles("APPLICANT"))).andExpect(status().isForbidden());
+        mvc.perform(get("/admin/users").with(user(adminName).roles("ADMIN"))).andExpect(status().isOk());
+        mvc.perform(post("/applications").with(user(applicantName).roles("APPLICANT"))).andExpect(status().isForbidden());
     }
 
     @Test
