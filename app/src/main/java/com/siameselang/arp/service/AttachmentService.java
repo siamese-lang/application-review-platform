@@ -8,6 +8,7 @@ import java.nio.file.*;
 import java.security.*;
 import java.time.*;
 import java.util.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AttachmentService {
     private final AttachmentRepository attachments; private final AttachmentTransactions tx; private final ApplicationService applications;
     private final ObjectStorage storage; private final GarageProperties properties; private final Clock clock;
+    @Autowired
     public AttachmentService(AttachmentRepository a,AttachmentTransactions tx,ApplicationService apps,ObjectStorage storage,GarageProperties p){this(a,tx,apps,storage,p,Clock.systemUTC());}
     AttachmentService(AttachmentRepository a,AttachmentTransactions tx,ApplicationService apps,ObjectStorage storage,GarageProperties p,Clock clock){attachments=a;this.tx=tx;applications=apps;this.storage=storage;properties=p;this.clock=clock;}
 
