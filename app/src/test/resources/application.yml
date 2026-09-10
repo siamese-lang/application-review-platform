@@ -6,3 +6,16 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+storage:
+  garage:
+    endpoint: ${GARAGE_ENDPOINT:http://localhost:3900}
+    bucket: ${GARAGE_BUCKET:application-review-test}
+    region: ${GARAGE_REGION:garage}
+    access-key: ${GARAGE_ACCESS_KEY:test-access-key}
+    secret-key: ${GARAGE_SECRET_KEY:test-secret-key}
+    path-style: true
+    managed-prefix: application-review/attachments/
+attachment:
+  reconciliation:
+    stale-after: PT15M
+    schedule: "-"
