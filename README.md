@@ -17,6 +17,7 @@
 - M4 GCP runtime: verified and intentionally destroyed after evidence capture to control cost
 - ADR-001: REST API + React SPA browser boundary accepted
 - ADR-002: applicant self-registration + controlled reviewer/admin provisioning accepted
+- ADR-003: admin program publication + derived intake window + generalized audit subjects accepted
 - Current implementation milestone: M5 Web/API & Product Surface
 - Active plan: `docs/plans/active/M5-web-api-product-surface.md`
 
@@ -37,7 +38,7 @@ edge-01: Nginx
 
 The production browser/API path is same-origin through Nginx. Spring Security session authentication, Spring Session JDBC, CSRF protection, domain/service authorization, Flyway, PostgreSQL, Garage, and the split-role GCP IaaS boundary remain part of the architecture.
 
-See `docs/architecture/ADR-001-web-api-spa.md` for the browser/API decision and `docs/architecture/ADR-002-account-lifecycle.md` for public registration and privileged-role provisioning.
+See `docs/architecture/ADR-001-web-api-spa.md` for the browser/API decision, `docs/architecture/ADR-002-account-lifecycle.md` for public registration and privileged-role provisioning, and `docs/architecture/ADR-003-program-lifecycle.md` for program publication/intake and reviewer claim semantics.
 
 ## Product workflow
 
@@ -52,10 +53,10 @@ Core application state flow:
 Roles:
 
 - `APPLICANT`: self-register, browse programs, prepare/edit own applications, manage attachments, submit/resubmit, track status/results
-- `REVIEWER`: controlled bootstrap/operations provisioning; work a review queue, inspect applications/evidence, start review, request revision, approve/reject
-- `ADMIN`: controlled bootstrap/operations provisioning; read-oriented operational visibility into users, applications, histories, audits, and workflow counts
+- `REVIEWER`: controlled bootstrap/operations provisioning; work a review queue, claim submitted work on review start, inspect applications/evidence, request revision, approve/reject
+- `ADMIN`: controlled bootstrap/operations provisioning; create/edit/publish support programs and inspect users, applications, histories, audits, and workflow counts
 
-M5 adds the minimum structured user/program/application fields and business UI required to make these workflows recognizable as a support-program application/review system rather than a generic CRUD interface.
+M5 adds the minimum structured user/program/application fields, program publication/intake rules, generalized audit subjects, and business UI required to make these workflows recognizable as a support-program application/review system rather than a generic CRUD interface.
 
 ## Identity claim boundary
 
@@ -92,6 +93,6 @@ Completed milestones retain their original numbering:
 
 M1 Business MVP → M2 Data Integrity → M3 Attachment → M4 Cloud Deployment
 
-Future plan after ADR-001/ADR-002:
+Future plan after ADR-001/ADR-002/ADR-003:
 
 M5 Web/API & Product Surface → M6 Operations & Delivery → M7 Observability → M8 Workload → M9 Performance → M10 Reliability → M11 DR → M12 Portfolio
