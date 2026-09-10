@@ -10,7 +10,7 @@ resource "google_compute_instance" "node" {
     initialize_params {
       image = var.boot_image
       size  = var.boot_disk_size_gb
-      type  = "pd-balanced"
+      type  = lookup(var.node_boot_disk_type_overrides, each.key, "pd-balanced")
     }
   }
 
