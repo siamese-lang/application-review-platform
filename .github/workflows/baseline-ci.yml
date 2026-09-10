@@ -145,7 +145,12 @@ jobs:
           grep -Fq 'enable-guest-attributes' infra/opentofu/compute.tf
           grep -Fq 'target_tags   = ["arp-ops"]' infra/opentofu/firewall.tf
           grep -Fq 'init -lockfile=readonly' deploy/tofu-bootstrap-plan.sh
-          grep -Fq 'init -reconfigure -lockfile=readonly' deploy/tofu-init-plan.sh
+          grep -Fq 'init -lockfile=readonly -backend-config="path=$state_path"' deploy/tofu-init-plan.sh
+          if grep -Fq 'init -reconfigure' deploy/tofu-init-plan.sh; then
+            echo 'Runtime repeat planning must not bypass backend migration safeguards with -reconfigure.' >&2
+            exit 1
+          fi
+          grep -Fq 'Refusing to plan with an empty runtime state file' deploy/tofu-init-plan.sh
           grep -Fq 'python3-requests' config/ansible/roles/garage/tasks/main.yml
           grep -Fq 'output -json inventory' deploy/bootstrap-garage.sh
           grep -Fq 'key import --name arp-application --yes' deploy/bootstrap-garage.sh
