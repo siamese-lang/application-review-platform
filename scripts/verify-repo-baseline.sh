@@ -40,4 +40,10 @@ if grep -Fq 'layout assign -z "${node_zone[$host]}" -c "$GARAGE_LAYOUT_CAPACITY"
   exit 1
 fi
 
+grep -Fq 'key import -n arp-application --yes "$GARAGE_APP_ACCESS_KEY" "$GARAGE_APP_SECRET_KEY"' deploy/bootstrap-garage.sh
+if grep -Fq 'key import --name arp-application' deploy/bootstrap-garage.sh; then
+  echo 'Garage v2.4 key import uses -n for the key name; --name is not accepted.' >&2
+  exit 1
+fi
+
 echo 'M0 repository baseline verification passed.'
