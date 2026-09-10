@@ -1,6 +1,8 @@
 ---
-- name: Install container runtime
-  ansible.builtin.apt: { name: docker.io, state: present }
+- name: Install container runtime and Docker module dependency
+  ansible.builtin.apt:
+    name: [docker.io, python3-requests]
+    state: present
 - name: Create Garage directories
   ansible.builtin.file: { path: "{{ item }}", state: directory, owner: root, group: root, mode: '0700' }
   loop: [/srv/garage, /etc/garage]

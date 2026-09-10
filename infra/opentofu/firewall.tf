@@ -88,7 +88,7 @@ resource "google_compute_firewall" "iap_ssh" {
   network       = google_compute_network.m4.name
   direction     = "INGRESS"
   source_ranges = ["35.235.240.0/20"]
-  target_tags   = ["arp-managed"]
+  target_tags   = ["arp-ops"]
   allow {
     protocol = "tcp"
     ports    = ["22"]

@@ -143,7 +143,17 @@ jobs:
           grep -Fq 'google_service_account_iam_member' infra/opentofu/bootstrap/iam.tf
           test ! -e infra/opentofu/iam.tf
           grep -Fq 'enable-guest-attributes' infra/opentofu/compute.tf
+          grep -Fq 'target_tags   = ["arp-ops"]' infra/opentofu/firewall.tf
+          grep -Fq 'init -lockfile=readonly' deploy/tofu-bootstrap-plan.sh
+          grep -Fq 'init -reconfigure -lockfile=readonly' deploy/tofu-init-plan.sh
+          grep -Fq 'python3-requests' config/ansible/roles/garage/tasks/main.yml
+          grep -Fq 'output -json inventory' deploy/bootstrap-garage.sh
+          grep -Fq 'key import --name arp-application --yes' deploy/bootstrap-garage.sh
           grep -Fq 'StrictHostKeyChecking=yes' deploy/bootstrap-garage.sh
+          if grep -Fq 'REQUIRED_VERIFIED_UPSTREAM_CHECKSUM' config/secrets/runtime.schema.yaml; then
+            echo 'Runtime secret input must not override verified non-secret tool checksums.' >&2
+            exit 1
+          fi
           if git grep -nF 'StrictHostKeyChecking=no' -- deploy config; then
             echo 'M4 executable/configuration paths must keep SSH host verification enabled.' >&2
             exit 1
