@@ -14,7 +14,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.siameselang.arp.domain.Role;
 import com.siameselang.arp.domain.User;
+import com.siameselang.arp.repository.ProgramRepository;
 import com.siameselang.arp.repository.UserRepository;
+import com.siameselang.arp.service.ApplicationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +36,8 @@ import org.springframework.transaction.annotation.Transactional;
 class SecurityIntegrationTest {
     @Autowired private MockMvc mvc;
     @Autowired private UserRepository users;
+    @Autowired private ProgramRepository programs;
+    @Autowired private ApplicationService applications;
     @Autowired private PasswordEncoder encoder;
     @Autowired private JdbcTemplate jdbc;
 
@@ -74,6 +78,28 @@ class SecurityIntegrationTest {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    void detailedViewsRenderTheDomainApplicationInsteadOfServletApplicationScope() throws Exception {
+        User applicant = users.findByUsername(applicantName).orElseThrow();
+        var program = programs.findAll().getFirst();
+        var application = applications.create(applicant, program.getId(), "Render proposal", "Render details");
+
+        mvc.perform(get("/applications/" + application.getId()).with(user(applicantName).roles("APPLICANT")))
+                .andExpect(status().isOk())
+                .andExpect(handler().handlerType(ApplicantController.class))
+                .andExpect(view().name("applications/detail"));
+
+        applications.submit(applicant, application.getId());
+        mvc.perform(get("/review/" + application.getId()).with(user(reviewerName).roles("REVIEWER")))
+                .andExpect(status().isOk())
+                .andExpect(handler().handlerType(ReviewerController.class))
+                .andExpect(view().name("reviewer/detail"));
+
+        mvc.perform(get("/admin/applications/" + application.getId()).with(user(adminName).roles("ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(handler().handlerType(AdminController.class))
+                .andExpect(view().name("admin/application"));
+    }
 
     @Test
     void authenticatedSessionIsPersistedAndReusable() throws Exception {
