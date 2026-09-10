@@ -11,9 +11,11 @@
 - M1 Business MVP: complete
 - M2 Data Integrity: complete
 - M3 Attachment: complete
-- Current implementation milestone: M4 Cloud Deployment
-- M4 execution plan: active at `docs/plans/active/M4-cloud-deployment.md`
-- M4 Phase 1 repository implementation: complete and green; Phase 2 runtime deployment pending; no GCP resources have been created
+- M4 Cloud Deployment: complete
+- M4 completed plan: `docs/plans/completed/M4-cloud-deployment.md`
+- M4 runtime evidence: `docs/operations/M4_RUNTIME_EVIDENCE.md`
+- Next implementation milestone: M5 Operations
+- M5 implementation: not started
 
 This project is **production-like**, not a claim of real production operation. All users, organizations, applications, workloads, and measurements are synthetic unless explicitly recorded otherwise.
 
@@ -22,9 +24,9 @@ This project is **production-like**, not a claim of real production operation. A
 - Project ID: `application-review-platform`
 - Primary region: `asia-northeast3`
 - Primary zone: `asia-northeast3-a`
-- Runtime VM fleet: not provisioned yet
+- M4 runtime: provisioned and verified on the frozen seven-role IaaS topology; lifecycle/cleanup decision is recorded in `docs/operations/M4_RUNTIME_EVIDENCE.md`
 
-See `docs/operations/GCP_BASELINE.md` for the owner-confirmed readiness record and M4 infrastructure conventions.
+See `docs/operations/GCP_BASELINE.md` for the owner-confirmed readiness record and infrastructure conventions. See `docs/operations/M4_RUNTIME_EVIDENCE.md` for the sanitized real-deployment verification record.
 
 ## Core business flow
 
