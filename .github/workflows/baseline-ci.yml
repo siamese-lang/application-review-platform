@@ -153,7 +153,7 @@ jobs:
           grep -Fq 'Refusing to plan with an empty runtime state file' deploy/tofu-init-plan.sh
           grep -Fq 'python3-requests' config/ansible/roles/garage/tasks/main.yml
           grep -Fq 'output -json inventory' deploy/bootstrap-garage.sh
-          grep -Fq 'key import --name arp-application --yes' deploy/bootstrap-garage.sh
+          grep -Fq 'key import -n arp-application --yes' deploy/bootstrap-garage.sh
           grep -Fq 'StrictHostKeyChecking=yes' deploy/bootstrap-garage.sh
           if grep -Fq 'REQUIRED_VERIFIED_UPSTREAM_CHECKSUM' config/secrets/runtime.schema.yaml; then
             echo 'Runtime secret input must not override verified non-secret tool checksums.' >&2
