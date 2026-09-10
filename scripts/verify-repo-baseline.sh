@@ -34,4 +34,10 @@ if git grep -nF 'opts: defaults,noatime' -- config/ansible/roles; then
   exit 1
 fi
 
+grep -Fq 'layout assign "${node_id[$host]}" -z "${node_zone[$host]}" -c "$GARAGE_LAYOUT_CAPACITY" -t "$host"' deploy/bootstrap-garage.sh
+if grep -Fq 'layout assign -z "${node_zone[$host]}" -c "$GARAGE_LAYOUT_CAPACITY" -t "$host" "${node_id[$host]}"' deploy/bootstrap-garage.sh; then
+  echo 'Garage layout assign must place the positional node ID before the variadic --tag option.' >&2
+  exit 1
+fi
+
 echo 'M0 repository baseline verification passed.'
