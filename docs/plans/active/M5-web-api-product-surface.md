@@ -34,7 +34,8 @@ Completed M0–M4 milestone identities and evidence are not renumbered.
 Implementation follows:
 
 - `docs/architecture/ADR-001-web-api-spa.md` for the browser/API boundary;
-- `docs/architecture/ADR-002-account-lifecycle.md` for registration and privileged-account provisioning.
+- `docs/architecture/ADR-002-account-lifecycle.md` for registration and privileged-account provisioning;
+- `docs/architecture/ADR-003-program-lifecycle.md` for administrator program publication, intake admission, reviewer claim-on-start, and generalized audit subjects.
 
 Target browser path:
 
@@ -82,7 +83,32 @@ Rules:
 
 Do not simulate email verification, password-reset email, MFA, SSO/OIDC, or reviewer invitation delivery without a real external provider. Document these as production gaps.
 
-### 2. Minimal product/domain enrichment
+### 2. Program administration and intake lifecycle
+
+Support programs are no longer seed-only reference records in the finished product.
+
+Implement administrator commands for:
+
+- create a program as `DRAFT`;
+- edit a draft program;
+- publish a valid draft program.
+
+Rules:
+
+- only `ADMIN` may create/edit/publish programs;
+- `DRAFT` programs are not visible through the public API;
+- `PUBLISHED` programs are publicly discoverable;
+- program code is unique and immutable;
+- `application_open_at < application_close_at` is mandatory before publication;
+- scheduled/open/closed intake state is derived from publication status and timestamps, not stored independently;
+- new application creation is allowed only for a published program while `application_open_at <= now < application_close_at`;
+- closing intake does not hide existing applications or prevent a reviewer-requested resubmission of an already accepted application;
+- published programs are immutable through ordinary M5 commands and cannot be silently unpublished;
+- draft program edits use optimistic locking.
+
+Retain the existing reviewer pull queue. A reviewer claims an unassigned `SUBMITTED` application by successfully starting review. Do not add administrator reviewer assignment/reassignment or multi-reviewer panels in M5. Concurrent claims must result in only one effective assigned reviewer.
+
+### 3. Minimal product/domain enrichment
 
 The current `Program(title, description)`, `Application(title, content, status)`, and `User(username, password_hash, role)` models are too sparse for a convincing support-program workflow. Add only fields that materially improve the business/browser contract.
 
@@ -96,11 +122,15 @@ Planned additive user model:
 
 Planned additive program model:
 
-- stable program code;
+- stable unique program code;
 - title;
 - description;
+- publication status (`DRAFT`, `PUBLISHED`);
 - application-open timestamp;
-- application-close timestamp.
+- application-close timestamp;
+- optimistic-lock version;
+- created timestamp;
+- updated timestamp.
 
 Planned additive application model:
 
@@ -113,11 +143,13 @@ Planned additive application model:
 
 Existing status-history `reason` continues to hold revision/approval/rejection rationale where appropriate; do not add a separate comment subsystem unless the implemented workflow demonstrates a concrete need.
 
+Generalize the M2 `audit_events` target so one event can refer to exactly one application, program, or user while retaining explicit foreign keys and a database exactly-one-subject check. Existing application events remain valid. Add `USER_REGISTERED`, `PROGRAM_CREATED`, `PROGRAM_UPDATED`, and `PROGRAM_PUBLISHED`.
+
 Use Flyway only. Prefer additive migrations and preserve rollback compatibility where practical. Backfill existing synthetic users/programs/applications with deterministic synthetic values as needed.
 
 All data remains synthetic; do not introduce real personal or company data.
 
-### 3. REST API boundary
+### 4. REST API boundary
 
 Add controllers under a dedicated API package. Controllers translate HTTP DTOs to existing application/domain services; they do not own state-transition rules.
 
@@ -126,11 +158,12 @@ Use `/api/v1` as the browser API namespace.
 Minimum contract areas:
 
 - authentication/session: register applicant, current user, login, logout, CSRF bootstrap;
-- public programs: list/detail;
+- public programs: published list/detail with derived intake state;
+- admin programs: list/detail/create/edit/publish;
 - applicant applications: list/detail/create/edit/submit/resubmit;
 - attachments: upload/list/download/delete within existing lifecycle rules;
 - reviewer work queue: list/detail/start review/request revision/approve/reject;
-- admin read views: operational counts and read-only user/application/audit visibility.
+- admin operational views: program administration plus user/application/audit visibility and workflow counts.
 
 Use explicit request/response DTOs rather than serializing JPA entities. List endpoints that may grow must use explicit pagination/filter DTOs rather than exposing repository internals.
 
@@ -138,9 +171,13 @@ Business transition endpoints may use action-oriented commands where that repres
 
 Return structured JSON errors using Spring `ProblemDetail` or an equivalent repository-wide shape. Authentication failures, authorization failures, validation failures, duplicate-account conflicts, not-found cases, state-transition conflicts, and optimistic-lock conflicts must be distinguishable.
 
-### 4. Concurrency and integrity over HTTP
+### 5. Concurrency and integrity over HTTP
 
 Preserve M2 optimistic locking. Editable application requests carry the client-observed version and stale writes fail with HTTP 409 rather than silently overwriting newer state.
+
+Draft program edits also carry the client-observed version and stale administrator writes fail with HTTP 409.
+
+Reviewer claim-on-start must remain exclusive under concurrent attempts; the losing claim is surfaced as a conflict rather than overwriting the assigned reviewer.
 
 Account uniqueness must be enforced by database constraints as well as application validation; pre-insert existence checks alone are not concurrency-safe.
 
@@ -148,7 +185,7 @@ Attachment state/reconciliation semantics from M3 remain unchanged behind the AP
 
 Do not weaken authorization because the SPA hides buttons. Every ownership/role/state check remains server-side.
 
-### 5. Browser authentication and CSRF
+### 6. Browser authentication and CSRF
 
 Keep Spring Security session authentication and Spring Session JDBC. Do not replace it with JWT solely because the client is React.
 
@@ -164,7 +201,7 @@ Registration does not create a privileged session or role. Login establishes the
 
 Local frontend development should use the Vite development proxy for `/api` so browser requests remain same-origin from the developer's perspective. Do not add permissive wildcard CORS merely to make development work. If an actual cross-origin client is later introduced, add a narrow allowlist and test it then.
 
-### 6. React/TypeScript frontend
+### 7. React/TypeScript frontend
 
 Create a `frontend/` application using React, TypeScript, and Vite with a committed lockfile. Keep the dependency set small.
 
@@ -181,13 +218,25 @@ Minimum screens:
 - application detail with workflow step/status, attachments, and history;
 - reviewer queue with filtering/sorting/pagination;
 - reviewer detail with applicant content, attachment access, history, and allowed review actions;
-- admin read-only dashboard/list/detail views.
+- admin dashboard plus program list/create/edit/publish screens and user/application/audit read views.
 
 The target is a restrained internal/public-sector business-system UI: readable tables, forms, status badges, navigation, empty/error/loading states, and responsive layout. It is not a design-showcase SPA.
 
-### 7. Frontend/backend contract tests
+### 8. Frontend/backend contract tests
 
 Backend verification must include controller/API integration tests for registration, authentication, authorization, validation, transitions, stale-version conflicts, attachments, and structured error responses.
+
+Program lifecycle tests must prove:
+
+- only admin can create/edit/publish programs;
+- draft programs are absent from public discovery;
+- invalid windows cannot be published;
+- published programs expose derived scheduled/open/closed intake state;
+- direct API calls cannot create applications for draft, scheduled, or closed programs;
+- reviewer-requested resubmission remains valid after intake closes;
+- stale program edits conflict;
+- concurrent reviewer claims have only one winner;
+- generalized audit rows have exactly one valid subject.
 
 Identity tests must prove:
 
@@ -208,7 +257,7 @@ Frontend verification must include at least:
 
 The applicant E2E must begin as an unauthenticated browser user, discover a public program, register/login, then execute the private application workflow. Browser tests must exercise API/session/CSRF behavior, not mock the entire backend.
 
-### 8. Static serving and routing contract
+### 9. Static serving and routing contract
 
 Prepare Nginx/application configuration for the later M6 deployment model:
 
@@ -222,7 +271,7 @@ Prepare Nginx/application configuration for the later M6 deployment model:
 
 M5 may validate this contract locally/in CI. M6 owns the real delivery automation and re-deployment to GCP.
 
-### 9. Migration away from Thymeleaf UI
+### 10. Migration away from Thymeleaf UI
 
 Do not maintain two permanent presentation implementations.
 
@@ -244,6 +293,8 @@ M5 does not introduce:
 - reviewer/admin public signup or a simulated invitation service;
 - complex workflow designer/dynamic form builder;
 - enterprise tenant/organization hierarchy;
+- post-publication program amendment/republication workflow;
+- administrator reviewer assignment/reassignment or multi-reviewer panels;
 - Redis, Kafka/RabbitMQ, Elasticsearch;
 - performance tuning before M9;
 - observability stack before M7;
@@ -251,18 +302,19 @@ M5 does not introduce:
 
 ## Implementation order
 
-1. Add ADR-002-approved user fields and structured Program/Application fields through additive Flyway migrations.
-2. Extend domain/repository/service code for registration and structured fields without moving business rules into controllers.
-3. Implement public program and applicant registration/session API contracts.
-4. Implement applicant application/attachment APIs including optimistic-lock conflict semantics.
-5. Implement reviewer queue/decision APIs and admin read APIs.
-6. Establish JSON error, CSRF, and API 401/403 behavior.
-7. Build the typed React/Vite client and public/registration/login shell.
-8. Build applicant workflow screens.
-9. Build reviewer/admin workflow screens.
-10. Add backend integration, frontend component/build, and real-stack browser E2E coverage.
-11. Validate Nginx SPA/API routing contract locally/CI.
-12. Remove obsolete Thymeleaf presentation paths before M5 completion.
+1. Add ADR-002/ADR-003-approved user, program, application, and generalized audit fields through additive Flyway migrations.
+2. Extend domain/repository/service code for applicant registration, program lifecycle/admission rules, structured application fields, and generalized audit subjects.
+3. Implement admin program create/edit/publish APIs and public published-program discovery.
+4. Implement applicant registration/session API contracts.
+5. Implement applicant application/attachment APIs including intake-window and optimistic-lock conflict semantics.
+6. Implement reviewer queue/claim/decision APIs and remaining admin operational read APIs.
+7. Establish JSON error, CSRF, and API 401/403 behavior.
+8. Build the typed React/Vite client and public/registration/login shell.
+9. Build applicant workflow screens.
+10. Build reviewer screens and admin program/operational screens.
+11. Add backend integration, frontend component/build, and real-stack browser E2E coverage.
+12. Validate Nginx SPA/API routing contract locally/CI.
+13. Remove obsolete Thymeleaf presentation paths before M5 completion.
 
 Do not move to M6 merely because the SPA renders; the full identity/business/API verification below must pass.
 
@@ -272,25 +324,31 @@ M5 is not complete unless all of the following hold:
 
 1. API contract is versioned under `/api/v1` and JPA entities are not exposed directly.
 2. Existing domain/service authorization and transition tests remain green.
-3. Additive Flyway migrations create the approved user/program/application fields and preserve existing data through deterministic synthetic backfill.
-4. An unauthenticated browser can browse public program list/detail.
-5. A user can self-register only as `APPLICANT`; privileged role self-assignment is impossible.
-6. Duplicate/invalid registration produces structured errors and passwords are persisted only as hashes.
-7. A newly registered applicant can log in using the normal Spring Security/Spring Session JDBC path.
-8. Applicant can create/edit an application, upload/download an attachment, submit, revise after a revision request, and view final status through the SPA/API path.
-9. Reviewer can filter the queue, open a submission, start review, request revision, approve, or reject as allowed.
-10. Admin can inspect agreed read-only operational views.
-11. Stale application edits return a conflict and do not overwrite newer data.
-12. Session authentication, logout, JSON 401/403 handling, and CSRF protection work through the SPA.
-13. Applicant sessions cannot access reviewer/admin APIs; bootstrap reviewer/admin identities continue to authenticate normally.
-14. Production routing is designed as same-origin; no wildcard CORS is introduced.
-15. Frontend build/type checks and critical component tests pass.
-16. Browser E2E covers the public discovery → registration/login → applicant workflow and a reviewer workflow against the real backend test stack.
-17. Nginx SPA fallback does not intercept `/api` responses and static/API routing is verified.
-18. The supported browser UI is recognizably an application/review business system rather than raw HTML/debug pages.
-19. Obsolete Thymeleaf presentation code is removed or explicitly justified before milestone completion.
-20. No fake external identity/messaging integration and no M6+ implementation is pulled into M5.
-21. Exact final PR head passes required GitHub Actions, the plan is moved to completed, and post-merge `main` is green.
+3. Additive Flyway migrations create the approved user/program/application fields, generalized audit subjects, and preserve existing data through deterministic synthetic backfill.
+4. An admin can create/edit a draft program and publish it only with a valid application window; draft programs remain private.
+5. A published program is publicly discoverable and its scheduled/open/closed intake state is derived correctly.
+6. New application creation is rejected for draft, scheduled, or closed programs even when the API is called directly.
+7. Reviewer-requested revision/resubmission remains valid for an existing application after intake closes.
+8. Stale draft-program edits and concurrent reviewer claim losers produce conflicts rather than lost updates.
+9. Generalized audit rows enforce exactly one user/program/application subject and existing application audit behavior remains green.
+10. An unauthenticated browser can browse public published-program list/detail.
+11. A user can self-register only as `APPLICANT`; privileged role self-assignment is impossible.
+12. Duplicate/invalid registration produces structured errors and passwords are persisted only as hashes.
+13. A newly registered applicant can log in using the normal Spring Security/Spring Session JDBC path.
+14. Applicant can create/edit an application, upload/download an attachment, submit, revise after a revision request, and view final status through the SPA/API path.
+15. Reviewer can filter the queue, open a submission, start review, request revision, approve, or reject as allowed.
+16. Admin can inspect agreed read-only operational views.
+17. Stale application edits return a conflict and do not overwrite newer data.
+18. Session authentication, logout, JSON 401/403 handling, and CSRF protection work through the SPA.
+19. Applicant sessions cannot access reviewer/admin APIs; bootstrap reviewer/admin identities continue to authenticate normally.
+20. Production routing is designed as same-origin; no wildcard CORS is introduced.
+21. Frontend build/type checks and critical component tests pass.
+22. Browser E2E covers the public discovery → registration/login → applicant workflow and a reviewer workflow against the real backend test stack.
+23. Nginx SPA fallback does not intercept `/api` responses and static/API routing is verified.
+24. The supported browser UI is recognizably an application/review business system rather than raw HTML/debug pages.
+25. Obsolete Thymeleaf presentation code is removed or explicitly justified before milestone completion.
+26. No fake external identity/messaging integration and no M6+ implementation is pulled into M5.
+27. Exact final PR head passes required GitHub Actions, the plan is moved to completed, and post-merge `main` is green.
 
 ## Handoff to M6
 
