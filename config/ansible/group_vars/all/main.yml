@@ -13,4 +13,6 @@ app_jar_source: "{{ lookup('env', 'ARP_APP_JAR') }}"
 tls_certificate_source: "{{ lookup('env', 'ARP_TLS_CERTIFICATE') }}"
 tls_private_key_source: "{{ lookup('env', 'ARP_TLS_PRIVATE_KEY') }}"
 opentofu_version: 1.12.6
+opentofu_linux_amd64_sha256: 5dc43da4f750f33873dc25e94587128709e819e544b7be9016b255316153c3a8
 sops_version: 3.10.2
+sops_linux_amd64_sha256: 79b0f844237bd4b0446e4dc884dbc1765fc7dedc3968f743d5949c6f2e701739

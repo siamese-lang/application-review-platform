@@ -1,6 +1,5 @@
 ---
 all:
-  vars: { ansible_user: replace_with_os_login_user }
   children:
     edge: { hosts: { edge-01: { ansible_host: 10.40.0.10 } } }
     app: { hosts: { app-01: { ansible_host: 10.40.0.20 } } }

@@ -1,10 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# Run on ops-01 after the garage role. Secrets are environment-only and never printed.
+# Run on ops-01 through deploy/with-oslogin-ssh.py after the Garage role.
 : "${GARAGE_RPC_SECRET:?required}"
 : "${GARAGE_APP_ACCESS_KEY:?required}"
 : "${GARAGE_APP_SECRET_KEY:?required}"
-run() { ssh "$1" sudo docker exec garage /garage -c /etc/garage.toml "${@:2}"; }
+: "${ARP_OSLOGIN_USER:?run this script through deploy/with-oslogin-ssh.py}"
+: "${ARP_OSLOGIN_SSH_KEY:?run this script through deploy/with-oslogin-ssh.py}"
+: "${ARP_OSLOGIN_KNOWN_HOSTS:?run this script through deploy/with-oslogin-ssh.py}"
+
+ssh_cmd=(
+  ssh
+  -i "$ARP_OSLOGIN_SSH_KEY"
+  -o "UserKnownHostsFile=$ARP_OSLOGIN_KNOWN_HOSTS"
+  -o StrictHostKeyChecking=yes
+  -o IdentitiesOnly=yes
+)
+run() {
+  local host=$1
+  shift
+  "${ssh_cmd[@]}" "$ARP_OSLOGIN_USER@$host" sudo docker exec garage /garage -c /etc/garage.toml "$@"
+}
+
 primary=storage-01
 for host in storage-02 storage-03; do
   node_id=$(run "$host" node id -q | cut -d@ -f1)

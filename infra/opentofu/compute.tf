@@ -34,11 +34,12 @@ resource "google_compute_instance" "node" {
   }
 
   metadata = {
-    enable-oslogin         = "TRUE"
-    block-project-ssh-keys = "TRUE"
+    enable-oslogin          = "TRUE"
+    enable-guest-attributes = "TRUE"
+    block-project-ssh-keys  = "TRUE"
   }
   service_account {
-    email  = each.value.role == "ops" ? google_service_account.ops.email : google_service_account.workload.email
+    email  = each.value.role == "ops" ? local.ops_service_account_email : local.workload_service_account_email
     scopes = ["https://www.googleapis.com/auth/cloud-platform"]
   }
   allow_stopping_for_update = true

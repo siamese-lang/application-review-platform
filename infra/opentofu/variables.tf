@@ -13,11 +13,6 @@ variable "subnet_cidr" {
   type    = string
   default = "10.40.0.0/24"
 }
-variable "admin_oslogin_members" {
-  description = "Account-specific user:/group: principals allowed IAP SSH and OS Login. Empty in static validation."
-  type        = set(string)
-  default     = []
-}
 variable "enable_http" {
   type    = bool
   default = true

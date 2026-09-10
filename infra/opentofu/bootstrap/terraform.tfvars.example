@@ -1,0 +1,4 @@
+project_id = "application-review-platform"
+# Put real principals only in an ignored local tfvars file.
+# The principal performing the initial runtime apply must be included here.
+# admin_oslogin_members = ["user:operator@example.invalid"]

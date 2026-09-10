@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
-for command in tofu python3 ansible-playbook ansible-galaxy sops age git java; do
+for command in tofu python3 ansible-playbook ansible-galaxy sops age git java ssh ssh-keygen psql; do
   command -v "$command" >/dev/null || { echo "Missing prerequisite: $command" >&2; exit 1; }
 done
-[[ $(git rev-parse --abbrev-ref HEAD) == codex/implement-m4-cloud-deployment ]] || echo 'Warning: verify the intended branch and exact commit before Phase 2.' >&2
+branch=$(git rev-parse --abbrev-ref HEAD)
+commit=$(git rev-parse HEAD)
+printf 'Prerequisites found. Current revision: %s @ %s\n' "$branch" "$commit"
 cat <<'MSG'
-Prerequisites found. This script performs no authentication and no GCP mutation.
+This script performs no authentication and no GCP mutation.
+Before Phase 2, verify that this exact revision is the reviewed PR head.
 Owner bootstrap must separately confirm billing/API readiness and account-specific IAP/OS Login IAM.
 MSG

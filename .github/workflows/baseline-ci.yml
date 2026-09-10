@@ -102,19 +102,49 @@ jobs:
           tofu_version: 1.12.6
       - name: Check OpenTofu formatting
         run: tofu -chdir=infra/opentofu fmt -check -recursive
-      - name: Initialize providers without a backend
+      - name: Initialize runtime providers without a backend
         run: tofu -chdir=infra/opentofu init -backend=false
-      - name: Validate OpenTofu configuration
+      - name: Validate runtime OpenTofu configuration
         run: tofu -chdir=infra/opentofu validate
+      - name: Initialize owner-bootstrap providers without a backend
+        run: tofu -chdir=infra/opentofu/bootstrap init -backend=false
+      - name: Validate owner-bootstrap OpenTofu configuration
+        run: tofu -chdir=infra/opentofu/bootstrap validate
+      - name: Record generated provider locks for repository pinning
+        run: |
+          echo '=== ARP_RUNTIME_LOCK_BEGIN ==='
+          cat infra/opentofu/.terraform.lock.hcl
+          echo '=== ARP_RUNTIME_LOCK_END ==='
+          echo '=== ARP_BOOTSTRAP_LOCK_BEGIN ==='
+          cat infra/opentofu/bootstrap/.terraform.lock.hcl
+          echo '=== ARP_BOOTSTRAP_LOCK_END ==='
       - name: Install Ansible and required collections
         run: |
           python -m pip install 'ansible-core>=2.17,<2.20'
           ansible-galaxy collection install -r config/ansible/requirements.yml
       - name: Check Ansible syntax
         working-directory: config/ansible
-        run: ansible-playbook --inventory inventory/example.yml site.yml --syntax-check
+        run: |
+          ansible-playbook --inventory inventory/example.yml site.yml --syntax-check
+          ansible-playbook --inventory 'localhost,' bootstrap-ops.yml --syntax-check
+      - name: Check deployment Python syntax
+        run: python3 -m py_compile deploy/generate-inventory.py deploy/with-oslogin-ssh.py
       - name: Check deployment shell syntax
         run: find deploy scripts -type f -name '*.sh' -print0 | xargs -0 -n1 bash -n
+      - name: Verify M4 bootstrap wiring
+        shell: bash
+        run: |
+          test -x ./mvnw
+          grep -Fq '(cd "$root" && ./mvnw -q -DskipTests package)' deploy/build-and-configure.sh
+          ! grep -Fq 'cd "$root/app"' deploy/build-and-configure.sh
+          grep -Fq 'with-oslogin-ssh.py' deploy/build-and-configure.sh
+          grep -Fq 'roles/compute.osAdminLogin' infra/opentofu/bootstrap/iam.tf
+          grep -Fq 'google_service_account_iam_member' infra/opentofu/bootstrap/iam.tf
+          test ! -e infra/opentofu/iam.tf
+          grep -Fq 'enable-guest-attributes' infra/opentofu/compute.tf
+          grep -Fq 'StrictHostKeyChecking=yes' deploy/bootstrap-garage.sh
+          ! git grep -nF 'StrictHostKeyChecking=no'
+          ! git grep -nF 'codex/implement-m4-cloud-deployment' -- deploy/check-prerequisites.sh
       - name: Verify forbidden generated material is absent
         run: |
           test -z "$(find . -type f \( -name '*.tfstate' -o -name '*.tfplan' -o -name '*.agekey' -o -name '*.dec.yaml' \) -print)"

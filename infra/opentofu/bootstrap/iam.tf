@@ -12,7 +12,7 @@ resource "google_project_iam_member" "ops_roles" {
   for_each = toset([
     "roles/compute.admin",
     "roles/compute.networkAdmin",
-    "roles/iam.serviceAccountUser",
+    "roles/compute.osAdminLogin",
   ])
   project = var.project_id
   role    = each.value
@@ -31,4 +31,25 @@ resource "google_project_iam_member" "admin_iap" {
   project  = var.project_id
   role     = "roles/iap.tunnelResourceAccessor"
   member   = each.value
+}
+
+locals {
+  service_account_users = setunion(
+    var.admin_oslogin_members,
+    toset(["serviceAccount:${google_service_account.ops.email}"])
+  )
+}
+
+resource "google_service_account_iam_member" "workload_act_as" {
+  for_each           = local.service_account_users
+  service_account_id = google_service_account.workload.name
+  role               = "roles/iam.serviceAccountUser"
+  member             = each.value
+}
+
+resource "google_service_account_iam_member" "ops_act_as" {
+  for_each           = local.service_account_users
+  service_account_id = google_service_account.ops.name
+  role               = "roles/iam.serviceAccountUser"
+  member             = each.value
 }

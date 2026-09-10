@@ -1,7 +1,15 @@
 ---
 - name: Install operations packages
   ansible.builtin.apt:
-    name: [age, ansible, apache2-utils, git, openjdk-21-jdk-headless, unzip]
+    name:
+      - age
+      - apache2-utils
+      - git
+      - openjdk-21-jdk-headless
+      - openssh-client
+      - postgresql-client
+      - python3-venv
+      - unzip
     state: present
 - name: Download pinned OpenTofu archive
   ansible.builtin.get_url:
