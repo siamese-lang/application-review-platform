@@ -9,7 +9,7 @@
 - name: Format uninitialized Garage disk
   community.general.filesystem: { fstype: ext4, dev: /dev/disk/by-id/google-arp-data }
 - name: Mount Garage disk
-  ansible.posix.mount: { path: /srv/garage, src: /dev/disk/by-id/google-arp-data, fstype: ext4, opts: defaults,noatime, state: mounted }
+  ansible.posix.mount: { path: /srv/garage, src: /dev/disk/by-id/google-arp-data, fstype: ext4, opts: "defaults,noatime", state: mounted }
 - name: Write node-specific Garage configuration
   ansible.builtin.template: { src: garage.toml.j2, dest: /etc/garage/garage.toml, owner: root, group: root, mode: '0600' }
   notify: Restart Garage
