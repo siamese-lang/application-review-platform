@@ -71,6 +71,6 @@ fi
 
 run "$primary_ip" bucket info application-review >/dev/null 2>&1 || run "$primary_ip" bucket create application-review
 if ! run "$primary_ip" key info "$GARAGE_APP_ACCESS_KEY" >/dev/null 2>&1; then
-  run "$primary_ip" key import --name arp-application --yes "$GARAGE_APP_ACCESS_KEY" "$GARAGE_APP_SECRET_KEY"
+  run "$primary_ip" key import -n arp-application --yes "$GARAGE_APP_ACCESS_KEY" "$GARAGE_APP_SECRET_KEY"
 fi
 run "$primary_ip" bucket allow --read --write --owner application-review --key "$GARAGE_APP_ACCESS_KEY"
