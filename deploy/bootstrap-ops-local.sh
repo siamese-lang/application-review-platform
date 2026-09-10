@@ -10,6 +10,8 @@ if [[ ! -x "$venv/bin/ansible-playbook" ]]; then
   sudo python3 -m venv "$venv"
 fi
 sudo "$venv/bin/pip" install --disable-pip-version-check 'ansible-core>=2.17,<2.20'
+sudo ln -sfn "$venv/bin/ansible" /usr/local/bin/ansible
+sudo ln -sfn "$venv/bin/ansible-inventory" /usr/local/bin/ansible-inventory
 sudo ln -sfn "$venv/bin/ansible-playbook" /usr/local/bin/ansible-playbook
 sudo ln -sfn "$venv/bin/ansible-galaxy" /usr/local/bin/ansible-galaxy
 
