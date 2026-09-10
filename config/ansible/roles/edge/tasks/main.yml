@@ -1,0 +1,132 @@
+---
+- name: Install Nginx and Certbot prerequisites
+  ansible.builtin.apt:
+    name: [nginx, python3-venv]
+    state: present
+- name: Validate optional operator TLS material is paired
+  ansible.builtin.assert:
+    that:
+      - (tls_certificate_source | length == 0 and tls_private_key_source | length == 0) or
+        (tls_certificate_source | length > 0 and tls_private_key_source | length > 0)
+    fail_msg: "Provide both ARP_TLS_CERTIFICATE and ARP_TLS_PRIVATE_KEY, or neither when using the Let's Encrypt IP-certificate bootstrap."
+- name: Create edge certificate and ACME paths
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: /etc/nginx/tls, mode: '0700' }
+    - { path: /var/lib/acme, mode: '0755' }
+- name: Install optional operator TLS certificate
+  ansible.builtin.copy:
+    src: "{{ tls_certificate_source }}"
+    dest: /etc/nginx/tls/fullchain.pem
+    owner: root
+    group: root
+    mode: '0644'
+  when: tls_certificate_source | length > 0
+  notify: Reload Nginx
+- name: Install optional operator TLS private key
+  ansible.builtin.copy:
+    src: "{{ tls_private_key_source }}"
+    dest: /etc/nginx/tls/privkey.pem
+    owner: root
+    group: root
+    mode: '0600'
+  when: tls_private_key_source | length > 0
+  no_log: true
+  notify: Reload Nginx
+- name: Create pinned Certbot virtual environment
+  ansible.builtin.command: python3 -m venv /opt/arp-certbot
+  args:
+    creates: /opt/arp-certbot/bin/python
+- name: Install pinned Certbot
+  ansible.builtin.pip:
+    name: "certbot=={{ certbot_version }}"
+    virtualenv: /opt/arp-certbot
+- name: Install Certbot renewal reload hook
+  ansible.builtin.copy:
+    dest: /usr/local/sbin/arp-certbot-reload-nginx
+    owner: root
+    group: root
+    mode: '0755'
+    content: |
+      #!/bin/sh
+      set -eu
+      /usr/sbin/nginx -t
+      /bin/systemctl reload nginx
+- name: Install Certbot renewal wrapper
+  ansible.builtin.copy:
+    dest: /usr/local/sbin/arp-certbot-renew
+    owner: root
+    group: root
+    mode: '0755'
+    content: |
+      #!/bin/sh
+      set -eu
+      /opt/arp-certbot/bin/certbot renew --quiet --deploy-hook /usr/local/sbin/arp-certbot-reload-nginx
+- name: Install Certbot renewal service
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/arp-certbot-renew.service
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      [Unit]
+      Description=Renew Application Review Platform TLS certificate
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/sbin/arp-certbot-renew
+- name: Install Certbot renewal timer
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/arp-certbot-renew.timer
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      [Unit]
+      Description=Periodic Application Review Platform TLS renewal
+      [Timer]
+      OnBootSec=15min
+      OnUnitActiveSec=6h
+      RandomizedDelaySec=30min
+      Persistent=true
+      [Install]
+      WantedBy=timers.target
+- name: Enable Certbot renewal timer
+  ansible.builtin.systemd:
+    name: arp-certbot-renew.timer
+    state: started
+    enabled: true
+    daemon_reload: true
+- name: Check installed TLS certificate
+  ansible.builtin.stat:
+    path: /etc/nginx/tls/fullchain.pem
+  args:
+    follow: true
+  register: edge_tls_certificate
+- name: Check installed TLS private key
+  ansible.builtin.stat:
+    path: /etc/nginx/tls/privkey.pem
+  args:
+    follow: true
+  register: edge_tls_private_key
+- name: Configure edge site for ACME bootstrap or HTTPS
+  ansible.builtin.template:
+    src: "{{ 'arp.conf.j2' if edge_tls_certificate.stat.exists and edge_tls_private_key.stat.exists else 'arp-http.conf.j2' }}"
+    dest: /etc/nginx/sites-available/arp
+    mode: '0644'
+  notify: Reload Nginx
+- name: Enable application site
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/arp
+    dest: /etc/nginx/sites-enabled/arp
+    state: link
+  notify: Reload Nginx
+- name: Remove default site
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Reload Nginx

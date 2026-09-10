@@ -1,0 +1,42 @@
+---
+- name: Install operations packages
+  ansible.builtin.apt:
+    name:
+      - age
+      - apache2-utils
+      - git
+      - openjdk-21-jdk-headless
+      - openssh-client
+      - postgresql-client
+      - python3-venv
+      - unzip
+    state: present
+- name: Download pinned OpenTofu archive
+  ansible.builtin.get_url:
+    url: "https://github.com/opentofu/opentofu/releases/download/v{{ opentofu_version }}/tofu_{{ opentofu_version }}_linux_amd64.zip"
+    dest: "/var/cache/tofu-{{ opentofu_version }}.zip"
+    checksum: "sha256:{{ opentofu_linux_amd64_sha256 }}"
+    mode: '0644'
+- name: Install pinned OpenTofu
+  ansible.builtin.unarchive:
+    src: "/var/cache/tofu-{{ opentofu_version }}.zip"
+    dest: /usr/local/bin
+    remote_src: true
+    creates: /usr/local/bin/tofu
+- name: Install pinned SOPS
+  ansible.builtin.get_url:
+    url: "https://github.com/getsops/sops/releases/download/v{{ sops_version }}/sops-v{{ sops_version }}.linux.amd64"
+    dest: /usr/local/bin/sops
+    checksum: "sha256:{{ sops_linux_amd64_sha256 }}"
+    mode: '0755'
+- name: Create controlled operations directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: /srv/arp, mode: '0750' }
+    - { path: /srv/arp/state, mode: '0700' }
+    - { path: /srv/arp/secrets, mode: '0700' }

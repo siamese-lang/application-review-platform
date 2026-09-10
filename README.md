@@ -13,7 +13,7 @@
 - M3 Attachment: complete
 - Current implementation milestone: M4 Cloud Deployment
 - M4 execution plan: active at `docs/plans/active/M4-cloud-deployment.md`
-- M4 implementation: not yet started
+- M4 Phase 1 repository implementation: complete and green; Phase 2 runtime deployment pending; no GCP resources have been created
 
 This project is **production-like**, not a claim of real production operation. All users, organizations, applications, workloads, and measurements are synthetic unless explicitly recorded otherwise.
 

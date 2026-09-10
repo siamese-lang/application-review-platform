@@ -1,0 +1,7 @@
+project_id = "application-review-platform"
+# Runtime sizing and disk values may be overridden in an ignored local tfvars file.
+# For a zonal capacity incident, override only the affected node instead of resizing healthy peers.
+# node_machine_type_overrides = { "storage-03" = "e2-small" }
+# If SSD_TOTAL_GB is exhausted, move only the affected boot disk to pd-standard instead of changing healthy disks.
+# node_boot_disk_type_overrides = { "storage-03" = "pd-standard" }
+# Owner/admin IAM principals belong only in infra/opentofu/bootstrap/*.tfvars.

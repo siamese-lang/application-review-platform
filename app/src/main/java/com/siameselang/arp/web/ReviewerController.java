@@ -39,7 +39,7 @@ public class ReviewerController {
     String detail(Authentication authentication, @PathVariable long id, Model model) {
         var actor = currentUser.require(authentication.getName());
         var application = service.reviewerDetail(actor, id);
-        model.addAttribute("application", application);
+        model.addAttribute("applicationRecord", application);
         model.addAttribute("history", service.reviewerHistory(actor, id));
         model.addAttribute("attachments",attachments.listForReviewer(actor,id));
         return "reviewer/detail";

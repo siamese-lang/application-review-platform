@@ -1,0 +1,12 @@
+---
+all:
+  children:
+    edge: { hosts: { edge-01: { ansible_host: 10.40.0.10 } } }
+    app: { hosts: { app-01: { ansible_host: 10.40.0.20 } } }
+    db: { hosts: { db-01: { ansible_host: 10.40.0.30 } } }
+    storage:
+      hosts:
+        storage-01: { ansible_host: 10.40.0.41, garage_zone: asia-northeast3-a }
+        storage-02: { ansible_host: 10.40.0.42, garage_zone: asia-northeast3-b }
+        storage-03: { ansible_host: 10.40.0.43, garage_zone: asia-northeast3-c }
+    ops: { hosts: { ops-01: { ansible_host: 10.40.0.50 } } }

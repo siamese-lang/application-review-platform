@@ -27,4 +27,23 @@ grep -q 'OpenTofu' docs/architecture/ARCHITECTURE.md
 grep -q 'Replication is not backup' docs/operations/BACKUP_RECOVERY.md
 grep -q 'Kubernetes' docs/NON_GOALS.md
 
+grep -Fq 'opts: "defaults,noatime"' config/ansible/roles/db/tasks/main.yml
+grep -Fq 'opts: "defaults,noatime"' config/ansible/roles/garage/tasks/main.yml
+if git grep -nF 'opts: defaults,noatime' -- config/ansible/roles; then
+  echo 'Comma-separated mount opts inside inline YAML mappings must be quoted.' >&2
+  exit 1
+fi
+
+grep -Fq 'layout assign "${node_id[$host]}" -z "${node_zone[$host]}" -c "$GARAGE_LAYOUT_CAPACITY" -t "$host"' deploy/bootstrap-garage.sh
+if grep -Fq 'layout assign -z "${node_zone[$host]}" -c "$GARAGE_LAYOUT_CAPACITY" -t "$host" "${node_id[$host]}"' deploy/bootstrap-garage.sh; then
+  echo 'Garage layout assign must place the positional node ID before the variadic --tag option.' >&2
+  exit 1
+fi
+
+grep -Fq 'key import -n arp-application --yes "$GARAGE_APP_ACCESS_KEY" "$GARAGE_APP_SECRET_KEY"' deploy/bootstrap-garage.sh
+if grep -Fq 'key import --name arp-application' deploy/bootstrap-garage.sh; then
+  echo 'Garage v2.4 key import uses -n for the key name; --name is not accepted.' >&2
+  exit 1
+fi
+
 echo 'M0 repository baseline verification passed.'

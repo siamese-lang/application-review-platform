@@ -51,7 +51,7 @@ public class ApplicantController {
     String detail(Authentication authentication, @PathVariable long id, Model model) {
         var actor = currentUser.require(authentication.getName());
         var application = service.applicantDetail(actor, id);
-        model.addAttribute("application", application);
+        model.addAttribute("applicationRecord", application);
         model.addAttribute("history", service.applicantHistory(actor, id));
         model.addAttribute("attachments", attachments.listForApplicant(actor,id));
         return "applications/detail";

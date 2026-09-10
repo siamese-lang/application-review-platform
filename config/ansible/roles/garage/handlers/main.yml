@@ -1,0 +1,3 @@
+---
+- name: Restart Garage
+  community.docker.docker_container: { name: garage, state: started, restart: true }

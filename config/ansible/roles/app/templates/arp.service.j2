@@ -1,0 +1,17 @@
+[Unit]
+Description=Application Review Platform
+After=network-online.target
+Wants=network-online.target
+[Service]
+User=arp
+Group=arp
+EnvironmentFile=/etc/arp/arp.env
+ExecStart=/usr/bin/java -jar /opt/arp/application.jar
+Restart=on-failure
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/arp
+[Install]
+WantedBy=multi-user.target
