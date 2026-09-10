@@ -19,6 +19,7 @@
 - ADR-002: applicant self-registration + controlled reviewer/admin provisioning accepted
 - ADR-003: admin program publication + derived intake window + generalized audit subjects accepted
 - Current implementation milestone: M5 Web/API & Product Surface
+- M5 pre-implementation architecture review: complete; ADR-001 through ADR-003 form the implementation baseline
 - Active plan: `docs/plans/active/M5-web-api-product-surface.md`
 
 This project is **production-like**, not a claim of real production operation. All users, organizations, applications, documents, workloads, and measurements are synthetic unless explicitly recorded otherwise.
