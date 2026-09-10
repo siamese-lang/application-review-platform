@@ -42,11 +42,10 @@ public class ApplicantController {
 
     @GetMapping("/{id}")
     String detail(Authentication authentication, @PathVariable long id, Model model) {
-        var application = service.get(id);
-        service.requireVisibleToApplicant(
-                currentUser.require(authentication.getName()), application);
+        var actor = currentUser.require(authentication.getName());
+        var application = service.applicantDetail(actor, id);
         model.addAttribute("application", application);
-        model.addAttribute("history", service.history(application));
+        model.addAttribute("history", service.applicantHistory(actor, id));
         return "applications/detail";
     }
 

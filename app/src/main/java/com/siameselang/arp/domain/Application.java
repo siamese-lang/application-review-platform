@@ -11,6 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.time.Instant;
 
 @Entity
@@ -19,6 +20,10 @@ public class Application {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Version
+    @Column(nullable = false)
+    private long version;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "program_id")
@@ -76,6 +81,7 @@ public class Application {
     }
 
     public Long getId() { return id; }
+    public long getVersion() { return version; }
     public Program getProgram() { return program; }
     public User getApplicant() { return applicant; }
     public User getReviewer() { return reviewer; }

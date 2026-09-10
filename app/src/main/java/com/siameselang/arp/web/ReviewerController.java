@@ -32,11 +32,10 @@ public class ReviewerController {
 
     @GetMapping("/{id}")
     String detail(Authentication authentication, @PathVariable long id, Model model) {
-        var application = service.get(id);
-        service.requireVisibleToReviewer(
-                currentUser.require(authentication.getName()), application);
+        var actor = currentUser.require(authentication.getName());
+        var application = service.reviewerDetail(actor, id);
         model.addAttribute("application", application);
-        model.addAttribute("history", service.history(application));
+        model.addAttribute("history", service.reviewerHistory(actor, id));
         return "reviewer/detail";
     }
 
