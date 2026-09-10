@@ -6,7 +6,7 @@
 - name: Format uninitialized database disk
   community.general.filesystem: { fstype: ext4, dev: /dev/disk/by-id/google-arp-data }
 - name: Mount database disk
-  ansible.posix.mount: { path: /srv/postgresql, src: /dev/disk/by-id/google-arp-data, fstype: ext4, opts: defaults,noatime, state: mounted }
+  ansible.posix.mount: { path: /srv/postgresql, src: /dev/disk/by-id/google-arp-data, fstype: ext4, opts: "defaults,noatime", state: mounted }
 - name: Restore PostgreSQL ownership after mounting
   ansible.builtin.file: { path: /srv/postgresql, state: directory, owner: postgres, group: postgres, mode: '0700' }
 - name: Find PostgreSQL major version
