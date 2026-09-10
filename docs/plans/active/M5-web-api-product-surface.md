@@ -52,6 +52,12 @@ edge-01: Nginx
 
 The frontend is a build artifact, not a long-running Node service in production. Nginx remains the only public ingress. The Spring application remains a modular monolith; existing domain/service rules remain authoritative.
 
+## Pre-implementation design freeze
+
+ADR-001, ADR-002, and ADR-003 together define the M5 implementation baseline. The pre-implementation architecture review is complete after ADR-003.
+
+Do not reopen the architecture merely because implementation exposes a cosmetic preference or an opportunity to add another technology. Change the baseline only when a concrete implementation/test result or newly discovered business requirement proves an accepted decision incorrect or incomplete. Such a change requires an explicit ADR or plan amendment before code is built around it.
+
 ## Scope
 
 ### 1. Applicant identity and public entry flow
