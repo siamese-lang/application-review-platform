@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -117,6 +119,12 @@ public class ProgramService {
                 ProgramPublicationStatus.PUBLISHED);
     }
 
+    public Page<Program> publicPrograms(Pageable pageable) {
+        return programs.findByPublicationStatus(
+                ProgramPublicationStatus.PUBLISHED,
+                pageable);
+    }
+
     public Program publicProgram(long programId) {
         Program program = load(programId);
         if (program.getPublicationStatus() != ProgramPublicationStatus.PUBLISHED) {
@@ -128,6 +136,11 @@ public class ProgramService {
     public List<Program> adminPrograms(User actor) {
         requireAdmin(actor);
         return programs.findAllByOrderByUpdatedAtDesc();
+    }
+
+    public Page<Program> adminPrograms(User actor, Pageable pageable) {
+        requireAdmin(actor);
+        return programs.findAll(pageable);
     }
 
     public Program adminProgram(User actor, long programId) {
