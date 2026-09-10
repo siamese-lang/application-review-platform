@@ -1,13 +1,14 @@
-# PRODUCT — M0 Baseline amended by ADR-001 and ADR-002
+# PRODUCT — M0 Baseline amended by ADR-001, ADR-002, and ADR-003
 
 Status: FROZEN EXCEPT AS AMENDED BY ACCEPTED ADRS  
 Baseline date: 2026-09-09  
 Web-boundary amendment: 2026-09-11  
-Account-lifecycle amendment: 2026-09-11
+Account-lifecycle amendment: 2026-09-11  
+Program-lifecycle amendment: 2026-09-11
 
 ## Product definition
 
-A personal production-like support-program application, review, and operations platform. Prospective applicants can browse public support programs before authentication. Applicants register, sign in, prepare and submit applications and evidence files, and track processing status. Reviewers work a submission queue, inspect application content/evidence, request revision, approve, or reject. Administrators have read-oriented operational visibility.
+A personal production-like support-program application, review, and operations platform. Prospective applicants can browse public support programs before authentication. Applicants register, sign in, prepare and submit applications and evidence files, and track processing status. Reviewers work a submission queue, claim submitted work, inspect application content/evidence, request revision, approve, or reject. Administrators create and publish support programs and retain operational visibility over users, applications, histories, and audits.
 
 The finished system is deployed on GCP IaaS and exercised with realistic synthetic data, API/browser workflows, load, faults, backup, and recovery tests.
 
@@ -19,6 +20,7 @@ The finished system is deployed on GCP IaaS and exercised with realistic synthet
 - Provide a credible browser product surface for applicant, reviewer, and administrator workflows.
 - Give external applicants a coherent public-discovery → registration → login → private-application journey.
 - Keep reviewer/admin privilege assignment outside public self-registration.
+- Model program setup and publication explicitly so application intake is controlled by server-side business rules rather than seeded data or UI visibility alone.
 - Demonstrate browser security, frontend/backend delivery boundaries, reverse-proxy routing, and rollback concerns without adding unjustified distributed-system complexity.
 - Produce reproducible performance and reliability evidence rather than invented operational claims.
 - Separate browser, application, database, object storage, observability, operations, and verification concerns sufficiently to make failures diagnosable.
@@ -45,7 +47,7 @@ Reviewers can list/filter submitted work; view application and attachment detail
 
 Administrators also have no public self-registration path. Admin identities are controlled bootstrap/operations identities.
 
-Admin product scope remains operational/read-oriented: users, applications, workflow counts, histories, and audit information. A broad enterprise IAM or administration suite is out of scope.
+Administrators create draft support programs, edit drafts, and publish valid programs. They also have operational read visibility into users, applications, workflow counts, histories, and audit information. A broad enterprise IAM or administration suite is out of scope.
 
 ### Identity limitations
 
@@ -59,7 +61,7 @@ The system remains intentionally smaller than a government production platform, 
 
 User includes a unique login ID, password hash, display name, synthetic email/contact field, role, and creation/update timestamps.
 
-Program includes a stable program code, title, description, and application window.
+Program includes a stable program code, title, description, publication state, application window, optimistic-lock version, and creation/update timestamps. Public intake state is derived from publication state and the application window rather than stored as a second mutable status.
 
 Application includes applicant organization name, project title, short summary, requested amount, detailed plan/content, attachments, current status, reviewer, version, timestamps, and status history.
 
@@ -70,6 +72,8 @@ All organizations, people, amounts, documents, and workloads are synthetic.
 `ADR-001-web-api-spa.md` changes the final browser surface from Thymeleaf to a React + TypeScript SPA backed by a Spring Boot REST API.
 
 `ADR-002-account-lifecycle.md` defines public applicant registration, public program discovery, and controlled reviewer/admin provisioning.
+
+`ADR-003-program-lifecycle.md` defines administrator program creation/publication, derived intake state, application admission rules, reviewer claim-on-start, and generalized audit subjects.
 
 The production browser and API share one HTTPS origin through Nginx. Session authentication and Spring Session JDBC remain. REST/API and SPA are presentation/application boundaries; business transition rules remain in the domain/service layer.
 
@@ -83,9 +87,9 @@ Completed milestones retain their original identities:
 - M3 Attachment — Garage, metadata/object consistency, reconciliation
 - M4 Cloud Deployment — GCP split roles, network, OpenTofu/Ansible, ops bootstrap, real HTTPS business/attachment verification
 
-Future milestones are rebaselined after ADR-001/ADR-002:
+Future milestones are rebaselined after ADR-001/ADR-002/ADR-003:
 
-- M5 Web/API & Product Surface — structured support-program/user fields, applicant registration, versioned REST API, SPA, session/CSRF behavior, browser E2E, Nginx routing contract
+- M5 Web/API & Product Surface — applicant registration, administrator program lifecycle, structured support-program/user/application fields, generalized audit subjects, versioned REST API, SPA, session/CSRF behavior, browser E2E, Nginx routing contract
 - M6 Operations & Delivery — CI/CD, frontend/backend artifact promotion, migration/deployment order, rollback, backup basics, verified GCP delivery
 - M7 Observability — metrics, logs, traces, alerts across edge/API/data paths
 - M8 Workload — synthetic datasets and k6 targeting the final API/browser boundary
