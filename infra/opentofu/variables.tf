@@ -66,3 +66,23 @@ variable "node_machine_type_overrides" {
     error_message = "node_machine_type_overrides may contain only known M4 node names."
   }
 }
+variable "node_boot_disk_type_overrides" {
+  description = "Optional per-node boot disk type overrides for quota recovery without changing healthy nodes."
+  type        = map(string)
+  default     = {}
+  validation {
+    condition = alltrue([
+      for name, disk_type in var.node_boot_disk_type_overrides :
+      contains([
+        "edge-01",
+        "app-01",
+        "db-01",
+        "storage-01",
+        "storage-02",
+        "storage-03",
+        "ops-01",
+      ], name) && contains(["pd-balanced", "pd-standard"], disk_type)
+    ])
+    error_message = "node_boot_disk_type_overrides may contain only known M4 node names and pd-balanced/pd-standard values."
+  }
+}
