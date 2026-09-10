@@ -5,7 +5,7 @@
 ## Current status
 
 - M0 design baseline: frozen
-- Repository bootstrap: in progress
+- Repository bootstrap: complete
 - Next implementation milestone: M1 Business MVP
 
 This project is **production-like**, not a claim of real production operation. All users, organizations, applications, workloads, and measurements are synthetic unless explicitly recorded otherwise.
