@@ -27,4 +27,11 @@ grep -q 'OpenTofu' docs/architecture/ARCHITECTURE.md
 grep -q 'Replication is not backup' docs/operations/BACKUP_RECOVERY.md
 grep -q 'Kubernetes' docs/NON_GOALS.md
 
+grep -Fq 'opts: "defaults,noatime"' config/ansible/roles/db/tasks/main.yml
+grep -Fq 'opts: "defaults,noatime"' config/ansible/roles/garage/tasks/main.yml
+if git grep -nF 'opts: defaults,noatime' -- config/ansible/roles; then
+  echo 'Comma-separated mount opts inside inline YAML mappings must be quoted.' >&2
+  exit 1
+fi
+
 echo 'M0 repository baseline verification passed.'
