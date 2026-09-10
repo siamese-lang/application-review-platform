@@ -2,7 +2,7 @@ resource "google_compute_instance" "node" {
   for_each     = local.nodes
   name         = each.key
   zone         = each.value.zone
-  machine_type = var.machine_types[each.value.role]
+  machine_type = lookup(var.node_machine_type_overrides, each.key, var.machine_types[each.value.role])
   tags         = concat(["arp-${each.value.role}", "arp-managed"], each.key == "storage-01" ? ["arp-garage-endpoint"] : [])
   labels       = { milestone = "m4", role = each.value.role }
 
