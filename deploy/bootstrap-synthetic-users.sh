@@ -10,12 +10,17 @@ if [[ -z ${ARP_OSLOGIN_USER:-} || -z ${ARP_OSLOGIN_SSH_KEY:-} || -z ${ARP_OSLOGI
   exec "$root/deploy/with-oslogin-ssh.py" -- "$0" "$@"
 fi
 
-for command in htpasswd tofu python3 ssh; do
+for command in htpasswd tofu python3 ssh sudo; do
   command -v "$command" >/dev/null || { echo "Missing prerequisite: $command" >&2; exit 1; }
 done
 
+tofu_cmd=(tofu)
+if [[ $EUID -ne 0 ]]; then
+  tofu_cmd=(sudo -n tofu)
+fi
+
 db_ip=$(
-  tofu -chdir="$root/infra/opentofu" output -json inventory |
+  "${tofu_cmd[@]}" -chdir="$root/infra/opentofu" output -json inventory |
     python3 -c 'import json,sys; print(json.load(sys.stdin)["db-01"]["private_ip"])'
 )
 python3 - "$db_ip" <<'PY'

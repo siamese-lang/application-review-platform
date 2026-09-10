@@ -11,7 +11,11 @@ set -euo pipefail
 
 root=$(git rev-parse --show-toplevel)
 GARAGE_LAYOUT_CAPACITY=${GARAGE_LAYOUT_CAPACITY:-25G}
-inventory_json=$(tofu -chdir="$root/infra/opentofu" output -json inventory)
+tofu_cmd=(tofu)
+if [[ $EUID -ne 0 ]]; then
+  tofu_cmd=(sudo -n tofu)
+fi
+inventory_json=$("${tofu_cmd[@]}" -chdir="$root/infra/opentofu" output -json inventory)
 
 node_value() {
   local host=$1 field=$2

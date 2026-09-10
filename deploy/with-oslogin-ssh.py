@@ -71,10 +71,17 @@ def google_json(
     return json.loads(data.decode("utf-8"))
 
 
+def tofu_output_prefix() -> list[str]:
+    """Read the root-owned runtime state without running the whole deployment as root."""
+    if os.geteuid() == 0:
+        return ["tofu"]
+    return ["sudo", "-n", "tofu"]
+
+
 def runtime_inventory(repo_root: Path) -> dict[str, dict[str, str]]:
     result = subprocess.run(
-        [
-            "tofu",
+        tofu_output_prefix()
+        + [
             f"-chdir={repo_root / 'infra' / 'opentofu'}",
             "output",
             "-json",
