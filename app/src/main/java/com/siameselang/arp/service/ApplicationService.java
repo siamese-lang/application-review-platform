@@ -151,7 +151,18 @@ public class ApplicationService {
     @Transactional
     public Application startReview(User actor, long id) {
         requireRole(actor, Role.REVIEWER);
+        return startReview(actor, load(id));
+    }
+
+    @Transactional
+    public Application startReview(User actor, long id, long expectedVersion) {
+        requireRole(actor, Role.REVIEWER);
         Application application = load(id);
+        requireVersion(application, expectedVersion);
+        return startReview(actor, application);
+    }
+
+    private Application startReview(User actor, Application application) {
         requireStatus(application, ApplicationStatus.SUBMITTED);
         User assigned = application.getReviewer();
         if (assigned != null && !assigned.getId().equals(actor.getId())) {
@@ -176,7 +187,27 @@ public class ApplicationService {
             ApplicationStatus target,
             String reason) {
         requireRole(actor, Role.REVIEWER);
+        return decide(actor, load(id), target, reason);
+    }
+
+    @Transactional
+    public Application decide(
+            User actor,
+            long id,
+            ApplicationStatus target,
+            String reason,
+            long expectedVersion) {
+        requireRole(actor, Role.REVIEWER);
         Application application = load(id);
+        requireVersion(application, expectedVersion);
+        return decide(actor, application, target, reason);
+    }
+
+    private Application decide(
+            User actor,
+            Application application,
+            ApplicationStatus target,
+            String reason) {
         requireStatus(application, ApplicationStatus.IN_REVIEW);
         if (application.getReviewer() == null
                 || !application.getReviewer().getId().equals(actor.getId())) {
@@ -243,6 +274,16 @@ public class ApplicationService {
     public List<Application> reviewQueue(User actor) {
         requireRole(actor, Role.REVIEWER);
         return applications.findReviewQueue(actor);
+    }
+
+    public Page<Application> reviewQueue(
+            User actor,
+            ApplicationStatus status,
+            Pageable pageable) {
+        requireRole(actor, Role.REVIEWER);
+        return status == null
+                ? applications.findReviewQueuePage(actor, pageable)
+                : applications.findReviewQueuePageByStatus(actor, status, pageable);
     }
 
     private Program openProgram(long programId) {
