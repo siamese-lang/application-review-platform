@@ -9,6 +9,9 @@ import type {
   ApplicationCreateRequest, ApplicationDetail, ApplicationHistory, ApplicationListItem,
   ApplicationStatus, ApplicationUpdateRequest, Attachment,
   ReviewerApplicationDetail, ReviewerQueueItem,
+  AdminApplicationDetail, AdminApplicationSummary, AdminAuditItem, AdminHistoryItem, AdminProgram,
+  AdminProgramCreateRequest, AdminProgramUpdateRequest, AdminUserSummary, AdminWorkflowCounts,
+  AuditEventType, Role,
 } from '../types/api'
 
 export class ApiError extends Error {
@@ -105,6 +108,17 @@ export const api = {
   reviewerHistory: (id: string | number) => request<ApplicationHistory[]>(`/api/v1/review/applications/${id}/history`),
   reviewerAttachments: (id: string | number) => request<Attachment[]>(`/api/v1/review/applications/${id}/attachments`),
   downloadReviewerAttachment: (applicationId: string | number, attachmentId: number) => download(`/api/v1/review/applications/${applicationId}/attachments/${attachmentId}`),
+  adminPrograms: (page = 0, size = 20) => request<ApiPage<AdminProgram>>(`/api/v1/admin/programs?page=${page}&size=${size}`),
+  adminProgram: (id: string | number) => request<AdminProgram>(`/api/v1/admin/programs/${id}`),
+  createAdminProgram: (body: AdminProgramCreateRequest) => request<AdminProgram>('/api/v1/admin/programs', { method: 'POST', body: JSON.stringify(body) }),
+  updateAdminProgram: (id: string | number, body: AdminProgramUpdateRequest) => request<AdminProgram>(`/api/v1/admin/programs/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  publishAdminProgram: (id: string | number, version: number) => request<AdminProgram>(`/api/v1/admin/programs/${id}/publish`, { method: 'POST', body: JSON.stringify({ version }) }),
+  adminWorkflowCounts: () => request<AdminWorkflowCounts>('/api/v1/admin/workflow-counts'),
+  adminUsers: (page = 0, size = 20, role?: Role) => { const q = new URLSearchParams({ page: String(page), size: String(size) }); if (role) q.set('role', role); return request<ApiPage<AdminUserSummary>>(`/api/v1/admin/users?${q}`) },
+  adminApplications: (page = 0, size = 20, status?: ApplicationStatus) => { const q = new URLSearchParams({ page: String(page), size: String(size) }); if (status) q.set('status', status); return request<ApiPage<AdminApplicationSummary>>(`/api/v1/admin/applications?${q}`) },
+  adminApplication: (id: string | number) => request<AdminApplicationDetail>(`/api/v1/admin/applications/${id}`),
+  adminApplicationHistory: (id: string | number) => request<AdminHistoryItem[]>(`/api/v1/admin/applications/${id}/history`),
+  adminAudits: (page = 0, size = 50, eventType?: AuditEventType) => { const q = new URLSearchParams({ page: String(page), size: String(size) }); if (eventType) q.set('eventType', eventType); return request<ApiPage<AdminAuditItem>>(`/api/v1/admin/audits?${q}`) },
 }
 
 export function clearCsrfTokenForTests() {
