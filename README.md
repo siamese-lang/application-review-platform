@@ -23,7 +23,9 @@
 - M5 final implementation PR #30 merged as `d8c34ebfa5a39cf253c5f9e1908d9a48cfa5bd88`; exact-head workflow `34614094018` and post-merge `main` workflow `34614462225` passed
 - React SPA public/auth, applicant, reviewer, and admin workflows are implemented; real-stack Chromium E2E covers the applicant/reviewer business flow, and Nginx routing verification proves SPA fallback, fingerprinted-asset caching, and `/api` proxy isolation
 - Legacy Thymeleaf presentation code is removed; Spring Boot owns the `/api/v1` application boundary while Nginx owns browser presentation routing
-- Next milestone: M6 Operations & Delivery; its active execution plan has not yet been created
+- Current implementation milestone: M6 Operations & Delivery
+- Active plan: `docs/plans/active/M6-operations-delivery.md`
+- M6 pre-implementation boundary: immutable backend/frontend release identity, GHCR artifact retention, versioned deploy/rollback, keyless GitHub→GCP delivery, and controlled real-cloud verification; no temporary preview environment
 
 This project is **production-like**, not a claim of real production operation. All users, organizations, applications, documents, workloads, and measurements are synthetic unless explicitly recorded otherwise.
 
