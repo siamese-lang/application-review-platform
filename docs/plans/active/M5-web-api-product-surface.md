@@ -62,8 +62,8 @@ Do not reopen the architecture merely because implementation exposes a cosmetic 
 
 Checkpoint date: 2026-09-11
 
-Verified implementation baseline after PR #17: `18504bd14fe9a6c06f3b3c8b59a809591053eb9f`  
-Its post-merge workflow: `34513478612` — `repository-baseline`, `m1-application`, and `m4-infrastructure-static` all successful.
+Verified applicant API baseline after PR #20: `91658ba7da432cb3f7ba8a20d137e32078f2ced2`  
+PR #20 exact-head workflow: `34583818541` — `repository-baseline`, `m1-application` (43 tests), and `m4-infrastructure-static` all successful.
 
 Completed slices:
 
@@ -86,12 +86,20 @@ Completed slices:
   - JSON 401/403 and ProblemDetail error handling;
   - public published-program API;
   - ADMIN Program REST API.
+- PR #20 — applicant Application and Attachment REST boundary
+  - paginated applicant-owned application list with optional status filtering;
+  - structured create/detail/edit with DTOs and client-observed optimistic version checks;
+  - version-aware submit/resubmit and status-history API;
+  - attachment list/upload/streamed download/delete over the existing M3 Garage lifecycle;
+  - CSRF/role/ownership/state/admission/conflict integration coverage;
+  - no schema migration or speculative performance index.
 
 The next implementation slice is:
 
-1. applicant application REST API: list/detail/create/edit/submit/resubmit/history;
-2. attachment REST API: list/upload/download/delete using the existing M3 storage lifecycle;
-3. then reviewer queue/detail/claim/decision APIs and remaining ADMIN operational read APIs.
+1. reviewer queue/detail/claim/start/decision/history APIs;
+2. reviewer attachment list/download using the existing M3 read path;
+3. remaining ADMIN operational read APIs for users/applications/audits/workflow counts;
+4. then the typed React/Vite client once these core REST workflows are stable.
 
 Do not begin the React SPA until these core browser-facing REST workflows and their integration tests are stable, unless a concrete frontend contract issue requires a small API adjustment.
 
@@ -360,8 +368,8 @@ M5 does not introduce:
 2. **DONE** — Extend domain/repository/service code for applicant registration, program lifecycle/admission rules, structured application fields, and generalized audit subjects.
 3. **DONE** — Implement admin program create/edit/publish APIs and public published-program discovery.
 4. **DONE** — Implement applicant registration/session API contracts.
-5. **NEXT** — Implement applicant application/attachment APIs including intake-window and optimistic-lock conflict semantics.
-6. Implement reviewer queue/claim/decision APIs and remaining admin operational read APIs.
+5. **DONE** — Implement applicant application/attachment APIs including intake-window and optimistic-lock conflict semantics.
+6. **NEXT** — Implement reviewer queue/claim/decision APIs and remaining admin operational read APIs.
 7. **DONE for current API surface; extend consistently as later endpoints are added** — Establish JSON error, CSRF, and API 401/403 behavior.
 8. Build the typed React/Vite client and public/registration/login shell.
 9. Build applicant workflow screens.
