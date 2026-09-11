@@ -257,7 +257,7 @@ class M5ApplicantApiIntegrationTest {
                         .with(user(applicant.getUsername()).roles("APPLICANT")).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content(createBody(program.getId())))
                 .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
-        return new com.fasterxml.jackson.databind.ObjectMapper().readTree(location).get("id").asLong();
+        return jsonMapper.readTree(location).get("id").asLong();
     }
 
     private void submit(User applicant, Application application) throws Exception {
