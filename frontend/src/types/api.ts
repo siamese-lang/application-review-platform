@@ -86,3 +86,25 @@ export interface ReviewerApplicationDetail extends ReviewerQueueItem {
   applicant: ReviewerApplicantSummary; reviewer: ReviewerSummary | null
   shortSummary: string; detailedPlan: string; createdAt: string
 }
+
+export type Role = CurrentUser['role']
+export type ProgramPublicationStatus = 'DRAFT' | 'PUBLISHED'
+export interface AdminProgram {
+  id: number; version: number; code: string; title: string; description: string
+  publicationStatus: ProgramPublicationStatus; applicationOpenAt: string; applicationCloseAt: string
+  intakeStatus: IntakeStatus | null; createdAt: string; updatedAt: string
+}
+export interface AdminProgramCreateRequest { code: string; title: string; description: string; applicationOpenAt: string; applicationCloseAt: string }
+export interface AdminProgramUpdateRequest extends Omit<AdminProgramCreateRequest, 'code'> { version: number }
+export interface AdminUserRef { id: number; username: string; displayName: string; role: Role }
+export interface AdminUserSummary extends AdminUserRef { email: string; createdAt: string; updatedAt: string }
+export interface AdminApplicationSummary {
+  id: number; program: ProgramSummary; applicant: AdminUserRef; reviewer: AdminUserRef | null
+  applicantOrganizationName: string; projectTitle: string; requestedAmount: number
+  status: ApplicationStatus; version: number; createdAt: string; updatedAt: string
+}
+export interface AdminApplicationDetail extends AdminApplicationSummary { shortSummary: string; detailedPlan: string }
+export interface AdminHistoryItem { id: number; changedAt: string; fromStatus: ApplicationStatus | null; toStatus: ApplicationStatus; changedBy: AdminUserRef; reason: string | null }
+export type AuditEventType = 'APPLICATION_CREATED' | 'APPLICATION_EDITED' | 'APPLICATION_SUBMITTED' | 'REVIEW_STARTED' | 'REVISION_REQUESTED' | 'APPLICATION_APPROVED' | 'APPLICATION_REJECTED' | 'USER_REGISTERED' | 'PROGRAM_CREATED' | 'PROGRAM_UPDATED' | 'PROGRAM_PUBLISHED'
+export interface AdminAuditItem { id: number; eventType: AuditEventType; occurredAt: string; actor: AdminUserRef; subjectType: 'APPLICATION' | 'PROGRAM' | 'USER'; subjectId: number }
+export interface AdminWorkflowCounts { total: number; draft: number; submitted: number; inReview: number; needsRevision: number; approved: number; rejected: number }
