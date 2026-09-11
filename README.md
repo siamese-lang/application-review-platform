@@ -22,7 +22,7 @@
 - M5 pre-implementation architecture review: complete; ADR-001 through ADR-003 form the implementation baseline
 - Active plan: `docs/plans/active/M5-web-api-product-surface.md`
 - M5 implementation checkpoint: schema/domain foundation, business services, session/auth API, public Program API, and ADMIN Program API are merged and green
-- Current verified main checkpoint: `18504bd14fe9a6c06f3b3c8b59a809591053eb9f` (post-merge run `34513478612` all required jobs successful)
+- M5 implementation baseline after PR #17: `18504bd14fe9a6c06f3b3c8b59a809591053eb9f` (post-merge run `34513478612` all required jobs successful)
 - Next M5 slice: applicant application/attachment REST API, followed by reviewer/admin operational REST API
 
 This project is **production-like**, not a claim of real production operation. All users, organizations, applications, documents, workloads, and measurements are synthetic unless explicitly recorded otherwise.

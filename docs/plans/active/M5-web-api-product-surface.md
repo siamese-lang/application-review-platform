@@ -62,8 +62,8 @@ Do not reopen the architecture merely because implementation exposes a cosmetic 
 
 Checkpoint date: 2026-09-11
 
-Verified `main`: `18504bd14fe9a6c06f3b3c8b59a809591053eb9f`  
-Post-merge workflow: `34513478612` — `repository-baseline`, `m1-application`, and `m4-infrastructure-static` all successful.
+Verified implementation baseline after PR #17: `18504bd14fe9a6c06f3b3c8b59a809591053eb9f`  
+Its post-merge workflow: `34513478612` — `repository-baseline`, `m1-application`, and `m4-infrastructure-static` all successful.
 
 Completed slices:
 
