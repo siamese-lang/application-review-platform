@@ -18,12 +18,12 @@
 - ADR-001: REST API + React SPA browser boundary accepted
 - ADR-002: applicant self-registration + controlled reviewer/admin provisioning accepted
 - ADR-003: admin program publication + derived intake window + generalized audit subjects accepted
-- Current implementation milestone: M5 Web/API & Product Surface
-- M5 pre-implementation architecture review: complete; ADR-001 through ADR-003 form the implementation baseline
-- Active plan: `docs/plans/active/M5-web-api-product-surface.md`
-- M5 implementation checkpoint: the REST surface plus public/auth, applicant, reviewer, and admin React SPA workflows are implemented; real-stack Chromium E2E exercises the applicant/reviewer business flow, and Nginx routing verification proves static SPA fallback, fingerprinted-asset caching, and `/api` proxy isolation
-- Legacy Thymeleaf controllers/templates and the Thymeleaf runtime dependency have been removed; Spring Boot now owns the `/api/v1` application boundary while Nginx owns browser presentation routing
-- Next M5 slice: final milestone verification and completion handoff to M6
+- M5 Web/API & Product Surface: complete
+- M5 completed plan: `docs/plans/completed/M5-web-api-product-surface.md`
+- M5 final implementation PR #30 merged as `d8c34ebfa5a39cf253c5f9e1908d9a48cfa5bd88`; exact-head workflow `34614094018` and post-merge `main` workflow `34614462225` passed
+- React SPA public/auth, applicant, reviewer, and admin workflows are implemented; real-stack Chromium E2E covers the applicant/reviewer business flow, and Nginx routing verification proves SPA fallback, fingerprinted-asset caching, and `/api` proxy isolation
+- Legacy Thymeleaf presentation code is removed; Spring Boot owns the `/api/v1` application boundary while Nginx owns browser presentation routing
+- Next milestone: M6 Operations & Delivery; its active execution plan has not yet been created
 
 This project is **production-like**, not a claim of real production operation. All users, organizations, applications, documents, workloads, and measurements are synthetic unless explicitly recorded otherwise.
 

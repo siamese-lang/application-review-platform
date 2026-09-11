@@ -1,6 +1,8 @@
 # M5 Web/API & Product Surface — Execution Plan
 
-Status: ACTIVE
+Status: COMPLETED
+
+Completion record: final implementation PR #30 merged as `d8c34ebfa5a39cf253c5f9e1908d9a48cfa5bd88`; PR exact-head workflow run `34614094018` passed `repository-baseline`, `m1-application`, `m4-infrastructure-static`, `m5-frontend`, `m5-browser-e2e`, and `m5-nginx-routing`; post-merge `main` workflow run `34614462225` also passed.
 
 ## Goal
 
@@ -101,7 +103,7 @@ Completed slices:
 - The Nginx edge contract now serves the Vite static release with SPA fallback, proxies `/api` before fallback, keeps fingerprinted assets long-cacheable, keeps browser entry HTML update-safe, and is exercised by a real Nginx CI job against the Spring backend.
 - Legacy Thymeleaf controllers/templates, form-login browser security chain, and the Thymeleaf runtime dependency are removed; domain/service compatibility methods remain for M1–M4 regression coverage.
 
-The next implementation slice is final M5 verification and milestone completion.
+M5 implementation and final verification are complete. M6 Operations & Delivery is the next milestone.
 
 ### Relationship to later DB/SQL evidence
 
@@ -377,7 +379,7 @@ M5 does not introduce:
 11. **DONE** — Add real-stack applicant/reviewer browser E2E coverage.
 12. **DONE** — Validate Nginx SPA/API routing contract locally/CI.
 13. **DONE** — Remove obsolete Thymeleaf presentation paths before M5 completion.
-14. **NEXT** — Perform final M5 verification, move the plan to completed, and verify post-merge `main` before M6.
+14. **DONE** — Final M5 implementation head and post-merge `main` verification are green; move this plan to completed before M6.
 
 Do not move to M6 merely because the SPA renders; the full identity/business/API verification below must pass.
 

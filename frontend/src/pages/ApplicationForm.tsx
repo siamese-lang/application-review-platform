@@ -14,10 +14,18 @@ export function ApplicationForm({ edit = false }: { edit?: boolean }) {
   const programId = Number(query.get('programId'))
 
   useEffect(() => {
-    if (edit && applicationId) api.application(applicationId).then((a) => {
-      setValues({ programId: a.program.id, applicantOrganizationName: a.applicantOrganizationName, projectTitle: a.projectTitle, shortSummary: a.shortSummary, requestedAmount: a.requestedAmount, detailedPlan: a.detailedPlan }); setVersion(a.version); setProgram(a.program)
-    }).catch(setError).finally(() => setLoading(false))
-    else if (programId > 0) { setValues((v) => ({ ...v, programId })); api.program(programId).then(setProgram).catch(setError) }
+    let cancelled = false
+    if (edit && applicationId) {
+      setLoading(true)
+      api.application(applicationId).then((a) => {
+        if (cancelled) return
+        setValues({ programId: a.program.id, applicantOrganizationName: a.applicantOrganizationName, projectTitle: a.projectTitle, shortSummary: a.shortSummary, requestedAmount: a.requestedAmount, detailedPlan: a.detailedPlan }); setVersion(a.version); setProgram(a.program)
+      }).catch((requestError) => { if (!cancelled) setError(requestError) }).finally(() => { if (!cancelled) setLoading(false) })
+    } else if (programId > 0) {
+      setValues((v) => ({ ...v, programId }))
+      api.program(programId).then((loadedProgram) => { if (!cancelled) setProgram(loadedProgram) }).catch((requestError) => { if (!cancelled) setError(requestError) })
+    }
+    return () => { cancelled = true }
   }, [applicationId, edit, programId])
 
   function field(name: keyof ApplicationCreateRequest, value: string) { setValues((v) => ({ ...v, [name]: name === 'programId' || name === 'requestedAmount' ? Number(value) : value })) }
