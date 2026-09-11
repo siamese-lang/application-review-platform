@@ -103,8 +103,12 @@ test('public applicant flow and reviewer workflow run against the real stack', a
 
   await page.getByRole('link', { name: 'Edit' }).click()
   await page.getByLabel('Short summary').fill('Edited browser E2E summary.')
+  const draftUpdate = page.waitForResponse((response) =>
+    response.request().method() === 'PUT' && /\/api\/v1\/applications\/\d+$/.test(new URL(response.url()).pathname))
   await page.getByRole('button', { name: 'Save changes' }).click()
-  await expect(page.getByText('Edited browser E2E summary.')).toBeVisible()
+  expect((await draftUpdate).status()).toBe(200)
+  await expect(page).toHaveURL(/\/applications\/\d+$/)
+  await expect(page.getByText('Edited browser E2E summary.')).toBeVisible({ timeout: 10_000 })
   await expect(page.getByText('Draft', { exact: true })).toBeVisible()
 
   await page.getByRole('button', { name: 'Submit' }).click()
@@ -140,8 +144,12 @@ test('public applicant flow and reviewer workflow run against the real stack', a
   await expect(page.getByText(revisionReason)).toBeVisible()
   await page.getByRole('link', { name: 'Edit' }).click()
   await page.getByLabel('Detailed plan').fill(applicant.revisedPlan)
+  const revisionUpdate = page.waitForResponse((response) =>
+    response.request().method() === 'PUT' && /\/api\/v1\/applications\/\d+$/.test(new URL(response.url()).pathname))
   await page.getByRole('button', { name: 'Save changes' }).click()
-  await expect(page.getByText(applicant.revisedPlan)).toBeVisible()
+  expect((await revisionUpdate).status()).toBe(200)
+  await expect(page).toHaveURL(/\/applications\/\d+$/)
+  await expect(page.getByText(applicant.revisedPlan)).toBeVisible({ timeout: 10_000 })
   await page.getByRole('button', { name: 'Resubmit' }).click()
   await expect(page.getByText('Submitted', { exact: true })).toBeVisible()
   await logout(page)
