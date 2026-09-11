@@ -97,12 +97,12 @@ Completed slices:
 - The applicant workflow React slice now covers guarded list/create/detail/edit routes, version-aware submission, attachments, history, and public Program entry.
 - The reviewer workflow React slice now covers guarded queue/detail routes, active-work filtering and pagination, version-aware claim-on-start, conflict recovery, decisions, read-only attachments, and history.
 - The ADMIN React slice now covers guarded program DRAFT creation/edit/publication, workflow counts, and paginated read-only user/application/history/audit operations.
+- Real-stack Chromium E2E now covers public discovery, applicant registration/login, draft/edit/attachment/submit, reviewer revision, applicant resubmission, reviewer approval, and final applicant status against Spring Boot, PostgreSQL, Garage, Spring Session/CSRF, and the Vite same-origin development proxy.
 
 The next implementation slice is:
 
-1. real-stack applicant/reviewer browser E2E;
-2. Nginx SPA routing validation and Thymeleaf presentation cleanup;
-3. final M5 verification.
+1. Nginx SPA routing validation and Thymeleaf presentation cleanup;
+2. final M5 verification.
 
 ### Relationship to later DB/SQL evidence
 
@@ -375,8 +375,8 @@ M5 does not introduce:
 8. **DONE** — Build the typed React/Vite client and public/registration/login shell.
 9. **DONE** — Build applicant workflow screens.
 10. **DONE** — Build applicant, reviewer, and admin program/operational screens.
-11. **NEXT** — Add real-stack applicant/reviewer browser E2E coverage.
-12. Validate Nginx SPA/API routing contract locally/CI.
+11. **DONE** — Add real-stack applicant/reviewer browser E2E coverage.
+12. **NEXT** — Validate Nginx SPA/API routing contract locally/CI.
 13. Remove obsolete Thymeleaf presentation paths before M5 completion.
 
 Do not move to M6 merely because the SPA renders; the full identity/business/API verification below must pass.
