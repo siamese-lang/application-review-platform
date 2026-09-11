@@ -33,5 +33,14 @@ public interface ApplicationRepository extends JpaRepository<Application,Long>{
      @Param("reviewer") User reviewer,
      @Param("status") ApplicationStatus status,
      Pageable pageable);
+ @EntityGraph(attributePaths = {"program", "applicant", "reviewer"})
+ @Query("select a from Application a")
+ Page<Application> findAdminPage(Pageable pageable);
+ @EntityGraph(attributePaths = {"program", "applicant", "reviewer"})
+ @Query("select a from Application a where a.status = :status")
+ Page<Application> findAdminPageByStatus(
+     @Param("status") ApplicationStatus status,
+     Pageable pageable);
+ long countByStatus(ApplicationStatus status);
  @Query("select a from Application a join fetch a.program join fetch a.applicant left join fetch a.reviewer where a.id=:id") Optional<Application> findDetailedById(@Param("id") Long id);
 }
