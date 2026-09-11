@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   m5-frontend:
@@ -17,28 +17,13 @@ jobs:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - name: Resolve and pin Playwright test dependency
-        run: npm install --save-dev --save-exact @playwright/test
-      - name: Commit npm-generated Playwright dependency files
-        working-directory: .
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add frontend/package.json frontend/package-lock.json
-          if git diff --cached --quiet; then
-            echo "Playwright dependency files are already pinned"
-          else
-            git commit -m "build(frontend): pin Playwright test dependency"
-            git push origin "HEAD:${{ github.head_ref }}"
-          fi
+      - name: Install frontend dependencies
+        run: npm ci
       - name: Type-check frontend
         run: npm run typecheck
       - name: Test frontend
