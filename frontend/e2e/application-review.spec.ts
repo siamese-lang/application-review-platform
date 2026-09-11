@@ -51,7 +51,7 @@ test('public applicant flow and reviewer workflow run against the real stack', a
   await page.getByRole('link', { name: 'Small Business Digital Adoption' }).click()
   await expect(page.getByText('Open for applications')).toBeVisible()
   await expect(page.getByText(/Log in.*register.*start an application/i)).toBeVisible()
-  await page.getByRole('link', { name: 'register' }).click()
+  await page.getByRole('link', { name: 'register', exact: true }).click()
 
   await page.getByLabel('Username').fill(applicant.username)
   await page.getByLabel('Display name').fill(applicant.displayName)
