@@ -75,3 +75,14 @@ export interface ApplicationUpdateRequest extends Omit<ApplicationCreateRequest,
 export interface Attachment {
   id: number; filename: string; contentType: string; size: number | null; status: AttachmentStatus; createdAt: string
 }
+
+export interface ReviewerQueueItem {
+  id: number; program: ProgramSummary; applicantOrganizationName: string; projectTitle: string
+  requestedAmount: number; status: ApplicationStatus; version: number; updatedAt: string
+}
+export interface ReviewerApplicantSummary { id: number; username: string; displayName: string; email: string }
+export interface ReviewerSummary { id: number; username: string; displayName: string }
+export interface ReviewerApplicationDetail extends ReviewerQueueItem {
+  applicant: ReviewerApplicantSummary; reviewer: ReviewerSummary | null
+  shortSummary: string; detailedPlan: string; createdAt: string
+}

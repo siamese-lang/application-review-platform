@@ -11,7 +11,10 @@ import { ApplicantRoute } from './components/ApplicantRoute'
 import { ApplicationsPage } from './pages/ApplicationsPage'
 import { ApplicationForm } from './pages/ApplicationForm'
 import { ApplicationDetailPage } from './pages/ApplicationDetailPage'
+import { ReviewerRoute } from './components/ReviewerRoute'
+import { ReviewQueuePage } from './pages/ReviewQueuePage'
+import { ReviewerApplicationPage } from './pages/ReviewerApplicationPage'
 
 export function App() {
-  return <BrowserRouter><AuthProvider><Routes><Route element={<AppShell />}><Route index element={<HomePage />} /><Route path="programs" element={<ProgramsPage />} /><Route path="programs/:programId" element={<ProgramDetailPage />} /><Route path="register" element={<RegisterPage />} /><Route path="login" element={<LoginPage />} /><Route element={<ApplicantRoute/>}><Route path="applications" element={<ApplicationsPage/>}/><Route path="applications/new" element={<ApplicationForm/>}/><Route path="applications/:applicationId" element={<ApplicationDetailPage/>}/><Route path="applications/:applicationId/edit" element={<ApplicationForm edit/>}/></Route><Route path="*" element={<NotFoundPage />} /></Route></Routes></AuthProvider></BrowserRouter>
+  return <BrowserRouter><AuthProvider><Routes><Route element={<AppShell />}><Route index element={<HomePage />} /><Route path="programs" element={<ProgramsPage />} /><Route path="programs/:programId" element={<ProgramDetailPage />} /><Route path="register" element={<RegisterPage />} /><Route path="login" element={<LoginPage />} /><Route element={<ApplicantRoute/>}><Route path="applications" element={<ApplicationsPage/>}/><Route path="applications/new" element={<ApplicationForm/>}/><Route path="applications/:applicationId" element={<ApplicationDetailPage/>}/><Route path="applications/:applicationId/edit" element={<ApplicationForm edit/>}/></Route><Route element={<ReviewerRoute/>}><Route path="review" element={<ReviewQueuePage/>}/><Route path="review/applications/:applicationId" element={<ReviewerApplicationPage/>}/></Route><Route path="*" element={<NotFoundPage />} /></Route></Routes></AuthProvider></BrowserRouter>
 }

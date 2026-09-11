@@ -28,6 +28,7 @@ export function AppShell() {
         <nav aria-label="Primary navigation">
           <NavLink to="/programs">Programs</NavLink>
           {!loading && user?.role === 'APPLICANT' && <NavLink to="/applications">My applications</NavLink>}
+          {!loading && user?.role === 'REVIEWER' && <NavLink to="/review">Review queue</NavLink>}
           {!loading && !user && <NavLink to="/register">Register</NavLink>}
           {!loading && !user && <NavLink to="/login">Login</NavLink>}
           {!loading && user && (
