@@ -37,7 +37,7 @@ export function AppShell() {
           )}
         </nav>
       </header>
-      {logoutError && <div className="shell-alert"><ErrorNotice error={logoutError} /></div>}
+      {logoutError !== undefined && <div className="shell-alert"><ErrorNotice error={logoutError} /></div>}
       <main><Outlet /></main>
       <footer><span>Application Review Platform</span><span>Secure session-based service</span></footer>
     </div>
