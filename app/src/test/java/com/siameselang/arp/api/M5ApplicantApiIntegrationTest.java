@@ -130,7 +130,7 @@ class M5ApplicantApiIntegrationTest {
                         .with(user(owner.getUsername()).roles("APPLICANT")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElements").value(1))
-                .andExpect(jsonPath("$.items[0].program.code").value("OPEN"));
+                .andExpect(jsonPath("$.items[0].program.code").value(openProgram.getCode()));
         mvc.perform(get("/api/v1/applications/" + otherId)
                         .with(user(owner.getUsername()).roles("APPLICANT")))
                 .andExpect(status().isUnprocessableEntity());
