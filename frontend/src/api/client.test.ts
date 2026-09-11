@@ -60,6 +60,12 @@ describe('API client', () => {
 
   it('exposes ProblemDetail errors', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ title: 'Conflict', status: 409, detail: 'Username already exists' }, 409)))
-    await expect(api.programs()).rejects.toEqual(expect.objectContaining<ApiError>({ status: 409, message: 'Username already exists' }))
+    try {
+      await api.programs()
+      throw new Error('Expected api.programs() to reject')
+    } catch (error) {
+      expect(error).toBeInstanceOf(ApiError)
+      expect(error).toMatchObject({ status: 409, message: 'Username already exists' })
+    }
   })
 })
