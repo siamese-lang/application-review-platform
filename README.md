@@ -21,8 +21,9 @@
 - Current implementation milestone: M5 Web/API & Product Surface
 - M5 pre-implementation architecture review: complete; ADR-001 through ADR-003 form the implementation baseline
 - Active plan: `docs/plans/active/M5-web-api-product-surface.md`
-- M5 implementation checkpoint: the current REST surface plus public/auth, applicant, reviewer, and admin React SPA workflows are implemented; real-stack Chromium E2E exercises the applicant/reviewer business flow against Spring Boot, PostgreSQL, Garage, Spring Session, CSRF, and the Vite `/api` proxy
-- Next M5 slice: validate the Nginx SPA/API routing contract, remove or narrowly justify obsolete Thymeleaf presentation paths, then perform final M5 verification
+- M5 implementation checkpoint: the REST surface plus public/auth, applicant, reviewer, and admin React SPA workflows are implemented; real-stack Chromium E2E exercises the applicant/reviewer business flow, and Nginx routing verification proves static SPA fallback, fingerprinted-asset caching, and `/api` proxy isolation
+- Legacy Thymeleaf controllers/templates and the Thymeleaf runtime dependency have been removed; Spring Boot now owns the `/api/v1` application boundary while Nginx owns browser presentation routing
+- Next M5 slice: final milestone verification and completion handoff to M6
 
 This project is **production-like**, not a claim of real production operation. All users, organizations, applications, documents, workloads, and measurements are synthetic unless explicitly recorded otherwise.
 
@@ -88,7 +89,7 @@ Read `AGENTS.md` first. `docs/PROJECT_EXECUTION.md` defines the durable project 
 
 Java 21, Spring Boot 4.1.x, Spring REST/MVC infrastructure, Spring Security, Spring Session JDBC, Spring Data JPA, Flyway, PostgreSQL, Garage, React, TypeScript, Vite, Nginx, Prometheus, Loki, Tempo, Grafana, Alertmanager, Grafana Alloy, pgBackRest, k6, OpenTofu, Ansible, GitHub Actions, GHCR, SOPS + age.
 
-Thymeleaf is migration-only after ADR-001 and is not the intended final browser presentation.
+Thymeleaf migration presentation code was removed in M5; React/Vite behind Nginx is the supported browser presentation.
 
 ## Milestones
 
