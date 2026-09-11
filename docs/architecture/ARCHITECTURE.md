@@ -67,7 +67,7 @@ Temporary resources only when required: `loadgen-01` for k6, `app-02` for scale-
 
 Java 21; Spring Boot 4.1.x; Spring REST/MVC infrastructure; Spring Security; Spring Session JDBC; Spring Data JPA; Flyway; PostgreSQL; Garage; React; TypeScript; Vite; Nginx; Prometheus; Loki; Tempo; Grafana; Alertmanager; Grafana Alloy; pgBackRest; k6; OpenTofu; Ansible; GitHub Actions; Docker/container runtime; SOPS + age; GHCR.
 
-Thymeleaf is migration-only after ADR-001 and is not the intended final browser presentation.
+Thymeleaf migration presentation code was removed in M5. React/Vite static assets served by Nginx are the supported browser presentation.
 
 ## GCP boundary
 
