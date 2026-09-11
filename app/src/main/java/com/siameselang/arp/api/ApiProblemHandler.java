@@ -3,6 +3,7 @@ package com.siameselang.arp.api;
 import com.siameselang.arp.service.BusinessRuleException;
 import com.siameselang.arp.service.ConflictException;
 import com.siameselang.arp.service.ResourceNotFoundException;
+import com.siameselang.arp.service.ResourceOwnershipException;
 import jakarta.persistence.OptimisticLockException;
 import java.util.stream.Collectors;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -31,8 +32,11 @@ public class ApiProblemHandler {
                 "The resource was changed by another request. Reload and try again.");
     }
 
-    @ExceptionHandler(ResourceNotFoundException.class)
-    ProblemDetail notFound(ResourceNotFoundException exception) {
+    @ExceptionHandler({
+        ResourceNotFoundException.class,
+        ResourceOwnershipException.class
+    })
+    ProblemDetail notFound(RuntimeException exception) {
         return problem(HttpStatus.NOT_FOUND, exception.getMessage());
     }
 
