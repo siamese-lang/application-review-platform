@@ -93,15 +93,15 @@ Completed slices:
   - attachment list/upload/streamed download/delete over the existing M3 Garage lifecycle;
   - CSRF/role/ownership/state/admission/conflict integration coverage;
   - no schema migration or speculative performance index.
+- Reviewer queue/detail/claim/decision and attachment APIs, remaining ADMIN operational read APIs, and the React/Vite public/auth shell are present on the current baseline.
+- The applicant workflow React slice now covers guarded list/create/detail/edit routes, version-aware submission, attachments, history, and public Program entry.
 
 The next implementation slice is:
 
-1. reviewer queue/detail/claim/start/decision/history APIs;
-2. reviewer attachment list/download using the existing M3 read path;
-3. remaining ADMIN operational read APIs for users/applications/audits/workflow counts;
-4. then the typed React/Vite client once these core REST workflows are stable.
-
-Do not begin the React SPA until these core browser-facing REST workflows and their integration tests are stable, unless a concrete frontend contract issue requires a small API adjustment.
+1. reviewer workflow screens;
+2. ADMIN program and operational screens;
+3. real-stack applicant/reviewer browser E2E;
+4. Nginx SPA routing validation and Thymeleaf presentation cleanup.
 
 ### Relationship to later DB/SQL evidence
 
@@ -369,11 +369,11 @@ M5 does not introduce:
 3. **DONE** — Implement admin program create/edit/publish APIs and public published-program discovery.
 4. **DONE** — Implement applicant registration/session API contracts.
 5. **DONE** — Implement applicant application/attachment APIs including intake-window and optimistic-lock conflict semantics.
-6. **NEXT** — Implement reviewer queue/claim/decision APIs and remaining admin operational read APIs.
+6. **DONE** — Implement reviewer queue/claim/decision APIs and remaining admin operational read APIs.
 7. **DONE for current API surface; extend consistently as later endpoints are added** — Establish JSON error, CSRF, and API 401/403 behavior.
-8. Build the typed React/Vite client and public/registration/login shell.
-9. Build applicant workflow screens.
-10. Build reviewer screens and admin program/operational screens.
+8. **DONE** — Build the typed React/Vite client and public/registration/login shell.
+9. **DONE** — Build applicant workflow screens.
+10. **NEXT** — Build reviewer screens and admin program/operational screens.
 11. Add backend integration, frontend component/build, and real-stack browser E2E coverage.
 12. Validate Nginx SPA/API routing contract locally/CI.
 13. Remove obsolete Thymeleaf presentation paths before M5 completion.

@@ -6,6 +6,8 @@ import type {
   ProblemDetail,
   PublicProgram,
   RegisterRequest,
+  ApplicationCreateRequest, ApplicationDetail, ApplicationHistory, ApplicationListItem,
+  ApplicationStatus, ApplicationUpdateRequest, Attachment,
 } from '../types/api'
 
 export class ApiError extends Error {
@@ -47,6 +49,15 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return response.json() as Promise<T>
 }
 
+async function download(path: string): Promise<{ blob: Blob; filename?: string }> {
+  const response = await fetch(path, { credentials: 'same-origin' })
+  if (!response.ok) throw new ApiError(response.status, await readProblem(response))
+  const disposition = response.headers.get('content-disposition') ?? ''
+  const encoded = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1]
+  const quoted = disposition.match(/filename="([^"]+)"/i)?.[1]
+  return { blob: await response.blob(), filename: encoded ? decodeURIComponent(encoded) : quoted }
+}
+
 export const api = {
   programs: (page = 0, size = 20) =>
     request<ApiPage<PublicProgram>>(`/api/v1/programs?page=${page}&size=${size}`),
@@ -62,7 +73,24 @@ export const api = {
     csrf = undefined
     return user
   },
-  logout: () => request<void>('/api/v1/auth/logout', { method: 'POST' }),
+  logout: async () => {
+    await request<void>('/api/v1/auth/logout', { method: 'POST' })
+    csrf = undefined
+  },
+  applications: (page = 0, size = 20, status?: ApplicationStatus) => {
+    const query = new URLSearchParams({ page: String(page), size: String(size) })
+    if (status) query.set('status', status)
+    return request<ApiPage<ApplicationListItem>>(`/api/v1/applications?${query}`)
+  },
+  application: (id: string | number) => request<ApplicationDetail>(`/api/v1/applications/${id}`),
+  createApplication: (body: ApplicationCreateRequest) => request<ApplicationDetail>('/api/v1/applications', { method: 'POST', body: JSON.stringify(body) }),
+  updateApplication: (id: string | number, body: ApplicationUpdateRequest) => request<ApplicationDetail>(`/api/v1/applications/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  submitApplication: (id: string | number, version: number) => request<ApplicationDetail>(`/api/v1/applications/${id}/submit`, { method: 'POST', body: JSON.stringify({ version }) }),
+  applicationHistory: (id: string | number) => request<ApplicationHistory[]>(`/api/v1/applications/${id}/history`),
+  attachments: (id: string | number) => request<Attachment[]>(`/api/v1/applications/${id}/attachments`),
+  uploadAttachment: (id: string | number, file: File) => { const body = new FormData(); body.append('file', file); return request<Attachment>(`/api/v1/applications/${id}/attachments`, { method: 'POST', body }) },
+  downloadAttachment: (applicationId: string | number, attachmentId: number) => download(`/api/v1/applications/${applicationId}/attachments/${attachmentId}`),
+  deleteAttachment: (applicationId: string | number, attachmentId: number) => request<void>(`/api/v1/applications/${applicationId}/attachments/${attachmentId}`, { method: 'DELETE' }),
 }
 
 export function clearCsrfTokenForTests() {

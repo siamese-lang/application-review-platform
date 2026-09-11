@@ -58,6 +58,34 @@ describe('API client', () => {
     expect(body).not.toHaveProperty('role')
   })
 
+  it('discards the invalidated logout token before the next unsafe request', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse({ headerName: 'X-CSRF-TOKEN', parameterName: '_csrf', token: 'token-a' }))
+      .mockResolvedValueOnce(jsonResponse({ id: 7, role: 'APPLICANT' }))
+      .mockResolvedValueOnce(jsonResponse({ headerName: 'X-CSRF-TOKEN', parameterName: '_csrf', token: 'token-b' }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(jsonResponse({ headerName: 'X-CSRF-TOKEN', parameterName: '_csrf', token: 'token-c' }))
+      .mockResolvedValueOnce(jsonResponse({ id: 7, role: 'APPLICANT' }))
+    vi.stubGlobal('fetch', fetchMock)
+    await api.login({ username: 'alex', password: 'correct-password' }); await api.logout(); await api.login({ username: 'alex', password: 'correct-password' })
+    expect(fetchMock.mock.calls.map(([path]) => path)).toEqual(['/api/v1/auth/csrf', '/api/v1/auth/login', '/api/v1/auth/csrf', '/api/v1/auth/logout', '/api/v1/auth/csrf', '/api/v1/auth/login'])
+    expect(new Headers((fetchMock.mock.calls[5][1] as RequestInit).headers).get('X-CSRF-TOKEN')).toBe('token-c')
+  })
+
+  it('uploads only the file in FormData without setting multipart content type', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(jsonResponse({ headerName: 'X-CSRF-TOKEN', parameterName: '_csrf', token: 'token' })).mockResolvedValueOnce(jsonResponse({ id: 1, filename: 'evidence.txt' }))
+    vi.stubGlobal('fetch', fetchMock); const file = new File(['proof'], 'evidence.txt', { type: 'text/plain' }); await api.uploadAttachment(9, file)
+    const init = fetchMock.mock.calls[1][1] as RequestInit
+    expect(init.body).toBeInstanceOf(FormData); expect(Array.from((init.body as FormData).keys())).toEqual(['file']); expect(new Headers(init.headers).has('Content-Type')).toBe(false)
+  })
+
+  it('sends structured application create fields', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(jsonResponse({ headerName: 'X-CSRF-TOKEN', parameterName: '_csrf', token: 'token' })).mockResolvedValueOnce(jsonResponse({ id: 8 })))
+    const body = { programId: 1, applicantOrganizationName: 'Org', projectTitle: 'Project', shortSummary: 'Summary', requestedAmount: 1000, detailedPlan: 'Plan' }
+    await api.createApplication(body)
+    expect(JSON.parse((vi.mocked(fetch).mock.calls[1][1] as RequestInit).body as string)).toEqual(body)
+  })
+
   it('exposes ProblemDetail errors', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ title: 'Conflict', status: 409, detail: 'Username already exists' }, 409)))
     try {
