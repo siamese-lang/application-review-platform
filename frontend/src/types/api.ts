@@ -52,3 +52,26 @@ export interface ProblemDetail {
   instance?: string
   [extension: string]: unknown
 }
+
+export type ApplicationStatus = 'DRAFT' | 'SUBMITTED' | 'IN_REVIEW' | 'NEEDS_REVISION' | 'APPROVED' | 'REJECTED'
+export type AttachmentStatus = 'PENDING' | 'AVAILABLE' | 'FAILED' | 'DELETE_PENDING'
+
+export interface ProgramSummary { id: number; code: string; title: string }
+export interface ApplicationListItem {
+  id: number; program: ProgramSummary; projectTitle: string; requestedAmount: number
+  status: ApplicationStatus; version: number; createdAt: string; updatedAt: string
+}
+export interface ApplicationDetail extends ApplicationListItem {
+  applicantOrganizationName: string; shortSummary: string; detailedPlan: string
+}
+export interface ApplicationHistory {
+  id: number; changedAt: string; fromStatus: ApplicationStatus | null; toStatus: ApplicationStatus; reason: string | null
+}
+export interface ApplicationCreateRequest {
+  programId: number; applicantOrganizationName: string; projectTitle: string
+  shortSummary: string; requestedAmount: number; detailedPlan: string
+}
+export interface ApplicationUpdateRequest extends Omit<ApplicationCreateRequest, 'programId'> { version: number }
+export interface Attachment {
+  id: number; filename: string; contentType: string; size: number | null; status: AttachmentStatus; createdAt: string
+}
