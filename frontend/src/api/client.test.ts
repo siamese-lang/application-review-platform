@@ -23,6 +23,30 @@ describe('API client', () => {
     expect(loginInit.credentials).toBe('same-origin')
   })
 
+  it('refreshes the CSRF token after login before logout', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse({ headerName: 'X-CSRF-TOKEN', parameterName: '_csrf', token: 'token-a' }))
+      .mockResolvedValueOnce(jsonResponse({ id: 7, username: 'alex', displayName: 'Alex', email: 'alex@example.test', role: 'APPLICANT' }))
+      .mockResolvedValueOnce(jsonResponse({ headerName: 'X-CSRF-TOKEN', parameterName: '_csrf', token: 'token-b' }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await api.login({ username: 'alex', password: 'correct-password' })
+    await api.logout()
+
+    expect(fetchMock).toHaveBeenCalledTimes(4)
+    expect(fetchMock.mock.calls.map(([path]) => path)).toEqual([
+      '/api/v1/auth/csrf',
+      '/api/v1/auth/login',
+      '/api/v1/auth/csrf',
+      '/api/v1/auth/logout',
+    ])
+    const loginHeaders = new Headers((fetchMock.mock.calls[1][1] as RequestInit).headers)
+    const logoutHeaders = new Headers((fetchMock.mock.calls[3][1] as RequestInit).headers)
+    expect(loginHeaders.get('X-CSRF-TOKEN')).toBe('token-a')
+    expect(logoutHeaders.get('X-CSRF-TOKEN')).toBe('token-b')
+  })
+
   it('registration sends only the public registration contract without a role', async () => {
     vi.stubGlobal('fetch', vi.fn()
       .mockResolvedValueOnce(jsonResponse({ headerName: 'X-CSRF-TOKEN', parameterName: '_csrf', token: 'token' }))

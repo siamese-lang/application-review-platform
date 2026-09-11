@@ -54,8 +54,14 @@ export const api = {
   currentUser: () => request<CurrentUser>('/api/v1/auth/me'),
   register: (registration: RegisterRequest) =>
     request<CurrentUser>('/api/v1/auth/register', { method: 'POST', body: JSON.stringify(registration) }),
-  login: (credentials: LoginRequest) =>
-    request<CurrentUser>('/api/v1/auth/login', { method: 'POST', body: JSON.stringify(credentials) }),
+  login: async (credentials: LoginRequest) => {
+    const user = await request<CurrentUser>('/api/v1/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    })
+    csrf = undefined
+    return user
+  },
   logout: () => request<void>('/api/v1/auth/logout', { method: 'POST' }),
 }
 
