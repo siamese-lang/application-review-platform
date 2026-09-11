@@ -8,6 +8,7 @@ import type {
   RegisterRequest,
   ApplicationCreateRequest, ApplicationDetail, ApplicationHistory, ApplicationListItem,
   ApplicationStatus, ApplicationUpdateRequest, Attachment,
+  ReviewerApplicationDetail, ReviewerQueueItem,
 } from '../types/api'
 
 export class ApiError extends Error {
@@ -91,6 +92,19 @@ export const api = {
   uploadAttachment: (id: string | number, file: File) => { const body = new FormData(); body.append('file', file); return request<Attachment>(`/api/v1/applications/${id}/attachments`, { method: 'POST', body }) },
   downloadAttachment: (applicationId: string | number, attachmentId: number) => download(`/api/v1/applications/${applicationId}/attachments/${attachmentId}`),
   deleteAttachment: (applicationId: string | number, attachmentId: number) => request<void>(`/api/v1/applications/${applicationId}/attachments/${attachmentId}`, { method: 'DELETE' }),
+  reviewQueue: (page = 0, size = 20, status?: 'SUBMITTED' | 'IN_REVIEW') => {
+    const query = new URLSearchParams({ page: String(page), size: String(size) })
+    if (status) query.set('status', status)
+    return request<ApiPage<ReviewerQueueItem>>(`/api/v1/review/applications?${query}`)
+  },
+  reviewerApplication: (id: string | number) => request<ReviewerApplicationDetail>(`/api/v1/review/applications/${id}`),
+  startReview: (id: string | number, version: number) => request<ReviewerApplicationDetail>(`/api/v1/review/applications/${id}/start`, { method: 'POST', body: JSON.stringify({ version }) }),
+  requestRevision: (id: string | number, version: number, reason: string) => request<ReviewerApplicationDetail>(`/api/v1/review/applications/${id}/request-revision`, { method: 'POST', body: JSON.stringify({ version, reason }) }),
+  approveApplication: (id: string | number, version: number) => request<ReviewerApplicationDetail>(`/api/v1/review/applications/${id}/approve`, { method: 'POST', body: JSON.stringify({ version }) }),
+  rejectApplication: (id: string | number, version: number, reason: string) => request<ReviewerApplicationDetail>(`/api/v1/review/applications/${id}/reject`, { method: 'POST', body: JSON.stringify({ version, reason }) }),
+  reviewerHistory: (id: string | number) => request<ApplicationHistory[]>(`/api/v1/review/applications/${id}/history`),
+  reviewerAttachments: (id: string | number) => request<Attachment[]>(`/api/v1/review/applications/${id}/attachments`),
+  downloadReviewerAttachment: (applicationId: string | number, attachmentId: number) => download(`/api/v1/review/applications/${applicationId}/attachments/${attachmentId}`),
 }
 
 export function clearCsrfTokenForTests() {

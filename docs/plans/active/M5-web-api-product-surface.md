@@ -95,13 +95,13 @@ Completed slices:
   - no schema migration or speculative performance index.
 - Reviewer queue/detail/claim/decision and attachment APIs, remaining ADMIN operational read APIs, and the React/Vite public/auth shell are present on the current baseline.
 - The applicant workflow React slice now covers guarded list/create/detail/edit routes, version-aware submission, attachments, history, and public Program entry.
+- The reviewer workflow React slice now covers guarded queue/detail routes, active-work filtering and pagination, version-aware claim-on-start, conflict recovery, decisions, read-only attachments, and history.
 
 The next implementation slice is:
 
-1. reviewer workflow screens;
-2. ADMIN program and operational screens;
-3. real-stack applicant/reviewer browser E2E;
-4. Nginx SPA routing validation and Thymeleaf presentation cleanup.
+1. ADMIN program and operational screens;
+2. real-stack applicant/reviewer browser E2E;
+3. Nginx SPA routing validation and Thymeleaf presentation cleanup.
 
 ### Relationship to later DB/SQL evidence
 
@@ -373,7 +373,7 @@ M5 does not introduce:
 7. **DONE for current API surface; extend consistently as later endpoints are added** — Establish JSON error, CSRF, and API 401/403 behavior.
 8. **DONE** — Build the typed React/Vite client and public/registration/login shell.
 9. **DONE** — Build applicant workflow screens.
-10. **NEXT** — Build reviewer screens and admin program/operational screens.
+10. **DONE (reviewer); NEXT (admin)** — Build reviewer screens and admin program/operational screens.
 11. Add backend integration, frontend component/build, and real-stack browser E2E coverage.
 12. Validate Nginx SPA/API routing contract locally/CI.
 13. Remove obsolete Thymeleaf presentation paths before M5 completion.
