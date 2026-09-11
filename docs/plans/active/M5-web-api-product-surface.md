@@ -98,11 +98,10 @@ Completed slices:
 - The reviewer workflow React slice now covers guarded queue/detail routes, active-work filtering and pagination, version-aware claim-on-start, conflict recovery, decisions, read-only attachments, and history.
 - The ADMIN React slice now covers guarded program DRAFT creation/edit/publication, workflow counts, and paginated read-only user/application/history/audit operations.
 - Real-stack Chromium E2E now covers public discovery, applicant registration/login, draft/edit/attachment/submit, reviewer revision, applicant resubmission, reviewer approval, and final applicant status against Spring Boot, PostgreSQL, Garage, Spring Session/CSRF, and the Vite same-origin development proxy.
+- The Nginx edge contract now serves the Vite static release with SPA fallback, proxies `/api` before fallback, keeps fingerprinted assets long-cacheable, keeps browser entry HTML update-safe, and is exercised by a real Nginx CI job against the Spring backend.
+- Legacy Thymeleaf controllers/templates, form-login browser security chain, and the Thymeleaf runtime dependency are removed; domain/service compatibility methods remain for M1–M4 regression coverage.
 
-The next implementation slice is:
-
-1. Nginx SPA routing validation and Thymeleaf presentation cleanup;
-2. final M5 verification.
+The next implementation slice is final M5 verification and milestone completion.
 
 ### Relationship to later DB/SQL evidence
 
@@ -376,8 +375,9 @@ M5 does not introduce:
 9. **DONE** — Build applicant workflow screens.
 10. **DONE** — Build applicant, reviewer, and admin program/operational screens.
 11. **DONE** — Add real-stack applicant/reviewer browser E2E coverage.
-12. **NEXT** — Validate Nginx SPA/API routing contract locally/CI.
-13. Remove obsolete Thymeleaf presentation paths before M5 completion.
+12. **DONE** — Validate Nginx SPA/API routing contract locally/CI.
+13. **DONE** — Remove obsolete Thymeleaf presentation paths before M5 completion.
+14. **NEXT** — Perform final M5 verification, move the plan to completed, and verify post-merge `main` before M6.
 
 Do not move to M6 merely because the SPA renders; the full identity/business/API verification below must pass.
 

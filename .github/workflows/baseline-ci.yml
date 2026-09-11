@@ -151,6 +151,93 @@ jobs:
             kill "$(cat ci-diagnostics/e2e-backend.pid)" 2>/dev/null || true
           fi
 
+  m5-nginx-routing:
+    needs: [m1-application, m5-frontend]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: application_review_nginx
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d application_review_nginx"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Build SPA static release
+        working-directory: frontend
+        run: npm run build
+      - name: Build Spring Boot application
+        run: ./mvnw -pl app -DskipTests package
+      - name: Start backend for Nginx routing verification
+        env:
+          DB_URL: jdbc:postgresql://127.0.0.1:5432/application_review_nginx
+          DB_USERNAME: postgres
+          DB_PASSWORD: postgres
+          GARAGE_ENDPOINT: http://127.0.0.1:3900
+          GARAGE_BUCKET: application-review-nginx
+          GARAGE_REGION: garage
+          GARAGE_ACCESS_KEY: synthetic-nginx-access
+          GARAGE_SECRET_KEY: synthetic-nginx-secret
+          ATTACHMENT_RECONCILIATION_SCHEDULE: '-'
+        shell: bash
+        run: |
+          mkdir -p ci-diagnostics
+          nohup java -jar app/target/application-review-platform-0.1.0-SNAPSHOT.jar > ci-diagnostics/nginx-backend.log 2>&1 &
+          echo $! > ci-diagnostics/nginx-backend.pid
+      - name: Wait for backend readiness
+        shell: bash
+        run: |
+          for attempt in $(seq 1 90); do
+            if curl --fail --silent --output /dev/null http://127.0.0.1:8080/api/v1/programs; then
+              exit 0
+            fi
+            if ! kill -0 "$(cat ci-diagnostics/nginx-backend.pid)" 2>/dev/null; then
+              cat ci-diagnostics/nginx-backend.log >&2 || true
+              exit 1
+            fi
+            sleep 1
+          done
+          cat ci-diagnostics/nginx-backend.log >&2 || true
+          exit 1
+      - name: Install Nginx
+        run: sudo apt-get update -qq && sudo apt-get install -y nginx
+      - name: Verify SPA fallback and API proxy contract
+        run: bash scripts/verify-m5-nginx-routing.sh
+      - name: Upload Nginx routing diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m5-nginx-routing-${{ github.run_id }}
+          path: |
+            ci-diagnostics/**
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Stop routing-test backend
+        if: always()
+        shell: bash
+        run: |
+          if [ -f ci-diagnostics/nginx-backend.pid ]; then
+            kill "$(cat ci-diagnostics/nginx-backend.pid)" 2>/dev/null || true
+          fi
+
   repository-baseline:
     runs-on: ubuntu-latest
     steps:

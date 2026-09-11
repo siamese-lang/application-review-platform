@@ -1,1 +1,0 @@
-<!doctype html><html><head><title>Programs</title></head><body><main><h1>Programs</h1><ul><li th:each="p:${programs}"><a th:href="@{/programs/{id}(id=${p.id})}" th:text="${p.title}"></a></li></ul><a href="/">Home</a></main></body></html>

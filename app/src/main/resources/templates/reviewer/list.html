@@ -1,1 +1,0 @@
-<!doctype html><html><head><title>Review queue</title></head><body><main><h1>Review queue</h1><ul><li th:each="a:${applications}"><a th:href="@{/review/{id}(id=${a.id})}" th:text="${a.title}"></a> — <span th:text="${a.status}"></span></li></ul><a href="/">Home</a></main></body></html>

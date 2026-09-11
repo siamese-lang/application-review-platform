@@ -1,1 +1,0 @@
-<!doctype html><html><head><title>Applications</title></head><body><main><h1>Applications</h1><ul><li th:each="a:${applications}"><a th:href="@{/admin/applications/{id}(id=${a.id})}" th:text="${a.title}"></a> — <span th:text="${a.status}"></span></li></ul></main></body></html>
