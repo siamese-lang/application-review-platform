@@ -17,8 +17,8 @@ export function ProgramsPage() {
 
   return <section className="page">
     <div className="page-heading"><div><div className="eyebrow">Published opportunities</div><h1>Programs</h1><p>Explore currently published support programs and their intake windows.</p></div></div>
-    {!result && !error && <div className="notice" role="status">Loading programs…</div>}
-    {error && <ErrorNotice error={error} />}
+    {!result && error === undefined && <div className="notice" role="status">Loading programs…</div>}
+    {error !== undefined && <ErrorNotice error={error} />}
     {result?.items.length === 0 && <div className="empty"><h2>No published programs</h2><p>There are no opportunities to show right now. Please check again later.</p></div>}
     {result && result.items.length > 0 && <div className="program-grid">
       {result.items.map((program) => <article className="program-card" key={program.id}>
