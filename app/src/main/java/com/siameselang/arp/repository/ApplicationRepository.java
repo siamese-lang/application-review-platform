@@ -1,7 +1,13 @@
 package com.siameselang.arp.repository;
 import com.siameselang.arp.domain.*; import org.springframework.data.jpa.repository.*; import org.springframework.data.repository.query.Param; import java.util.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 public interface ApplicationRepository extends JpaRepository<Application,Long>{
  List<Application> findByApplicantOrderByCreatedAtDesc(User applicant);
+ @EntityGraph(attributePaths = "program")
+ Page<Application> findByApplicant(User applicant, Pageable pageable);
+ @EntityGraph(attributePaths = "program")
+ Page<Application> findByApplicantAndStatus(User applicant, ApplicationStatus status, Pageable pageable);
  @Query("""
      select a from Application a
      where (a.status = 'SUBMITTED' and (a.reviewer is null or a.reviewer = :reviewer))

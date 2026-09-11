@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @Transactional(readOnly = true)
@@ -129,6 +131,24 @@ public class ApplicationService {
     }
 
     @Transactional
+    public Application submit(User actor, long id, long expectedVersion) {
+        Application application = load(id);
+        requireOwner(actor, application);
+        requireVersion(application, expectedVersion);
+        if (application.getStatus() != ApplicationStatus.DRAFT
+                && application.getStatus() != ApplicationStatus.NEEDS_REVISION) {
+            throw new BusinessRuleException("Only a draft or revision may be submitted");
+        }
+        transition(
+                application,
+                actor,
+                ApplicationStatus.SUBMITTED,
+                null,
+                AuditEventType.APPLICATION_SUBMITTED);
+        return application;
+    }
+
+    @Transactional
     public Application startReview(User actor, long id) {
         requireRole(actor, Role.REVIEWER);
         Application application = load(id);
@@ -208,6 +228,16 @@ public class ApplicationService {
     public List<Application> mine(User actor) {
         requireRole(actor, Role.APPLICANT);
         return applications.findByApplicantOrderByCreatedAtDesc(actor);
+    }
+
+    public Page<Application> mine(
+            User actor,
+            ApplicationStatus status,
+            Pageable pageable) {
+        requireRole(actor, Role.APPLICANT);
+        return status == null
+                ? applications.findByApplicant(actor, pageable)
+                : applications.findByApplicantAndStatus(actor, status, pageable);
     }
 
     public List<Application> reviewQueue(User actor) {
