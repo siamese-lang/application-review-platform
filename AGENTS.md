@@ -7,17 +7,18 @@ This repository is the source of truth for the Application Review Platform. Read
 ## Required reading
 
 1. `README.md`
-2. `docs/WORKFLOW.md`
-3. `docs/product/PRODUCT.md`
-4. `docs/domain/DOMAIN.md`
-5. `docs/architecture/ARCHITECTURE.md`
-6. `docs/security/SECURITY.md`
-7. `docs/data/DATA.md`
-8. `docs/operations/BACKUP_RECOVERY.md`
-9. `docs/workload/WORKLOAD.md`
-10. `docs/NON_GOALS.md`
-11. `docs/FREEZE_RECORD.md`
-12. The current plan under `docs/plans/active/`, when one exists
+2. `docs/PROJECT_EXECUTION.md`
+3. `docs/WORKFLOW.md`
+4. `docs/product/PRODUCT.md`
+5. `docs/domain/DOMAIN.md`
+6. `docs/architecture/ARCHITECTURE.md`
+7. `docs/security/SECURITY.md`
+8. `docs/data/DATA.md`
+9. `docs/operations/BACKUP_RECOVERY.md`
+10. `docs/workload/WORKLOAD.md`
+11. `docs/NON_GOALS.md`
+12. `docs/FREEZE_RECORD.md`
+13. The current plan under `docs/plans/active/`, when one exists
 
 ## Working rules
 
@@ -33,6 +34,7 @@ This repository is the source of truth for the Application Review Platform. Read
 - When CI fails, identify the first meaningful causal failure and compare it with the exact commit under test before changing code or configuration. Do not change several plausible causes at once.
 - Never commit secrets, credentials, private keys, tokens, or real personal data. Do not place secrets in prompts, logs, README files, images, or container images.
 - Prefer the simplest implementation that satisfies the frozen requirements and that the project owner can explain.
+- Follow `docs/PROJECT_EXECUTION.md` for portfolio evidence goals, DB/SQL evidence requirements, tool division, and anti-drift rules.
 
 ## Planning rule
 
