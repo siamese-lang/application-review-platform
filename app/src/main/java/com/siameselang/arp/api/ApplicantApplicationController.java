@@ -44,7 +44,7 @@ public class ApplicantApplicationController {
     }
 
     @GetMapping
-    ApiPage<ApplicationResponse> list(
+    ApiPage<ApplicationListItemResponse> list(
             Authentication authentication,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -54,7 +54,7 @@ public class ApplicantApplicationController {
                 size,
                 Sort.by(Sort.Direction.DESC, "updatedAt")
                         .and(Sort.by(Sort.Direction.DESC, "id")));
-        return ApiPage.from(applications.mine(actor(authentication), status, pageable), this::response);
+        return ApiPage.from(applications.mine(actor(authentication), status, pageable), this::listResponse);
     }
 
     @PostMapping
@@ -112,6 +112,19 @@ public class ApplicantApplicationController {
         return currentUsers.require(authentication.getName());
     }
 
+    private ApplicationListItemResponse listResponse(Application application) {
+        Program program = application.getProgram();
+        return new ApplicationListItemResponse(
+                application.getId(),
+                new ProgramSummary(program.getId(), program.getCode(), program.getTitle()),
+                application.getProjectTitle(),
+                application.getRequestedAmount(),
+                application.getStatus(),
+                application.getVersion(),
+                application.getCreatedAt(),
+                application.getUpdatedAt());
+    }
+
     private ApplicationResponse response(Application application) {
         Program program = application.getProgram();
         return new ApplicationResponse(
@@ -156,6 +169,16 @@ public class ApplicantApplicationController {
     public record VersionRequest(@NotNull @PositiveOrZero Long version) {}
 
     public record ProgramSummary(long id, String code, String title) {}
+
+    public record ApplicationListItemResponse(
+            long id,
+            ProgramSummary program,
+            String projectTitle,
+            BigDecimal requestedAmount,
+            ApplicationStatus status,
+            long version,
+            Instant createdAt,
+            Instant updatedAt) {}
 
     public record ApplicationResponse(
             long id,

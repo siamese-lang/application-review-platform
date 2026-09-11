@@ -278,7 +278,7 @@ public class ApplicationService {
     private void requireOwner(User user, Application application) {
         requireRole(user, Role.APPLICANT);
         if (!application.getApplicant().getId().equals(user.getId())) {
-            throw new BusinessRuleException("Application belongs to another applicant");
+            throw new ResourceOwnershipException("Application not found");
         }
     }
 

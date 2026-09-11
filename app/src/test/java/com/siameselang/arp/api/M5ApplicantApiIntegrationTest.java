@@ -130,10 +130,15 @@ class M5ApplicantApiIntegrationTest {
                         .with(user(owner.getUsername()).roles("APPLICANT")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElements").value(1))
-                .andExpect(jsonPath("$.items[0].program.code").value(openProgram.getCode()));
+                .andExpect(jsonPath("$.items[0].program.code").value(openProgram.getCode()))
+                .andExpect(jsonPath("$.items[0].projectTitle").value("Project title"))
+                .andExpect(jsonPath("$.items[0].requestedAmount").value(1000.00))
+                .andExpect(jsonPath("$.items[0].applicantOrganizationName").doesNotExist())
+                .andExpect(jsonPath("$.items[0].shortSummary").doesNotExist())
+                .andExpect(jsonPath("$.items[0].detailedPlan").doesNotExist());
         mvc.perform(get("/api/v1/applications/" + otherId)
                         .with(user(owner.getUsername()).roles("APPLICANT")))
-                .andExpect(status().isUnprocessableEntity());
+                .andExpect(status().isNotFound());
         mvc.perform(get("/api/v1/applications/" + id)
                         .with(user(owner.getUsername()).roles("APPLICANT")))
                 .andExpect(status().isOk())
@@ -141,12 +146,12 @@ class M5ApplicantApiIntegrationTest {
                 .andExpect(jsonPath("$.version").value(0));
         mvc.perform(get("/api/v1/applications/" + id)
                         .with(user(other.getUsername()).roles("APPLICANT")))
-                .andExpect(status().isUnprocessableEntity());
+                .andExpect(status().isNotFound());
         mvc.perform(put("/api/v1/applications/" + id)
                         .with(user(other.getUsername()).roles("APPLICANT")).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateBody(0, "Unauthorized edit")))
-                .andExpect(status().isUnprocessableEntity());
+                .andExpect(status().isNotFound());
 
         mvc.perform(put("/api/v1/applications/" + id)
                         .with(user(owner.getUsername()).roles("APPLICANT")).with(csrf())
@@ -227,9 +232,18 @@ class M5ApplicantApiIntegrationTest {
                 .andExpect(header().longValue("Content-Length", 18))
                 .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.containsString("evidence.txt")))
                 .andExpect(content().bytes("synthetic evidence".getBytes()));
+        mvc.perform(get("/api/v1/applications/" + id + "/attachments")
+                        .with(user(other.getUsername()).roles("APPLICANT")))
+                .andExpect(status().isNotFound());
+        mvc.perform(multipart("/api/v1/applications/" + id + "/attachments")
+                        .file(file).with(user(other.getUsername()).roles("APPLICANT")).with(csrf()))
+                .andExpect(status().isNotFound());
         mvc.perform(get("/api/v1/applications/" + id + "/attachments/" + attachmentId)
                         .with(user(other.getUsername()).roles("APPLICANT")))
-                .andExpect(status().isUnprocessableEntity());
+                .andExpect(status().isNotFound());
+        mvc.perform(delete("/api/v1/applications/" + id + "/attachments/" + attachmentId)
+                        .with(user(other.getUsername()).roles("APPLICANT")).with(csrf()))
+                .andExpect(status().isNotFound());
 
         MockMultipartFile disposable = new MockMultipartFile(
                 "file", "delete.txt", "text/plain", "delete me".getBytes());
