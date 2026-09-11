@@ -21,9 +21,8 @@
 - Current implementation milestone: M5 Web/API & Product Surface
 - M5 pre-implementation architecture review: complete; ADR-001 through ADR-003 form the implementation baseline
 - Active plan: `docs/plans/active/M5-web-api-product-surface.md`
-- M5 implementation checkpoint: schema/domain foundation, business services, session/auth API, Program APIs, and applicant Application/Attachment REST APIs are merged
-- M5 applicant API baseline after PR #20: `91658ba7da432cb3f7ba8a20d137e32078f2ced2`; exact-head run `34583818541` and post-merge run `34584088613` passed all required jobs
-- Next M5 slice: reviewer queue/detail/claim/decision REST API and remaining ADMIN operational read APIs; React SPA follows after the core REST workflows are stable
+- M5 implementation checkpoint: the current REST surface plus public/auth, applicant, reviewer, and admin React SPA workflows are implemented; real-stack Chromium E2E exercises the applicant/reviewer business flow against Spring Boot, PostgreSQL, Garage, Spring Session, CSRF, and the Vite `/api` proxy
+- Next M5 slice: validate the Nginx SPA/API routing contract, remove or narrowly justify obsolete Thymeleaf presentation paths, then perform final M5 verification
 
 This project is **production-like**, not a claim of real production operation. All users, organizations, applications, documents, workloads, and measurements are synthetic unless explicitly recorded otherwise.
 
