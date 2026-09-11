@@ -37,6 +37,7 @@ import java.nio.file.Files;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,6 +63,7 @@ class M5ApplicantApiIntegrationTest {
     @Autowired private AuditEventRepository audits;
     @Autowired private ApplicationService applicationService;
     @Autowired private PasswordEncoder passwords;
+    @Autowired private JsonMapper jsonMapper;
     @MockitoBean private ObjectStorage storage;
 
     private final Map<String, byte[]> objects = new ConcurrentHashMap<>();
@@ -213,8 +215,7 @@ class M5ApplicantApiIntegrationTest {
                 .andExpect(jsonPath("$.filename").value("evidence.txt"))
                 .andExpect(jsonPath("$.objectKey").doesNotExist())
                 .andReturn().getResponse().getContentAsString();
-        long attachmentId = new com.fasterxml.jackson.databind.ObjectMapper()
-                .readTree(response).get("id").asLong();
+        long attachmentId = jsonMapper.readTree(response).get("id").asLong();
 
         mvc.perform(get("/api/v1/applications/" + id + "/attachments")
                         .with(user(owner.getUsername()).roles("APPLICANT")))
@@ -235,8 +236,7 @@ class M5ApplicantApiIntegrationTest {
         String disposableResponse = mvc.perform(multipart("/api/v1/applications/" + id + "/attachments")
                         .file(disposable).with(user(owner.getUsername()).roles("APPLICANT")).with(csrf()))
                 .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
-        long disposableId = new com.fasterxml.jackson.databind.ObjectMapper()
-                .readTree(disposableResponse).get("id").asLong();
+        long disposableId = jsonMapper.readTree(disposableResponse).get("id").asLong();
         mvc.perform(delete("/api/v1/applications/" + id + "/attachments/" + disposableId)
                         .with(user(owner.getUsername()).roles("APPLICANT")).with(csrf()))
                 .andExpect(status().isNoContent());
