@@ -21,9 +21,9 @@
 - Current implementation milestone: M5 Web/API & Product Surface
 - M5 pre-implementation architecture review: complete; ADR-001 through ADR-003 form the implementation baseline
 - Active plan: `docs/plans/active/M5-web-api-product-surface.md`
-- M5 implementation checkpoint: schema/domain foundation, business services, session/auth API, public Program API, and ADMIN Program API are merged and green
-- M5 implementation baseline after PR #17: `18504bd14fe9a6c06f3b3c8b59a809591053eb9f` (post-merge run `34513478612` all required jobs successful)
-- Next M5 slice: applicant application/attachment REST API, followed by reviewer/admin operational REST API
+- M5 implementation checkpoint: schema/domain foundation, business services, session/auth API, Program APIs, and applicant Application/Attachment REST APIs are merged
+- M5 applicant API baseline after PR #20: `91658ba7da432cb3f7ba8a20d137e32078f2ced2`; exact-head run `34583818541` and post-merge run `34584088613` passed all required jobs
+- Next M5 slice: reviewer queue/detail/claim/decision REST API and remaining ADMIN operational read APIs; React SPA follows after the core REST workflows are stable
 
 This project is **production-like**, not a claim of real production operation. All users, organizations, applications, documents, workloads, and measurements are synthetic unless explicitly recorded otherwise.
 
