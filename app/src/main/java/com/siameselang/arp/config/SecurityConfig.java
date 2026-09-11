@@ -115,34 +115,6 @@ public class SecurityConfig {
                 .build();
     }
 
-    @Bean
-    @Order(2)
-    SecurityFilterChain webSecurity(
-            HttpSecurity http,
-            AuthenticationManager authenticationManager,
-            CsrfTokenRepository csrfTokens) throws Exception {
-        return http
-                .authenticationManager(authenticationManager)
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/login", "/error")
-                        .permitAll()
-                        .requestMatchers("/admin/**")
-                        .hasRole("ADMIN")
-                        .requestMatchers("/applications/**")
-                        .hasRole("APPLICANT")
-                        .requestMatchers("/review/**")
-                        .hasRole("REVIEWER")
-                        .anyRequest()
-                        .authenticated())
-                .csrf(csrf -> csrf.csrfTokenRepository(csrfTokens))
-                .formLogin(form -> form
-                        .loginPage("/login")
-                        .defaultSuccessUrl("/", true)
-                        .permitAll())
-                .logout(logout -> logout.logoutSuccessUrl("/login?logout"))
-                .build();
-    }
-
     private static void writeProblem(
             jakarta.servlet.http.HttpServletResponse response,
             int status,
