@@ -30,9 +30,24 @@ ChatGPT may make small, targeted, reviewable repository changes directly when ap
 
 ### Codex
 
-Codex is the preferred implementation workspace for substantive multi-file application, infrastructure, automation, or refactoring work. Before implementation it must read `AGENTS.md`, this workflow document, the relevant frozen M0 documents, and the current active plan.
+Codex is the preferred implementation workspace for substantive multi-file application, infrastructure, automation, frontend, or refactoring work. Before implementation it must read `AGENTS.md`, `docs/PROJECT_EXECUTION.md`, this workflow document, the relevant frozen M0 documents, and the current active plan.
 
 Codex works on a branch, preserves the requested scope, runs available verification, and leaves changes in a state that can be independently reviewed through GitHub. A Codex statement that work succeeded is not a substitute for repository diff review or CI.
+
+### ChatGPT/Codex handoff discipline
+
+For one substantive implementation slice, assign one implementation owner. ChatGPT and Codex must not independently edit the same branch/scope in parallel.
+
+Preferred flow:
+
+1. ChatGPT/repository state establishes the exact base commit, active-plan scope, acceptance criteria, and prohibited changes.
+2. Codex implements the bounded multi-file slice and runs available local/workspace verification.
+3. GitHub diff and exact-head CI are reviewed independently.
+4. ChatGPT coordinates narrow corrections, PR/CI diagnosis, merge decision, and durable plan/handoff updates.
+
+ChatGPT may directly perform small documentation/metadata changes, PR/CI operations, or narrowly scoped fixes. It should not create a competing implementation of the same substantive Codex slice.
+
+See `docs/PROJECT_EXECUTION.md` for the durable project-purpose and evidence guardrails.
 
 ### GitHub Actions
 

@@ -21,6 +21,9 @@
 - Current implementation milestone: M5 Web/API & Product Surface
 - M5 pre-implementation architecture review: complete; ADR-001 through ADR-003 form the implementation baseline
 - Active plan: `docs/plans/active/M5-web-api-product-surface.md`
+- M5 implementation checkpoint: schema/domain foundation, business services, session/auth API, public Program API, and ADMIN Program API are merged and green
+- Current verified main checkpoint: `18504bd14fe9a6c06f3b3c8b59a809591053eb9f` (post-merge run `34513478612` all required jobs successful)
+- Next M5 slice: applicant application/attachment REST API, followed by reviewer/admin operational REST API
 
 This project is **production-like**, not a claim of real production operation. All users, organizations, applications, documents, workloads, and measurements are synthetic unless explicitly recorded otherwise.
 
@@ -78,7 +81,7 @@ See `docs/operations/GCP_BASELINE.md` and `docs/operations/M4_RUNTIME_EVIDENCE.m
 
 ## Source of truth
 
-Read `AGENTS.md` first. The M0 documents under `docs/`, accepted ADRs, the current active plan, code/configuration, PRs, and exact-head CI together define project state.
+Read `AGENTS.md` first. `docs/PROJECT_EXECUTION.md` defines the durable project purpose, portfolio evidence goals, DB/SQL evidence requirement, and anti-drift working rules. The M0 documents under `docs/`, accepted ADRs, the current active plan, code/configuration, PRs, and exact-head CI together define project state.
 
 `docs/WORKFLOW.md` defines how ChatGPT, Codex, GitHub, GitHub Actions, external documentation, and GCP/`ops-01` work together. New sessions should recover project state from the repository before relying on prior conversation context.
 

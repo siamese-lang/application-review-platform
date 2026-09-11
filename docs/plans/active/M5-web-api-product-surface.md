@@ -58,6 +58,54 @@ ADR-001, ADR-002, and ADR-003 together define the M5 implementation baseline. Th
 
 Do not reopen the architecture merely because implementation exposes a cosmetic preference or an opportunity to add another technology. Change the baseline only when a concrete implementation/test result or newly discovered business requirement proves an accepted decision incorrect or incomplete. Such a change requires an explicit ADR or plan amendment before code is built around it.
 
+## Current implementation checkpoint
+
+Checkpoint date: 2026-09-11
+
+Verified `main`: `18504bd14fe9a6c06f3b3c8b59a809591053eb9f`  
+Post-merge workflow: `34513478612` — `repository-baseline`, `m1-application`, and `m4-infrastructure-static` all successful.
+
+Completed slices:
+
+- PR #15 — M5 schema/domain foundation
+  - Flyway V5 user/program/application enrichment;
+  - deterministic synthetic backfill;
+  - generalized application/program/user audit subjects;
+  - JPA mappings and M1–M4 regression compatibility.
+- PR #16 — M5 business services
+  - applicant registration service;
+  - ADMIN program draft/edit/publish lifecycle;
+  - server-side intake-window admission rule;
+  - structured application edits and conflict semantics;
+  - exclusive reviewer claim-on-start concurrency verification.
+- PR #17 — M5 authentication and Program REST boundary
+  - API/web Spring Security chain separation;
+  - CSRF bootstrap;
+  - JSON registration/login/logout/current-user API;
+  - Spring Session JDBC session persistence;
+  - JSON 401/403 and ProblemDetail error handling;
+  - public published-program API;
+  - ADMIN Program REST API.
+
+The next implementation slice is:
+
+1. applicant application REST API: list/detail/create/edit/submit/resubmit/history;
+2. attachment REST API: list/upload/download/delete using the existing M3 storage lifecycle;
+3. then reviewer queue/detail/claim/decision APIs and remaining ADMIN operational read APIs.
+
+Do not begin the React SPA until these core browser-facing REST workflows and their integration tests are stable, unless a concrete frontend contract issue requires a small API adjustment.
+
+### Relationship to later DB/SQL evidence
+
+M5 owns schema quality, constraints, transactions, concurrency, and the API query contract. It does **not** claim that the project's SQL/query-performance gap is solved and it must not add speculative performance indexes.
+
+Per `docs/PROJECT_EXECUTION.md`:
+
+- M8 Workload creates representative synthetic data/workloads large enough to expose real query behavior;
+- M9 Performance captures actual SQL and PostgreSQL `EXPLAIN (ANALYZE, BUFFERS)`, identifies measured bottlenecks, applies evidence-supported query/index changes through Flyway, and retains same-condition before/after evidence.
+
+This preserves the project-wide rule to measure before optimizing.
+
 ## Scope
 
 ### 1. Applicant identity and public entry flow
@@ -308,13 +356,13 @@ M5 does not introduce:
 
 ## Implementation order
 
-1. Add ADR-002/ADR-003-approved user, program, application, and generalized audit fields through additive Flyway migrations.
-2. Extend domain/repository/service code for applicant registration, program lifecycle/admission rules, structured application fields, and generalized audit subjects.
-3. Implement admin program create/edit/publish APIs and public published-program discovery.
-4. Implement applicant registration/session API contracts.
-5. Implement applicant application/attachment APIs including intake-window and optimistic-lock conflict semantics.
+1. **DONE** — Add ADR-002/ADR-003-approved user, program, application, and generalized audit fields through additive Flyway migrations.
+2. **DONE** — Extend domain/repository/service code for applicant registration, program lifecycle/admission rules, structured application fields, and generalized audit subjects.
+3. **DONE** — Implement admin program create/edit/publish APIs and public published-program discovery.
+4. **DONE** — Implement applicant registration/session API contracts.
+5. **NEXT** — Implement applicant application/attachment APIs including intake-window and optimistic-lock conflict semantics.
 6. Implement reviewer queue/claim/decision APIs and remaining admin operational read APIs.
-7. Establish JSON error, CSRF, and API 401/403 behavior.
+7. **DONE for current API surface; extend consistently as later endpoints are added** — Establish JSON error, CSRF, and API 401/403 behavior.
 8. Build the typed React/Vite client and public/registration/login shell.
 9. Build applicant workflow screens.
 10. Build reviewer screens and admin program/operational screens.
