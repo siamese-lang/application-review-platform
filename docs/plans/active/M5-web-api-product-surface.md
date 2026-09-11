@@ -63,7 +63,7 @@ Do not reopen the architecture merely because implementation exposes a cosmetic 
 Checkpoint date: 2026-09-11
 
 Verified applicant API baseline after PR #20: `91658ba7da432cb3f7ba8a20d137e32078f2ced2`  
-PR #20 exact-head workflow: `34583818541` — `repository-baseline`, `m1-application` (43 tests), and `m4-infrastructure-static` all successful.
+PR #20 exact-head workflow `34583818541` and post-merge workflow `34584088613` — `repository-baseline`, `m1-application` (43 tests on the PR head), and `m4-infrastructure-static` all successful.
 
 Completed slices:
 
