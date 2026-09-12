@@ -42,7 +42,7 @@ ssh_cmd=(
 sql=$(mktemp)
 trap 'rm -f "$sql"' EXIT
 cat >"$sql" <<'SQL'
-DO $
+DO $$
 DECLARE
   required_column_count integer;
 BEGIN
@@ -57,7 +57,7 @@ BEGIN
   IF required_column_count <> 7 THEN
     RAISE EXCEPTION 'users table does not satisfy the Flyway V5 schema; start the backend and let Flyway complete first';
   END IF;
-END $;
+END $$;
 SQL
 for role in APPLICANT REVIEWER ADMIN; do
   var="SYNTHETIC_${role}_PASSWORD"
