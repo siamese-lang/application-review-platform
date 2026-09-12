@@ -82,14 +82,16 @@ From the milestone where they are introduced, GCP and `ops-01` are execution and
 2. Confirm the current `main`, active milestone, open PRs, and CI state before changing anything.
 3. For work that meets the planning threshold in `AGENTS.md`, create an active plan before implementation.
 4. Create a branch from the current intended base. Do not continue an obsolete branch by assumption.
-5. Implement only the active plan. Do not pull later-milestone features forward.
-6. Run the most relevant available tests/checks during implementation.
-7. Open or update a PR and inspect the actual diff.
-8. Require GitHub Actions to pass for the final PR head when applicable.
-9. If CI fails, follow the CI failure diagnostics procedure above and fix the first causal failure rather than changing multiple plausible causes at once.
-10. Review the result against the milestone requirements and frozen architecture.
-11. Move the active plan to `docs/plans/completed/` only when its done conditions are met.
-12. Re-run CI on the resulting final head, then merge. Verify the post-merge `main` workflow when the repository runs one.
+5. Check `docs/portfolio/PORTFOLIO_EVIDENCE_MAP.md` and classify the slice as enabling infrastructure, supporting evidence, or a primary-story candidate. Do not add technology solely to increase stack breadth.
+6. Implement only the active plan. Do not pull later-milestone features forward.
+7. Run the most relevant available tests/checks during implementation.
+8. Open or update a PR and inspect the actual diff.
+9. Require GitHub Actions to pass for the final PR head when applicable.
+10. If CI fails, follow the CI failure diagnostics procedure above and fix the first causal failure rather than changing multiple plausible causes at once.
+11. Review the result against the milestone requirements, frozen architecture, and evidence gate.
+12. If the work changes evidence maturity, update the Portfolio Evidence Map and the relevant Evidence Card; a negative result must be retained rather than hidden.
+13. Move the active plan to `docs/plans/completed/` only when its done conditions are met.
+14. Re-run CI on the resulting final head, then merge. Verify the post-merge `main` workflow when the repository runs one.
 
 ## Scope and architecture control
 
