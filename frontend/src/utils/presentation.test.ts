@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applicationStatusLabels, auditEventLabels, formatDateTime, formatMoney, intakeStatusLabels, publicationStatusLabels, roleLabels } from './presentation'
+import { applicationStatusLabels, attachmentStatusLabels, auditEventLabels, auditSubjectLabels, formatDateTime, formatMoney, intakeStatusLabels, publicationStatusLabels, roleLabels } from './presentation'
 
 describe('Korean presentation helpers', () => {
   it('provides shared Korean business labels', () => {
@@ -7,6 +7,8 @@ describe('Korean presentation helpers', () => {
     expect(intakeStatusLabels).toEqual({ SCHEDULED: '접수 예정', OPEN: '접수 중', CLOSED: '접수 마감' })
     expect(roleLabels).toEqual({ APPLICANT: '신청자', REVIEWER: '심사자', ADMIN: '관리자' })
     expect(publicationStatusLabels).toEqual({ DRAFT: '작성 중', PUBLISHED: '게시 완료' })
+    expect(attachmentStatusLabels).toEqual({ PENDING: '처리 중', AVAILABLE: '업로드 완료', FAILED: '처리 실패', DELETE_PENDING: '삭제 중' })
+    expect(auditSubjectLabels).toEqual({ APPLICATION: '신청서', PROGRAM: '지원사업', USER: '사용자' })
     expect(auditEventLabels.REVIEW_STARTED).toBe('심사 시작')
   })
 
