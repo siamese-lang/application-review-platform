@@ -83,7 +83,7 @@ See `docs/operations/GCP_BASELINE.md` and `docs/operations/M4_RUNTIME_EVIDENCE.m
 
 ## Source of truth
 
-Read `AGENTS.md` first. `docs/PROJECT_EXECUTION.md` defines the durable project purpose, portfolio evidence goals, DB/SQL evidence requirement, and anti-drift working rules. The M0 documents under `docs/`, accepted ADRs, the current active plan, code/configuration, PRs, and exact-head CI together define project state.
+Read `AGENTS.md` first. `docs/PROJECT_EXECUTION.md` defines the durable project purpose, evidence gates, DB/SQL requirement, and anti-drift rules. `docs/portfolio/PORTFOLIO_EVIDENCE_MAP.md` is the durable map of candidate problem-solving stories, current evidence maturity, rejected résumé-driven additions, and missing proof. The M0 documents under `docs/`, accepted ADRs, the current active plan, code/configuration, PRs, and exact-head CI together define project state.
 
 `docs/WORKFLOW.md` defines how ChatGPT, Codex, GitHub, GitHub Actions, external documentation, and GCP/`ops-01` work together. New sessions should recover project state from the repository before relying on prior conversation context.
 

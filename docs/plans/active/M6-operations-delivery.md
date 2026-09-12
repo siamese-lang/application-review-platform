@@ -16,6 +16,33 @@ M6 must prove that one reviewed repository revision can be:
 
 M6 is about **delivery and operational release control**, not observability, workload, performance, failure injection, backup implementation, or DR.
 
+
+## Portfolio evidence objective
+
+M6 is not a portfolio story about “using GHCR, WIF, Ansible, and symlinks.”
+
+Its primary problem-solving candidate is:
+
+> The previous deployment path could not prove that backend and frontend came from one immutable reviewed revision or that a known compatible release could be restored exactly.
+
+M6 may promote this candidate only with retained evidence.
+
+Required evidence for promotion:
+
+- exact source commit SHA and OCI digest;
+- backend/frontend payload checksums bound by one release manifest;
+- active release identity before deployment;
+- active release identity after deployment;
+- actual schema-compatible rollback to a retained previous release;
+- public/API/business smoke after rollback;
+- elapsed rollback operation time as an observation, not a promised SLA;
+- final return to the intended release;
+- explicit statement that database migrations are not automatically rolled back.
+
+GitHub OIDC/WIF, GHCR, Ansible, OpenTofu, and symlink mechanics are implementation choices supporting that claim. Do not turn each mechanism into a separate résumé bullet.
+
+If the actual rollback drill exposes a different or more useful problem, update `docs/portfolio/PORTFOLIO_EVIDENCE_MAP.md` rather than forcing the planned narrative.
+
 ## Confirmed starting point
 
 M5 is complete at:
@@ -351,7 +378,7 @@ Implement:
 - GHCR OCI artifact publication for green `main` only;
 - CI test that extracts/verifies the bundle.
 
-Done when an exact green `main` SHA has an immutable GHCR release reference/digest and no GCP resources were changed.
+Done when an exact green `main` SHA has an immutable GHCR release reference/digest, the release bundle/manifest can be independently verified, and no GCP resources were changed. This is enabling evidence only; it does not by itself promote the M6 portfolio candidate.
 
 ### Phase 2 — Versioned install and rollback mechanics
 
@@ -427,6 +454,8 @@ Verify rollback with the same public/API checks.
 
 Return to the intended final release after the drill.
 
+Record the rollback observation in a draft/updated Evidence Card, including release identities, checksums/digest references, smoke result, elapsed rollback time, and migration-compatibility limit.
+
 ### Phase 6 — M6 evidence and lifecycle closeout
 
 Record sanitized evidence:
@@ -442,7 +471,9 @@ Record sanitized evidence:
 - final active release;
 - post-deploy infrastructure plan result;
 - manual browser validation result;
-- retain/destroy decision for the runtime.
+- retain/destroy decision for the runtime;
+- updated `docs/portfolio/PORTFOLIO_EVIDENCE_MAP.md` maturity for the M6 candidate;
+- an M6 Evidence Card if the rollback candidate reaches E3 or higher.
 
 Then:
 
@@ -502,6 +533,7 @@ M6 is complete only when all are true:
 - the project owner can open the actual deployed SPA for manual inspection;
 - sanitized deployment/rollback evidence is committed;
 - cost/lifecycle disposition is recorded;
+- the M6 evidence candidate is updated honestly in the Portfolio Evidence Map, including a negative/non-distinctive result if applicable;
 - final exact-head CI passes;
 - post-merge `main` CI passes.
 
