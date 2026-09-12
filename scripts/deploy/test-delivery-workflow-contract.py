@@ -28,6 +28,7 @@ required = [
     'application-review-platform', 'ops-01', 'asia-northeast3-a',
     '--tunnel-through-iap', '--ssh-key-expire-after=5m',
     'GITHUB_REF', 'refs/heads/main', 'workflow_dispatch',
+    'ref: ${{ github.sha }}',
 ]
 for needle in required:
     assert needle in t, needle
