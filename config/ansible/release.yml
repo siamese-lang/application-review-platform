@@ -2,6 +2,7 @@
 - name: Stage backend release without activation
   hosts: app
   become: true
+  any_errors_fatal: true
   vars:
     release_transfer_dir: "/tmp/arp-release-{{ arp_release_sha }}"
   tasks:
@@ -30,6 +31,7 @@
 - name: Stage frontend release without activation
   hosts: edge
   become: true
+  any_errors_fatal: true
   vars:
     release_transfer_dir: "/tmp/arp-release-{{ arp_release_sha }}"
   tasks:
@@ -58,6 +60,7 @@
 - name: Preflight staged backend before any activation
   hosts: app
   become: true
+  any_errors_fatal: true
   tasks:
     - name: Verify installed backend release
       ansible.builtin.command:
@@ -67,6 +70,7 @@
 - name: Preflight staged frontend before any activation
   hosts: edge
   become: true
+  any_errors_fatal: true
   tasks:
     - name: Verify installed frontend release
       ansible.builtin.command:
@@ -76,6 +80,7 @@
 - name: Activate backend and restart application
   hosts: app
   become: true
+  any_errors_fatal: true
   tasks:
     - name: Activate backend release
       ansible.builtin.command:
@@ -86,6 +91,7 @@
 - name: Activate frontend after backend succeeds
   hosts: edge
   become: true
+  any_errors_fatal: true
   tasks:
     - name: Activate frontend release
       ansible.builtin.command:
