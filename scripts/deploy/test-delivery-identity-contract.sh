@@ -11,9 +11,9 @@ require_fixed() {
 }
 
 require_fixed 'issuer_uri = "https://token.actions.githubusercontent.com"' "$iam"
-require_fixed '"google.subject"                 = "assertion.sub"' "$iam"
-require_fixed '"attribute.repository_id"       = "assertion.repository_id"' "$iam"
-require_fixed '"attribute.repository_owner_id" = "assertion.repository_owner_id"' "$iam"
+grep -Eq '"google\.subject"[[:space:]]*=[[:space:]]*"assertion\.sub"' "$iam" || { echo "Missing google.subject mapping" >&2; exit 1; }
+grep -Eq '"attribute\.repository_id"[[:space:]]*=[[:space:]]*"assertion\.repository_id"' "$iam" || { echo "Missing immutable repository_id mapping" >&2; exit 1; }
+grep -Eq '"attribute\.repository_owner_id"[[:space:]]*=[[:space:]]*"assertion\.repository_owner_id"' "$iam" || { echo "Missing immutable repository_owner_id mapping" >&2; exit 1; }
 require_fixed "assertion.repository == '\${var.github_repository}'" "$iam"
 require_fixed "assertion.repository_id == '\${var.github_repository_id}'" "$iam"
 require_fixed "assertion.repository_owner == '\${var.github_repository_owner}'" "$iam"
