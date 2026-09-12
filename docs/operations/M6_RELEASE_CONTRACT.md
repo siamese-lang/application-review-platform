@@ -93,3 +93,22 @@ These media types describe repository artifacts only and do not alter the VM/JAR
 Phase 1 is enabling evidence.
 
 Successfully publishing a GHCR artifact is **not** enough to promote the M6 portfolio candidate. The portfolio claim requires the later real deployment and schema-compatible rollback drill defined in the active M6 plan.
+
+## Phase 2B runtime path
+
+Phase 2B starts with an exact, already downloaded bundle on the controlled operations
+path. `deploy/configure-runtime.sh` configures hosts without building or activating a
+release. `deploy/deploy-release.sh` verifies the local bundle against an explicit full
+SHA, then Ansible stages and verifies both component hosts before activating the
+backend, restarting `arp.service`, and finally activating the frontend.
+
+The repository-managed mechanics and the same bundle verifier are installed on app
+and edge hosts under `/usr/local/lib/arp`. Retained bundles and component state remain
+under `/opt/arp/releases/<full-sha>` and `/opt/arp/release-state`; stable systemd and
+Nginx pointers do not change.
+
+Rollback requires an explicit full SHA and the operator acknowledgement
+`ARP_ROLLBACK_SCHEMA_COMPATIBLE=true`. Both hosts verify that SHA as their recorded,
+checksum-valid previous release before either pointer changes. Switching then follows
+frontend, backend, and backend restart order. This performs no database rollback and
+does not claim cross-host atomicity.

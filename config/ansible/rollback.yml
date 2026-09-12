@@ -1,0 +1,41 @@
+---
+- name: Preflight frontend rollback target without mutation
+  hosts: edge
+  become: true
+  tasks:
+    - name: Validate explicit rollback inputs
+      ansible.builtin.assert:
+        that:
+          - arp_rollback_sha is match('^[0-9a-f]{40}$')
+          - arp_rollback_schema_compatible | bool
+    - name: Verify retained frontend rollback target and state
+      ansible.builtin.command:
+        argv: [/usr/local/lib/arp/deploy/release-mechanics.py, verify-rollback, frontend, "{{ arp_rollback_sha }}"]
+      changed_when: false
+
+- name: Preflight backend rollback target without mutation
+  hosts: app
+  become: true
+  tasks:
+    - name: Verify retained backend rollback target and state
+      ansible.builtin.command:
+        argv: [/usr/local/lib/arp/deploy/release-mechanics.py, verify-rollback, backend, "{{ arp_rollback_sha }}"]
+      changed_when: false
+
+- name: Roll frontend back first
+  hosts: edge
+  become: true
+  tasks:
+    - name: Activate recorded previous frontend release
+      ansible.builtin.command:
+        argv: [/usr/local/lib/arp/deploy/release-mechanics.py, rollback, frontend, "{{ arp_rollback_sha }}"]
+
+- name: Roll backend back and restart application
+  hosts: app
+  become: true
+  tasks:
+    - name: Activate recorded previous backend release
+      ansible.builtin.command:
+        argv: [/usr/local/lib/arp/deploy/release-mechanics.py, rollback, backend, "{{ arp_rollback_sha }}"]
+    - name: Restart application for rolled-back backend
+      ansible.builtin.systemd: { name: arp, state: restarted, enabled: true }

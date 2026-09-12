@@ -5,19 +5,30 @@
   ansible.builtin.user: { name: arp, system: true, home: /var/lib/arp, shell: /usr/sbin/nologin }
 - name: Create application paths
   ansible.builtin.file: { path: "{{ item }}", state: directory, owner: arp, group: arp, mode: '0750' }
-  loop: [/opt/arp/releases, /etc/arp]
-- name: Require a built application artifact
-  ansible.builtin.assert: { that: ["app_jar_source | length > 0"], fail_msg: "Set ARP_APP_JAR to the exact built JAR path." }
-- name: Copy versioned application artifact
+  loop: [/etc/arp, /var/lib/arp]
+- name: Copy legacy local application artifact when explicitly supplied
   ansible.builtin.copy: { src: "{{ app_jar_source }}", dest: "/opt/arp/releases/arp-{{ app_version }}.jar", owner: arp, group: arp, mode: '0500' }
-  notify: Restart application
-- name: Link current application artifact
+  when: app_jar_source | length > 0
+  register: legacy_application_copy
+- name: Link legacy local application artifact when explicitly supplied
   ansible.builtin.file: { src: "/opt/arp/releases/arp-{{ app_version }}.jar", dest: /opt/arp/application.jar, state: link, force: true }
-  notify: Restart application
+  when: app_jar_source | length > 0
+  register: legacy_application_link
 - name: Write restricted runtime environment
   ansible.builtin.template: { src: arp.env.j2, dest: /etc/arp/arp.env, owner: root, group: arp, mode: '0640' }
-  notify: Restart application
+  register: application_environment
   no_log: true
 - name: Install application unit
   ansible.builtin.template: { src: arp.service.j2, dest: /etc/systemd/system/arp.service, mode: '0644' }
-  notify: Restart application
+  register: application_unit
+- name: Enable application unit without starting an unactivated host
+  ansible.builtin.systemd: { name: arp, enabled: true, daemon_reload: true }
+- name: Check for an activated application release
+  ansible.builtin.stat: { path: /opt/arp/application.jar }
+  register: active_application
+- name: Restart application after runtime configuration changes
+  ansible.builtin.systemd: { name: arp, state: restarted }
+  when:
+    - active_application.stat.exists
+    - application_environment.changed or application_unit.changed or
+      (legacy_application_copy.changed | default(false)) or (legacy_application_link.changed | default(false))

@@ -1,0 +1,27 @@
+---
+- name: Create release runtime directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop:
+    - /opt/arp/releases
+    - /opt/arp/release-state
+    - /usr/local/lib/arp/deploy
+    - /usr/local/lib/arp/release
+- name: Install release mechanics
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../scripts/deploy/release-mechanics.py"
+    dest: /usr/local/lib/arp/deploy/release-mechanics.py
+    owner: root
+    group: root
+    mode: '0755'
+- name: Install release bundle verifier
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../scripts/release/verify-release-bundle.sh"
+    dest: /usr/local/lib/arp/release/verify-release-bundle.sh
+    owner: root
+    group: root
+    mode: '0755'

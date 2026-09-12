@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# Legacy M4 compatibility entry point. The final M6 path uses configure-runtime.sh
-# plus deploy-release.sh and never builds from the controller working tree.
 set -euo pipefail
 umask 077
+
 root=$(git rev-parse --show-toplevel)
 : "${SOPS_AGE_KEY_FILE:?Point to the age private key outside the repository on ops-01}"
 : "${ARP_SECRETS_FILE:?Point to committed SOPS-encrypted runtime YAML}"
@@ -10,11 +9,7 @@ if [[ -n ${ARP_TLS_CERTIFICATE:-} || -n ${ARP_TLS_PRIVATE_KEY:-} ]]; then
   : "${ARP_TLS_CERTIFICATE:?Set both ARP_TLS_CERTIFICATE and ARP_TLS_PRIVATE_KEY}"
   : "${ARP_TLS_PRIVATE_KEY:?Set both ARP_TLS_CERTIFICATE and ARP_TLS_PRIVATE_KEY}"
 fi
-export ARP_APP_VERSION="$(git -C "$root" rev-parse --short=12 HEAD)"
-(cd "$root" && ./mvnw -q -DskipTests package)
-export ARP_APP_JAR
-ARP_APP_JAR=$(find "$root/app/target" -maxdepth 1 -name '*.jar' ! -name '*.original' -print -quit)
-[[ -n $ARP_APP_JAR ]] || { echo 'Application JAR was not produced.' >&2; exit 1; }
+
 secret_vars=$(mktemp)
 trap 'rm -f "$secret_vars"' EXIT
 sops --decrypt "$ARP_SECRETS_FILE" >"$secret_vars"
