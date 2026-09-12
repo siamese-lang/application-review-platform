@@ -38,16 +38,16 @@ export function ApplicationForm({ edit = false }: { edit?: boolean }) {
       navigate(`/applications/${saved.id}`)
     } catch (requestError) { setError(requestError); setConflict(requestError instanceof ApiError && requestError.status === 409) } finally { setSubmitting(false) }
   }
-  if (loading) return <section className="page"><div className="notice" role="status">Loading application…</div></section>
-  return <section className="page form-page"><Link className="back-link" to={edit ? `/applications/${applicationId}` : '/applications'}>← Back</Link><div className="page-heading"><div className="eyebrow">Applicant workspace</div><h1>{edit ? 'Edit application' : 'New application'}</h1></div>
-    {error !== undefined && <ErrorNotice error={error} />}{conflict && <div className="conflict-actions"><strong>This application was changed by another request.</strong><span>Your entries have been kept. Reload the latest version before deciding how to apply them.</span><button className="button secondary" type="button" onClick={() => window.location.reload()}>Load latest application</button></div>}
+  if (loading) return <section className="page"><div className="notice" role="status">신청서를 불러오는 중…</div></section>
+  return <section className="page form-page"><Link className="back-link" to={edit ? `/applications/${applicationId}` : '/applications'}>← 돌아가기</Link><div className="page-heading"><div className="eyebrow">신청자 업무</div><h1>{edit ? '신청서 수정' : '새 신청서 작성'}</h1></div>
+    {error !== undefined && <ErrorNotice error={error} />}{conflict && <div className="conflict-actions"><strong>다른 작업에서 신청서가 변경되었습니다.</strong><span>입력 내용은 유지했습니다. 최신 신청서를 불러온 뒤 변경 내용을 다시 반영해 주세요.</span><button className="button secondary" type="button" onClick={() => window.location.reload()}>최신 신청서 불러오기</button></div>}
     <form className="business-form" onSubmit={submit}>
-      <label>Program{program ? <span className="selected-program">{program.code} — {program.title}</span> : <input name="programId" type="number" min="1" required disabled={edit} value={values.programId || ''} onChange={(e) => field('programId', e.target.value)} />}</label>
-      <label>Applicant organization name<input name="applicantOrganizationName" required maxLength={255} value={values.applicantOrganizationName} onChange={(e) => field('applicantOrganizationName', e.target.value)} /></label>
-      <label>Project title<input name="projectTitle" required maxLength={255} value={values.projectTitle} onChange={(e) => field('projectTitle', e.target.value)} /></label>
-      <label>Short summary<textarea name="shortSummary" required maxLength={1000} rows={4} value={values.shortSummary} onChange={(e) => field('shortSummary', e.target.value)} /></label>
-      <label>Requested amount<input name="requestedAmount" type="number" min="0.01" step="0.01" required value={values.requestedAmount || ''} onChange={(e) => field('requestedAmount', e.target.value)} /></label>
-      <label>Detailed plan<textarea name="detailedPlan" required maxLength={10000} rows={12} value={values.detailedPlan} onChange={(e) => field('detailedPlan', e.target.value)} /></label>
-      <button className="button" disabled={submitting}>{submitting ? 'Saving…' : edit ? 'Save changes' : 'Save draft'}</button>
+      <label>지원사업{program ? <span className="selected-program">{program.code} — {program.title}</span> : <input name="programId" type="number" min="1" required disabled={edit} value={values.programId || ''} onChange={(e) => field('programId', e.target.value)} />}</label>
+      <label>신청 기관명<input name="applicantOrganizationName" required maxLength={255} value={values.applicantOrganizationName} onChange={(e) => field('applicantOrganizationName', e.target.value)} /></label>
+      <label>과제명<input name="projectTitle" required maxLength={255} value={values.projectTitle} onChange={(e) => field('projectTitle', e.target.value)} /></label>
+      <label>요약<textarea name="shortSummary" required maxLength={1000} rows={4} value={values.shortSummary} onChange={(e) => field('shortSummary', e.target.value)} /></label>
+      <label>신청 금액(원)<input name="requestedAmount" type="number" min="0.01" step="0.01" required value={values.requestedAmount || ''} onChange={(e) => field('requestedAmount', e.target.value)} /></label>
+      <label>세부 계획<textarea name="detailedPlan" required maxLength={10000} rows={12} value={values.detailedPlan} onChange={(e) => field('detailedPlan', e.target.value)} /></label>
+      <button className="button" disabled={submitting}>{submitting ? '저장 중…' : edit ? '변경 내용 저장' : '임시 저장'}</button>
     </form></section>
 }
