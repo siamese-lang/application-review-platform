@@ -4,7 +4,7 @@ import { api, ApiError } from '../api/client'
 import { ErrorNotice } from '../components/ErrorNotice'
 import { StatusBadge } from '../components/StatusBadge'
 import { formatMoney } from './ApplicationsPage'
-import { applicationStatusLabel, applicationStatusLabels, auditEventLabels, formatDateTime, intakeStatusLabels, publicationStatusLabels, roleLabels } from '../utils/presentation'
+import { applicationStatusLabel, applicationStatusLabels, auditEventLabels, auditSubjectLabels, formatDateTime, intakeStatusLabels, publicationStatusLabels, roleLabels } from '../utils/presentation'
 import type { AdminApplicationDetail, AdminAuditItem, AdminHistoryItem, AdminProgram, AdminWorkflowCounts, ApiPage, ApplicationStatus, AuditEventType, Role, AdminUserSummary, AdminApplicationSummary } from '../types/api'
 
 const statuses: ApplicationStatus[] = ['DRAFT', 'SUBMITTED', 'IN_REVIEW', 'NEEDS_REVISION', 'APPROVED', 'REJECTED']
