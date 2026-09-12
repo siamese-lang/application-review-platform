@@ -59,7 +59,7 @@ PR CI builds the application/frontend, assembles the bundle twice from the same 
 
 ## GHCR publication
 
-Publication occurs only on a `push` to `main` after the completed M5 checks and the M6 bundle-verification job succeed.
+Publication occurs only on a `push` to `main` after the completed M5 checks and the M6 bundle-verification job succeed. A main revision that changes only `docs/**` and/or `README.md` does not create another runtime release artifact; such commits do not change deployable/runtime material.
 
 The publish job:
 
@@ -68,6 +68,7 @@ The publish job:
 - receives `packages: write` only in the publication job;
 - publishes an OCI artifact, not a containerized Spring runtime;
 - uses the full source SHA as the only release tag;
+- skips docs/README-only main revisions to avoid retaining redundant byte-identical runtime payloads;
 - records the OCI digest;
 - pulls the artifact back by digest and runs the same bundle verifier.
 
