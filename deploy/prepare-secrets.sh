@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 umask 077
-root=$(git rev-parse --show-toplevel)
+root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 : "${AGE_RECIPIENT:?Set the real public age recipient generated in the controlled M6 operations path}"
 : "${PLAINTEXT_FILE:?Set an outside-repository populated runtime schema path}"
 : "${ENCRYPTED_FILE:?Set the destination *.enc.yaml path}"

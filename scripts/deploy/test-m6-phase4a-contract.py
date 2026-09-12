@@ -9,6 +9,8 @@ preflight = (ROOT / "deploy/m6-runtime-preflight.sh").read_text()
 users = (ROOT / "deploy/bootstrap-synthetic-users.sh").read_text()
 bootstrap = (ROOT / "deploy/tofu-bootstrap-plan.sh").read_text()
 runtime = (ROOT / "deploy/tofu-init-plan.sh").read_text()
+prepare_secrets = (ROOT / "deploy/prepare-secrets.sh").read_text()
+configure_runtime = (ROOT / "deploy/configure-runtime.sh").read_text()
 
 assert "PROJECT_ID=application-review-platform" in preflight
 assert "REGION=asia-northeast3" in preflight
@@ -30,11 +32,18 @@ assert all(identity in users for identity in ("m6-${role,,}", "@example.test", "
 assert "WHERE NOT EXISTS" in users and "htpasswd -bnBC 12" in users
 assert "echo \"$password\"" not in users and "echo \"$hash\"" not in users
 assert "Flyway V5 schema" in users
+assert "required_column_count <> 7" in users
+assert 'root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)' in users
+assert "git rev-parse --show-toplevel" not in users
 
 for text, variable in ((bootstrap, "ARP_BOOTSTRAP_STATE_PATH"), (runtime, "ARP_TOFU_STATE_PATH")):
     assert f"${{{variable}:?" in text
     assert "outside the Git checkout" in text
 assert "google_service_account.ops" in bootstrap and "google_service_account.workload" in bootstrap
+assert 'root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)' in prepare_secrets
+assert 'root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)' in configure_runtime
+assert "git rev-parse --show-toplevel" not in prepare_secrets
+assert "git rev-parse --show-toplevel" not in configure_runtime
 
 phase4_tools = preflight + bootstrap + runtime + users
 assert "deploy-release.sh" not in phase4_tools and "rollback-release.sh" not in phase4_tools

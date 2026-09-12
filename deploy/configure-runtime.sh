@@ -2,7 +2,7 @@
 set -euo pipefail
 umask 077
 
-root=$(git rev-parse --show-toplevel)
+root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 # Keep the final M6 configuration entry point separate from the legacy M4
 # working-tree/local-JAR compatibility path.
 unset ARP_APP_JAR ARP_APP_VERSION

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 umask 077
-root=$(git rev-parse --show-toplevel)
+root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 : "${SYNTHETIC_APPLICANT_PASSWORD:?required}"
 : "${SYNTHETIC_REVIEWER_PASSWORD:?required}"
 : "${SYNTHETIC_ADMIN_PASSWORD:?required}"
@@ -42,19 +42,22 @@ ssh_cmd=(
 sql=$(mktemp)
 trap 'rm -f "$sql"' EXIT
 cat >"$sql" <<'SQL'
-DO $$
+DO $
+DECLARE
+  required_column_count integer;
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema = 'public' AND table_name = 'users'
-    GROUP BY table_schema, table_name
-    HAVING array_agg(column_name) @> ARRAY[
+  SELECT count(*) INTO required_column_count
+  FROM information_schema.columns
+  WHERE table_schema = 'public'
+    AND table_name = 'users'
+    AND column_name IN (
       'username', 'password_hash', 'role', 'display_name', 'email', 'created_at', 'updated_at'
-    ]
-  ) THEN
+    );
+
+  IF required_column_count <> 7 THEN
     RAISE EXCEPTION 'users table does not satisfy the Flyway V5 schema; start the backend and let Flyway complete first';
   END IF;
-END $$;
+END $;
 SQL
 for role in APPLICANT REVIEWER ADMIN; do
   var="SYNTHETIC_${role}_PASSWORD"

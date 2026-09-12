@@ -16,30 +16,22 @@ M6 must prove that one reviewed repository revision can be:
 
 M6 is about **delivery and operational release control**, not observability, workload, performance, failure injection, backup implementation, or DR.
 
-## Current implementation slice — Phase 4A — runtime/cloud preflight hardening
+## Current implementation slice — Phase 5 — exact release deployment and rollback drill
 
-Goal: remove repository blockers before live recreation, define a reproducible read-only
-GCP readiness check, harden owner-bootstrap/runtime local-state handling, and prepare the
-Flyway-V5-compatible synthetic-user and secret paths. Phase 4A performs no cloud apply.
+Phase 4 is complete. The live seven-role GCP runtime has been recreated from the reviewed
+repository state, the Phase 3 WIF/IAM resources are applied, `ops-01` controls the runtime
+state and fresh SOPS/age material, PostgreSQL/Garage/Nginx/application prerequisites are
+configured, Garage is healthy across three Seoul zones, and final bootstrap/runtime
+OpenTofu plans report no drift.
 
-Files/components: read-only GCP preflight, owner-bootstrap/runtime plan wrappers,
-synthetic-user bootstrap, secret preparation wording, focused offline CI, and the
-Phase 4 operations runbook.
+Phase 5 now owns the first immutable release deployment through the explicit GitHub
+deployment workflow, Flyway V5 activation, final-schema synthetic privileged-user
+bootstrap, public SPA/API/business/attachment smoke, a schema-compatible rollback drill,
+and return to the intended final release.
 
-Constraints: preserve the frozen M4/M5 runtime architecture; no M7 observability,
-no automatic application deployment, no rollback drill, no benchmark/fault/DR work,
-and no plaintext runtime secret in GitHub, prompts, logs, OpenTofu state, or evidence.
-
-Verification: offline script/contracts, existing Phase 3 tests, repository baseline,
-OpenTofu formatting/initialization/validation, and shell syntax. No live readiness is
-claimed by Phase 4A.
-
-The next Phase 4 execution slice is owner-authenticated: run readiness; recover state;
-plan/apply the owner-bootstrap and runtime roots; bootstrap `ops-01`; rotate/encrypt
-secrets and configure the runtime; bootstrap Garage; and verify final no-drift plans.
-Synthetic privileged users are inserted only after the first Phase 5 backend startup
-runs Flyway V5; Phase 4 only prepares the compatible bootstrap and may prove its
-pre-V5 refusal. Do not mark Phase 4 complete after Phase 4A.
+Constraints remain unchanged: no M7 observability, workload/performance/fault/DR work,
+no plaintext secret leaving the controlled operations path, and no claim that database
+migrations are automatically rolled back.
 
 
 ## Portfolio evidence objective
@@ -88,10 +80,10 @@ The repository already proves infrastructure provisioning and application behavi
 Current gaps:
 
 - the legacy `deploy/build-and-configure.sh` remains only as the retained M4 compatibility path; the final M6 path no longer builds a working-tree JAR;
-- Phase 2 provides versioned backend/frontend install, exact-SHA activation, paired preflight, and explicit rollback mechanics through Ansible, but they have not yet been exercised on a real VM runtime;
-- Phase 3 provides a repository/ref/workflow-constrained GitHub WIF identity and explicit exact-SHA/exact-digest, pull-by-digest, stage-only `ops-01` handoff workflow, but the IAM/WIF resources and runtime have not yet been applied in GCP and the workflow has not been dispatched;
-- `deploy/cloud-smoke.sh` still describes the removed Thymeleaf/form-login interface and must not be used as M6 evidence in its current form;
-- current synthetic privileged-user bootstrap predates the final M5 identity fields and must be brought forward before cloud verification.
+- Phase 2 install/rollback mechanics are repository-verified but have not yet been exercised by a real immutable release activation and rollback on the recreated runtime;
+- Phase 3 WIF/IAM resources are now live and GitHub repository variables are configured, but the explicit deployment workflow has not yet been dispatched against the real runtime;
+- `deploy/cloud-smoke.sh` still describes the removed Thymeleaf/form-login interface and must be replaced before Phase 5 business evidence;
+- the Flyway-V5-compatible synthetic-user bootstrap is prepared, but actual insertion intentionally waits until the first Phase 5 backend startup establishes the final schema.
 
 ## Frozen architecture and non-goals
 
@@ -491,25 +483,27 @@ Phase 3 proves the repository-defined delivery trust and artifact-selection/hand
 
 ### Phase 4 — Runtime and secret execution
 
-Phase 4A hardens and statically verifies the repository path. The next owner-authenticated
-execution slice is where real GCP work begins.
+Status: **COMPLETE**
 
-Perform:
+Completion evidence:
 
-- current billing/API/quota readiness check;
-- controlled OpenTofu plan/apply from current repository state;
-- re-create the seven-role runtime;
-- bootstrap `ops-01`;
-- restore or rotate SOPS/age material safely;
-- fresh synthetic DB/Garage/application credentials;
-- Garage bootstrap;
-- prepare and validate the final-M5-schema synthetic-user bootstrap; actual insertion
-  follows the first Phase 5 backend/Flyway startup (unless an approved Flyway-only
-  schema activation path already exists);
-- verify no unexpected OpenTofu drift after configuration.
+- reviewed execution revision: `e40e78d73e48e7daf3e11641c8de65da5f49c0a0`;
+- live billing/API/quota preflight succeeded in `application-review-platform` / `asia-northeast3`;
+- retained owner-bootstrap state was recovered and a reviewed plan applied exactly seven Phase 3 delivery-identity additions with no changes or destroys;
+- `arp-m6-github-deploy`, the GitHub WIF pool/provider, constrained IAP/OS Login access, and exact repository/workflow trust are live;
+- real WIF provider/service-account outputs are configured as GitHub repository variables;
+- the frozen seven-role runtime was recreated, preserving the M4 `storage-03` `e2-small` + `pd-standard` capacity workaround;
+- only `edge-01` has a public service address; app/DB/storage/ops remain private;
+- `ops-01` controls the runtime state and fresh SOPS/age material;
+- Ansible configured PostgreSQL, Garage, Nginx, the application service prerequisites, and the controlled operations path without activating a release;
+- Garage `v2.4.1` is healthy across Seoul zones a/b/c with replication factor 3 and the `application-review` bucket/application-key contract;
+- PostgreSQL accepts connections, Nginx is active, the `arp` service is enabled, and no active application JAR exists yet;
+- final owner-bootstrap and runtime OpenTofu plans both reported no changes;
+- sanitized evidence is retained in `docs/operations/M6_PHASE4_RUNTIME_EVIDENCE.md`.
 
-Do not manually apply Flyway SQL with `psql`, and do not implement M7 observability
-services or create `obs-01` in this seven-role runtime.
+Phase 4 deliberately does not run Flyway V5 or insert privileged synthetic users before
+the first Phase 5 backend activation. It also does not claim a real GitHub deployment
+dispatch, public business smoke, or rollback.
 
 ### Phase 5 — Exact release deployment and rollback drill
 
