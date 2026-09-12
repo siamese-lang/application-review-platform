@@ -27,16 +27,20 @@ resource "google_iam_workload_identity_pool_provider" "github" {
 
   attribute_mapping = {
     "google.subject"             = "assertion.sub"
-    "attribute.repository"       = "assertion.repository"
-    "attribute.repository_owner" = "assertion.repository_owner"
-    "attribute.ref"              = "assertion.ref"
+    "attribute.repository"          = "assertion.repository"
+    "attribute.repository_id"       = "assertion.repository_id"
+    "attribute.repository_owner"    = "assertion.repository_owner"
+    "attribute.repository_owner_id" = "assertion.repository_owner_id"
+    "attribute.ref"                 = "assertion.ref"
     "attribute.workflow_ref"     = "assertion.workflow_ref"
     "attribute.event_name"       = "assertion.event_name"
   }
 
   attribute_condition = <<-EOT
     assertion.repository == '${var.github_repository}' &&
+    assertion.repository_id == '${var.github_repository_id}' &&
     assertion.repository_owner == '${var.github_repository_owner}' &&
+    assertion.repository_owner_id == '${var.github_repository_owner_id}' &&
     assertion.ref == 'refs/heads/main' &&
     assertion.workflow_ref == '${var.github_deployment_workflow_ref}' &&
     assertion.event_name == 'workflow_dispatch'
@@ -50,13 +54,7 @@ resource "google_iam_workload_identity_pool_provider" "github" {
 resource "google_service_account_iam_member" "github_deploy_wif" {
   service_account_id = google_service_account.github_deploy.name
   role               = "roles/iam.workloadIdentityUser"
-  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/attribute.repository/${var.github_repository}"
-}
-
-resource "google_project_iam_member" "github_deploy_compute_viewer" {
-  project = var.project_id
-  role    = "roles/compute.viewer"
-  member  = "serviceAccount:${google_service_account.github_deploy.email}"
+  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/attribute.repository_id/${var.github_repository_id}"
 }
 
 resource "google_project_iam_member" "github_deploy_oslogin" {
