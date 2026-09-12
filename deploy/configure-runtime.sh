@@ -3,6 +3,9 @@ set -euo pipefail
 umask 077
 
 root=$(git rev-parse --show-toplevel)
+# Keep the final M6 configuration entry point separate from the legacy M4
+# working-tree/local-JAR compatibility path.
+unset ARP_APP_JAR ARP_APP_VERSION
 : "${SOPS_AGE_KEY_FILE:?Point to the age private key outside the repository on ops-01}"
 : "${ARP_SECRETS_FILE:?Point to committed SOPS-encrypted runtime YAML}"
 if [[ -n ${ARP_TLS_CERTIFICATE:-} || -n ${ARP_TLS_PRIVATE_KEY:-} ]]; then
