@@ -27,7 +27,8 @@
 - Active plan: `docs/plans/active/M6-operations-delivery.md`
 - M6 Phase 1 release publication: complete; immutable backend/frontend bundle is retained in GHCR by full main SHA/digest
 - M6 Phase 2 versioned install/rollback mechanics: complete; exact-SHA app/edge install, paired preflight, explicit rollback, and Ansible final release path are verified repository-side without recreating GCP
-- Current M6 slice: Phase 3 keyless GitHub→GCP delivery identity and explicit exact-release deployment workflow; no GCP runtime creation until Phase 4
+- M6 Phase 3 keyless delivery contract: complete; repository/workflow-constrained GitHub WIF and explicit exact-SHA/exact-digest, pull-by-digest, stage-only `ops-01` handoff are verified repository-side without GCP execution
+- Current M6 slice: Phase 4 runtime and secret preflight; real GCP recreation begins here
 
 This project is **production-like**, not a claim of real production operation. All users, organizations, applications, documents, workloads, and measurements are synthetic unless explicitly recorded otherwise.
 

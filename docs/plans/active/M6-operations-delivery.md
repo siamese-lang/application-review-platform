@@ -16,25 +16,23 @@ M6 must prove that one reviewed repository revision can be:
 
 M6 is about **delivery and operational release control**, not observability, workload, performance, failure injection, backup implementation, or DR.
 
-## Current implementation slice — Phase 3B — exact-release workflow and ops-01 handoff
+## Current implementation slice — Phase 4 — runtime and secret preflight
 
-Goal: add the explicit exact-SHA/exact-digest workflow and its verified, stage-only
-IAP/OS Login handoff to `ops-01`, without activating application nodes.
+Goal: recreate the frozen seven-role GCP runtime from the current repository state,
+activate the Phase 3 keyless delivery identity in the owner-bootstrap IAM root, and
+restore a controlled `ops-01` operations boundary with fresh synthetic runtime secrets.
 
-Files/components: owner-bootstrap IAM/OpenTofu, a repository/ref/workflow-constrained
-GitHub identity, focused static regression, and the identity side of the IAP/OS Login
-handoff contract to ops-01.
+Files/components: owner-bootstrap OpenTofu, runtime OpenTofu, `ops-01` bootstrap,
+SOPS/age material, synthetic runtime credentials/users, Garage bootstrap, and
+post-configuration no-drift verification.
 
-Constraints: no service-account JSON key, no automatic main deployment, no GCP
-runtime creation, no runtime secret decryption on GitHub, no application deployment
-while Phase 3 is being verified, and no arbitrary branch/floating-tag artifact.
+Constraints: preserve the frozen M4/M5 runtime architecture; no M7 observability,
+no automatic application deployment, no rollback drill, no benchmark/fault/DR work,
+and no plaintext runtime secret in GitHub, prompts, logs, OpenTofu state, or evidence.
 
-Verification: OpenTofu fmt/init/validate, focused identity static policy checks,
-provider-lock stability, existing baseline checks, and exact-head CI.
-
-Phase 3 is complete only after repository/static CI proves the explicit trigger,
-reviewed-main ancestry, exact digest and bundle verification, exact WIF configuration,
-fixed `ops-01` target, and absence of arbitrary artifact or command paths.
+Verification: live billing/API/quota preflight, reviewed owner-bootstrap/runtime plans,
+controlled apply, seven-role inventory checks, `ops-01` controlled-path readiness,
+fresh secret/bootstrap verification, and final OpenTofu no-drift plan.
 
 
 ## Portfolio evidence objective
@@ -83,9 +81,8 @@ The repository already proves infrastructure provisioning and application behavi
 Current gaps:
 
 - the legacy `deploy/build-and-configure.sh` remains only as the retained M4 compatibility path; the final M6 path no longer builds a working-tree JAR;
-- Phase 2 now provides versioned backend/frontend install, exact-SHA activation, paired preflight, and explicit rollback mechanics through Ansible, but they have not yet been exercised on a real VM runtime;
-- a retained GHCR artifact exists for exact reviewed revisions, but GitHub does not yet have a keyless, repository-constrained path that resolves an exact artifact and hands it to `ops-01`;
-- there is no controlled explicit deployment workflow that accepts and verifies one reviewed release revision/digest;
+- Phase 2 provides versioned backend/frontend install, exact-SHA activation, paired preflight, and explicit rollback mechanics through Ansible, but they have not yet been exercised on a real VM runtime;
+- Phase 3 provides a repository/ref/workflow-constrained GitHub WIF identity and explicit exact-SHA/exact-digest, pull-by-digest, stage-only `ops-01` handoff workflow, but the IAM/WIF resources and runtime have not yet been applied in GCP and the workflow has not been dispatched;
 - `deploy/cloud-smoke.sh` still describes the removed Thymeleaf/form-login interface and must not be used as M6 evidence in its current form;
 - current synthetic privileged-user bootstrap predates the final M5 identity fields and must be brought forward before cloud verification.
 
@@ -452,7 +449,9 @@ Phase 2 proves the repository-side install/rollback mechanics and orchestration 
 
 ### Phase 3 — Keyless delivery identity and deployment workflow
 
-Repository/IAM definition work first; no application deployment yet.
+Status: **COMPLETE**
+
+Repository/IAM definition and static/isolated CI only; no GCP runtime or WIF resource was applied.
 
 Implement:
 
@@ -466,9 +465,22 @@ Implement:
 
 Done when static CI is green and the workflow cannot deploy an arbitrary unreviewed artifact.
 
-Phase 3A defines and statically validates the keyless delivery identity. Phase 3B
-retains the explicit `workflow_dispatch`, exact SHA/digest validation, GHCR
-pull-by-digest verification, WIF authentication, and IAP/OS Login handoff to `ops-01`.
+Completion evidence:
+
+- Phase 3A merged through PR #40 and defines a dedicated `arp-m6-github-deploy` service account plus repository/owner immutable-ID, main-ref, exact-workflow, and `workflow_dispatch` constrained Workload Identity Federation trust;
+- the deployment identity has OS Admin Login, an IAP TCP tunnel restricted to `10.40.0.50:22`, and service-account-user permission only on the specific `arp-m4-ops` target identity; it receives no project-wide Compute Viewer/Admin or Network Admin grant;
+- Phase 3B merged through PR #41 and adds an explicit exact-SHA/exact-digest workflow that proves main ancestry, resolves the fixed full-SHA GHCR tag, requires digest equality, verifies OCI source/revision annotations, pulls only by digest, and re-runs the Phase 1 bundle verifier;
+- the workflow is pinned to the dispatched `github.sha`, uses pinned ORAS/Google auth/gcloud actions, has fixed project/zone/`ops-01` target values, uses IAP plus short-lived OS Login SSH material, and exposes no arbitrary host/path/command input;
+- the `ops-01` staging helper verifies again before same-filesystem publication, is idempotent across workflow run IDs for identical SHA/digest/payload, and fails closed on retained identity/content mismatch;
+- final Phase 3 main SHA: `40b7af5a3626266562c051c742f91b0d9e259241`;
+- post-merge workflow run `34678666268`: SUCCESS, including `m6-delivery-workflow-static` and all baseline jobs;
+- resulting immutable release: `ghcr.io/siamese-lang/application-review-platform-release:40b7af5a3626266562c051c742f91b0d9e259241`;
+- OCI digest: `sha256:76b0b8961e6a8e7d68ecefd3f34d5f3b9a79772329958076f87c95139152fe00`;
+- publish pulled that release back by digest and re-ran the manifest/checksum verifier successfully;
+- no GCP runtime, WIF pool/provider/service account, SSH connection, artifact transfer, or application deployment was executed in Phase 3.
+
+Phase 3 proves the repository-defined delivery trust and artifact-selection/handoff contract only. Real WIF authentication, IAP/OS Login transport, runtime staging, deploy, rollback, and business smoke remain later runtime evidence, so the M6 portfolio candidate remains E1.
+
 
 ### Phase 4 — Runtime and secret preflight
 
