@@ -1,0 +1,109 @@
+name: M6 exact release handoff
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_sha:
+        description: Full lowercase SHA from main history
+        required: true
+        type: string
+      release_digest:
+        description: Expected immutable OCI sha256 digest
+        required: true
+        type: string
+
+concurrency:
+  group: m6-release-handoff
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: read
+  id-token: write
+
+jobs:
+  stage-on-ops:
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_REPOSITORY: ghcr.io/siamese-lang/application-review-platform-release
+      RELEASE_SHA: ${{ inputs.release_sha }}
+      RELEASE_DIGEST: ${{ inputs.release_digest }}
+      GCP_PROJECT: application-review-platform
+      GCP_INSTANCE: ops-01
+      GCP_ZONE: asia-northeast3-a
+    steps:
+      - name: Guard trusted invocation
+        shell: bash
+        run: |
+          [[ "$GITHUB_REF" == refs/heads/main ]]
+          [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]
+          [[ "$GITHUB_REPOSITORY" == siamese-lang/application-review-platform ]]
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Validate requested main release
+        shell: bash
+        run: |
+          [[ "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo 'release_sha must be a full lowercase SHA' >&2; exit 1; }
+          [[ "$RELEASE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo 'release_digest must be a lowercase SHA-256 digest' >&2; exit 1; }
+          git fetch --no-tags origin main
+          git cat-file -e "$RELEASE_SHA^{commit}"
+          git merge-base --is-ancestor "$RELEASE_SHA" origin/main
+      - uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d
+        with:
+          version: 1.3.3
+      - name: Resolve, authenticate, and verify exact OCI release
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          work=$(mktemp -d)
+          echo "WORK_DIR=$work" >> "$GITHUB_ENV"
+          printf '%s' "$GHCR_TOKEN" | oras login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          tag="$RELEASE_REPOSITORY:$RELEASE_SHA"
+          resolved_digest=$(oras manifest fetch --descriptor "$tag" | python3 -c 'import json,sys; print(json.load(sys.stdin)["digest"])')
+          [[ "$resolved_digest" == "$RELEASE_DIGEST" ]] || { echo 'resolved digest does not match requested digest' >&2; exit 1; }
+          oras manifest fetch "$RELEASE_REPOSITORY@$RELEASE_DIGEST" > "$work/oci-manifest.json"
+          python3 - "$work/oci-manifest.json" "$RELEASE_SHA" <<'PY'
+          import json, sys
+          annotations = json.load(open(sys.argv[1], encoding="utf-8")).get("annotations", {})
+          if annotations.get("org.opencontainers.image.source") != "https://github.com/siamese-lang/application-review-platform": raise SystemExit("OCI source annotation mismatch")
+          if annotations.get("org.opencontainers.image.revision") != sys.argv[2]: raise SystemExit("OCI revision annotation mismatch")
+          PY
+          mkdir "$work/bundle"
+          oras pull "$RELEASE_REPOSITORY@$RELEASE_DIGEST" -o "$work/bundle"
+          bash scripts/release/verify-release-bundle.sh "$work/bundle" "$RELEASE_SHA"
+      - name: Require Phase 3A repository variables
+        env:
+          PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          SERVICE_ACCOUNT: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+        run: |
+          [[ -n "$PROVIDER" ]] || { echo 'GCP_WORKLOAD_IDENTITY_PROVIDER repository variable is unset' >&2; exit 1; }
+          [[ -n "$SERVICE_ACCOUNT" ]] || { echo 'GCP_DEPLOY_SERVICE_ACCOUNT repository variable is unset' >&2; exit 1; }
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+          project_id: application-review-platform
+      - uses: google-github-actions/setup-gcloud@26f734c2779b00b7dda794207734c511110a4368
+        with:
+          version: 584.0.0
+      - name: Transfer and stage verified bundle on ops-01 only
+        shell: bash
+        run: |
+          set -euo pipefail
+          remote="/tmp/arp-handoff-$GITHUB_RUN_ID"
+          common=(--project="$GCP_PROJECT" --zone="$GCP_ZONE" --tunnel-through-iap --ssh-key-expire-after=5m --quiet)
+          gcloud compute ssh "$GCP_INSTANCE" "${common[@]}" --command="rm -rf '$remote' && mkdir -m 0700 '$remote'"
+          gcloud compute scp "${common[@]}" "$WORK_DIR/bundle/backend.jar" "$WORK_DIR/bundle/frontend.tar.gz" "$WORK_DIR/bundle/release-manifest.json" scripts/release/verify-release-bundle.sh scripts/deploy/stage-release-on-ops.sh "$GCP_INSTANCE:$remote/"
+          gcloud compute ssh "$GCP_INSTANCE" "${common[@]}" --command="sudo bash '$remote/stage-release-on-ops.sh' '$remote' '$RELEASE_SHA' '$RELEASE_DIGEST' '$GITHUB_RUN_ID'"
+      - name: Clean temporary material
+        if: always()
+        shell: bash
+        run: |
+          rm -rf "${WORK_DIR:-}"
+          if [[ "${GITHUB_RUN_ID:-}" =~ ^[0-9]+$ ]]; then
+            gcloud compute ssh ops-01 --project=application-review-platform --zone=asia-northeast3-a --tunnel-through-iap --ssh-key-expire-after=5m --quiet --command="rm -rf '/tmp/arp-handoff-$GITHUB_RUN_ID'" || true
+          fi

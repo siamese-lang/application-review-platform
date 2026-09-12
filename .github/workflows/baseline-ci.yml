@@ -10,6 +10,17 @@ permissions:
   contents: read
 
 jobs:
+  m6-delivery-workflow-static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Phase 3B workflow and staging contracts
+        run: |
+          ruby -e 'require "yaml"; YAML.load_file(".github/workflows/deploy-release.yml")'
+          python3 scripts/deploy/test-delivery-workflow-contract.py
+          bash scripts/deploy/test-stage-release-on-ops.sh
+          bash -n scripts/deploy/stage-release-on-ops.sh scripts/deploy/test-stage-release-on-ops.sh
+
   m5-frontend:
     runs-on: ubuntu-latest
     defaults:

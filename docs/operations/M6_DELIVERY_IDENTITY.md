@@ -68,3 +68,26 @@ No service-account private key or JSON credential is created, stored, or output.
 Phase 3A performs no GCP apply or runtime mutation. Phase 3B will consume this identity
 contract for explicit exact-release validation, WIF authentication, and the IAP/OS
 Login handoff; it remains separately scoped work.
+
+## Phase 3B exact-release handoff
+
+The manually dispatched `.github/workflows/deploy-release.yml` requires a lowercase
+40-character `release_sha` and a lowercase `sha256:` `release_digest`. It guards the
+repository, main ref, and event; proves the commit is reachable from `origin/main`;
+resolves the fixed full-SHA GHCR tag; requires its digest to equal the operator input;
+checks OCI source/revision annotations; pulls by digest; and runs the existing bundle
+verifier. Only then does it check the two repository variables, exchange GitHub OIDC
+through `GCP_WORKLOAD_IDENTITY_PROVIDER` as `GCP_DEPLOY_SERVICE_ACCOUNT`, and use IAP
+plus OS Login to `ops-01` in project `application-review-platform`, zone
+`asia-northeast3-a`.
+
+The transferred bundle is verified again before a same-filesystem rename exposes it
+at `/srv/arp/releases/incoming/<full-sha>/`. Existing identical content is idempotent;
+different payload or handoff identity fails closed. The receipt contains only source
+SHA, OCI digest, fixed repository, and workflow run ID. GitHub receives no runtime
+secret and the workflow neither activates `app-01`/`edge-01` nor runs deployment,
+migration, restart, or rollback mechanics.
+
+The WIF resources, repository variables, and runtime are not currently applied.
+Phase 4 will provision/bootstrap them; Phase 5 will execute and verify real deployment
+and rollback. Phase 3B therefore makes no claim of successful GCP access.

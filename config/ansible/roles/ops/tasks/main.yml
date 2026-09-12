@@ -40,3 +40,5 @@
     - { path: /srv/arp, mode: '0750' }
     - { path: /srv/arp/state, mode: '0700' }
     - { path: /srv/arp/secrets, mode: '0700' }
+    - { path: /srv/arp/releases, mode: '0700' }
+    - { path: /srv/arp/releases/incoming, mode: '0700' }
