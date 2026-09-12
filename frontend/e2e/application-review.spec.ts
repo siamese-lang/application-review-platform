@@ -25,8 +25,8 @@ async function login(page: Page, username: string, password: string) {
 }
 
 async function logout(page: Page) {
-  await page.getByRole('button', { name: 'Log out' }).click()
-  await expect(page.getByRole('link', { name: 'Login' })).toBeVisible()
+  await page.getByRole('button', { name: '로그아웃' }).click()
+  await expect(page.getByRole('link', { name: '로그인' })).toBeVisible()
 }
 
 async function openApplicantApplication(page: Page) {
