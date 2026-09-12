@@ -24,7 +24,9 @@ stage() { ARP_OPS_STAGING_ROOT="$tmp/incoming" bash "$root/scripts/deploy/stage-
 make_bundle "$tmp/a" release-a
 stage "$tmp/a" "$sha" "$digest" 42
 bash "$root/scripts/release/verify-release-bundle.sh" "$tmp/incoming/$sha" "$sha"
-stage "$tmp/a" "$sha" "$digest" 42
+stage "$tmp/a" "$sha" "$digest" 43
+other_digest=sha256:$(printf 'b%.0s' {1..64})
+! stage "$tmp/a" "$sha" "$other_digest" 44
 make_bundle "$tmp/changed" changed
 ! stage "$tmp/changed" "$sha" "$digest" 42
 make_bundle "$tmp/wrong-sha" x 1111111111111111111111111111111111111111
