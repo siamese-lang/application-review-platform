@@ -44,8 +44,29 @@ if [[ -e $final ]]; then
   bash "$verifier" "$final" "$release_sha"
   for file in backend.jar frontend.tar.gz release-manifest.json handoff.json; do
     [[ -f $final/$file && ! -L $final/$file ]] || { echo "invalid retained $file" >&2; exit 1; }
-    cmp -s "$tmp/$file" "$final/$file" || { echo "retained release identity/content differs: $file" >&2; exit 1; }
   done
+  for file in backend.jar frontend.tar.gz release-manifest.json; do
+    cmp -s "$tmp/$file" "$final/$file" || { echo "retained release content differs: $file" >&2; exit 1; }
+  done
+  python3 - "$final/handoff.json" "$release_sha" "$release_digest" <<'PY'
+import json, pathlib, sys
+path, sha, digest = sys.argv[1:]
+try:
+    receipt = json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
+except (OSError, json.JSONDecodeError) as exc:
+    raise SystemExit(f"invalid retained handoff receipt: {exc}")
+expected = {
+    "sourceSha": sha,
+    "ociDigest": digest,
+    "releaseRepository": "ghcr.io/siamese-lang/application-review-platform-release",
+}
+for key, value in expected.items():
+    if receipt.get(key) != value:
+        raise SystemExit(f"retained release identity differs: {key}")
+run_id = receipt.get("githubWorkflowRunId")
+if not isinstance(run_id, int) or run_id < 1:
+    raise SystemExit("retained handoff receipt has invalid githubWorkflowRunId")
+PY
   echo "release already staged: $final"
   exit 0
 fi
