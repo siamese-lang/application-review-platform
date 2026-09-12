@@ -16,23 +16,29 @@ M6 must prove that one reviewed repository revision can be:
 
 M6 is about **delivery and operational release control**, not observability, workload, performance, failure injection, backup implementation, or DR.
 
-## Current implementation slice — Phase 5 — exact release deployment and rollback drill
+## Current implementation slice — Phase 6 — M6 evidence and lifecycle closeout
 
-Phase 4 is complete. The live seven-role GCP runtime has been recreated from the reviewed
-repository state, the Phase 3 WIF/IAM resources are applied, `ops-01` controls the runtime
-state and fresh SOPS/age material, PostgreSQL/Garage/Nginx/application prerequisites are
-configured, Garage is healthy across three Seoul zones, and final bootstrap/runtime
-OpenTofu plans report no drift.
+Phase 5 is complete. The live runtime has now exercised the complete M6 delivery path:
+exact reviewed release publication and WIF/IAP/OS Login handoff, immutable activation,
+Flyway V5 verification, controlled synthetic-user bootstrap, real HTTPS SPA/API/Garage
+business smoke, an actual schema-compatible rollback, post-rollback smoke, and return to
+the intended final release.
 
-Phase 5 now owns the first immutable release deployment through the explicit GitHub
-deployment workflow, Flyway V5 activation, final-schema synthetic privileged-user
-bootstrap, public SPA/API/business/attachment smoke, a schema-compatible rollback drill,
-and return to the intended final release.
+The final intended release is
+`a26193598d0fbcb5a2f6d468739b36b7aef3f0aa`. The observed Release B → Release A
+rollback completed in `38,346 ms`; no database migration rollback was performed.
+Sanitized Phase 5 evidence is retained in
+`docs/operations/M6_PHASE5_RELEASE_ROLLBACK_EVIDENCE.md`, and the portfolio candidate
+has a dedicated Evidence Card.
+
+Phase 6 now owns closeout only: manual browser inspection, final post-deploy
+infrastructure no-drift verification, explicit runtime retain/destroy disposition,
+evidence maturity review, plan/README/state closeout, final exact-head CI, merge, and
+post-merge verification.
 
 Constraints remain unchanged: no M7 observability, workload/performance/fault/DR work,
 no plaintext secret leaving the controlled operations path, and no claim that database
 migrations are automatically rolled back.
-
 
 ## Portfolio evidence objective
 
@@ -73,17 +79,17 @@ The M4 runtime is intentionally destroyed. M6 must not assume that the old seven
 
 The retained owner-bootstrap IAM/service-account root and repository OpenTofu/Ansible configuration are the starting infrastructure baseline.
 
-## Existing delivery gaps
+## Delivery gaps resolved through Phase 5
 
-The repository already proves infrastructure provisioning and application behavior, but it does not yet provide a final delivery path.
+The M6 runtime work has now closed the delivery gaps that motivated this milestone:
 
-Current gaps:
+- the final deployment path consumes a verified immutable release bundle and does not build a working-tree JAR;
+- the versioned install/rollback mechanics have been exercised on the recreated runtime with a real compatible release pair;
+- the repository-constrained GitHub WIF workflow has authenticated and staged exact release artifacts on `ops-01`;
+- `deploy/cloud-smoke.sh` targets the final M5 SPA/API boundary and has passed before rollback, after rollback, and after final release restoration;
+- Flyway V5 was verified before controlled synthetic privileged users were inserted.
 
-- the legacy `deploy/build-and-configure.sh` remains only as the retained M4 compatibility path; the final M6 path no longer builds a working-tree JAR;
-- Phase 2 install/rollback mechanics are repository-verified but have not yet been exercised by a real immutable release activation and rollback on the recreated runtime;
-- Phase 3 WIF/IAM resources are now live and GitHub repository variables are configured, but the explicit deployment workflow has not yet been dispatched against the real runtime;
-- `deploy/cloud-smoke.sh` still describes the removed Thymeleaf/form-login interface and must be replaced before Phase 5 business evidence;
-- the Flyway-V5-compatible synthetic-user bootstrap is prepared, but actual insertion intentionally waits until the first Phase 5 backend startup establishes the final schema.
+The remaining work is evidence/lifecycle closeout rather than delivery-path implementation.
 
 ## Frozen architecture and non-goals
 
@@ -507,53 +513,45 @@ dispatch, public business smoke, or rollback.
 
 ### Phase 5 — Exact release deployment and rollback drill
 
-Deploy an immutable release through the new M6 path.
+Status: **COMPLETE**
 
-Verify:
+Completion evidence:
 
-- artifact digest/manifest;
-- backend-first deployment order;
-- Flyway state;
-- API readiness;
-- frontend activation;
-- HTTPS SPA/API smoke;
-- attachment persistence;
-- active release identity.
-
-Then deploy a second schema-compatible release or otherwise establish two retained compatible releases and perform an actual rollback drill.
-
-Verify rollback with the same public/API checks.
-
-Return to the intended final release after the drill.
-
-Record the rollback observation in a draft/updated Evidence Card, including release identities, checksums/digest references, smoke result, elapsed rollback time, and migration-compatibility limit.
+- Release A SHA: `53f5796235114481c62d9d178e395738f486ea3e`;
+- Release A OCI digest: `sha256:0f3ec84718f001439b1cab365cfe8dc5f18246395f0dd0d3b71bb8d1398a49f9`;
+- Release B/final SHA: `a26193598d0fbcb5a2f6d468739b36b7aef3f0aa`;
+- Release B OCI digest: `sha256:63716c0ff1b679ef2293fe1be47183828c87f323d13d2842bb8e8e84d280345c`;
+- Release B exact-release handoff workflow run `34695033956`: SUCCESS;
+- Flyway schema history V1–V5 verified successful, failed migration count 0;
+- controlled synthetic APPLICANT/REVIEWER/ADMIN identities bootstrapped after V5 without exposing credentials;
+- full HTTPS SPA/API/Garage business smoke passed on the live release path;
+- Release B activated with backend/frontend `current=B`, `previous=A`;
+- real schema-compatible B → A rollback completed in `38,346 ms`;
+- no database migration rollback was performed;
+- backend/frontend rollback identity verified as `current=A`, `previous=B`;
+- full HTTPS/API/Garage business smoke passed after rollback;
+- Release B was reactivated and final identity returned to `current=B`, `previous=A`;
+- final full HTTPS/API/Garage business smoke passed;
+- sanitized detailed evidence is retained in `docs/operations/M6_PHASE5_RELEASE_ROLLBACK_EVIDENCE.md`.
 
 ### Phase 6 — M6 evidence and lifecycle closeout
 
-Record sanitized evidence:
+Status: **ACTIVE**
 
-- release source SHA;
-- OCI digest;
-- artifact checksums without secret values;
-- deployment workflow run;
-- target release before/after;
-- Flyway migration state;
-- HTTPS smoke result;
-- rollback target/result;
-- final active release;
-- post-deploy infrastructure plan result;
-- manual browser validation result;
-- retain/destroy decision for the runtime;
-- updated `docs/portfolio/PORTFOLIO_EVIDENCE_MAP.md` maturity for the M6 candidate;
-- an M6 Evidence Card if the rollback candidate reaches E3 or higher.
+Phase 5 already retained the release/rollback runtime evidence, promoted the candidate to E3, and added the required Evidence Card.
 
-Then:
+Remaining closeout work:
 
-- move this plan to `docs/plans/completed/`;
-- update README;
-- require final exact-head CI;
-- merge;
-- verify post-merge `main`.
+1. manually inspect the real HTTPS SPA pages defined in the manual-browser-validation section;
+2. run final owner-bootstrap/runtime OpenTofu plans and retain the no-drift result;
+3. explicitly choose and record whether the seven-role runtime is retained for immediate M7 work or destroyed for cost control;
+4. review the M6 Evidence Card and evidence-map maturity honestly after those controls are complete;
+5. move this plan to `docs/plans/completed/`;
+6. update README and `docs/AI_PROJECT_STATE.md`;
+7. require final exact-head CI;
+8. merge and verify post-merge `main`.
+
+Do not begin M7 implementation until this closeout is complete.
 
 ## Expected files/components
 
