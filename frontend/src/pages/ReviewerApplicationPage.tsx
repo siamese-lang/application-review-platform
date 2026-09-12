@@ -5,7 +5,7 @@ import { ErrorNotice } from '../components/ErrorNotice'
 import { StatusBadge } from '../components/StatusBadge'
 import type { ApplicationHistory, Attachment, ReviewerApplicationDetail } from '../types/api'
 import { formatMoney, formatTimestamp } from './ApplicationsPage'
-import { applicationStatusLabel } from '../utils/presentation'
+import { applicationStatusLabel, attachmentStatusLabels } from '../utils/presentation'
 
 type PendingAction = 'start' | 'revision' | 'approve' | 'reject'
 
