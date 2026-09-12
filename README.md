@@ -28,7 +28,9 @@
 - M6 Phase 1 release publication: complete; immutable backend/frontend bundle is retained in GHCR by full main SHA/digest
 - M6 Phase 2 versioned install/rollback mechanics: complete; exact-SHA app/edge install, paired preflight, explicit rollback, and Ansible final release path are verified repository-side without recreating GCP
 - M6 Phase 3 keyless delivery contract: complete; repository/workflow-constrained GitHub WIF and explicit exact-SHA/exact-digest, pull-by-digest, stage-only `ops-01` handoff are verified repository-side without GCP execution
-- Current M6 slice: Phase 4A runtime/cloud preflight hardening; it prepares but does not execute the owner-authenticated GCP recreation
+- M6 Phase 4 live runtime/secret execution: complete; WIF/IAM and the seven-role GCP runtime are live, `ops-01` controls state/secrets, Garage/PostgreSQL/Nginx prerequisites are verified, and both OpenTofu roots are no-drift
+- M6 Phase 4 runtime evidence: `docs/operations/M6_PHASE4_RUNTIME_EVIDENCE.md`
+- Current M6 slice: Phase 5 exact release deployment and rollback drill
 
 This project is **production-like**, not a claim of real production operation. All users, organizations, applications, documents, workloads, and measurements are synthetic unless explicitly recorded otherwise.
 
@@ -80,7 +82,8 @@ Public registration always creates `APPLICANT`; browser clients cannot self-assi
 - Primary zone: `asia-northeast3-a`
 - M4 proved the seven-role IaaS topology with HTTPS and end-to-end business/attachment smoke.
 - The live M4 runtime was destroyed after verification/merge to stop unnecessary trial-credit consumption.
-- Repository OpenTofu/Ansible and sanitized M4 evidence remain the reproducible record; later milestones re-provision infrastructure only when required.
+- M6 Phase 4 recreated the same seven-role runtime for delivery verification; the environment is currently retained only for the active M6 deployment/rollback work.
+- Repository OpenTofu/Ansible plus sanitized M4/M6 evidence remain the reproducible record.
 
 See `docs/operations/GCP_BASELINE.md` and `docs/operations/M4_RUNTIME_EVIDENCE.md`.
 
