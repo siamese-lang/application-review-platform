@@ -16,6 +16,23 @@ M6 must prove that one reviewed repository revision can be:
 
 M6 is about **delivery and operational release control**, not observability, workload, performance, failure injection, backup implementation, or DR.
 
+## Current implementation slice — Phase 2B
+
+Goal: connect an exact, locally retained Phase 1 bundle to app/edge release
+installation, activation, and explicit rollback through Ansible without a working-tree
+build.
+
+Files/components: shared release-runtime role, app/edge provisioning, dedicated
+release and rollback playbooks, operator wrappers, Phase 2A mechanics, and focused CI.
+
+Constraints: preserve the optional M4 compatibility script and stable systemd/Nginx
+pointers; stage and preflight both hosts before activation; require paired rollback
+preflight and schema-compatibility acknowledgement; do not add GHCR/GCP delivery or
+runtime evidence in this slice.
+
+Verification: isolated filesystem regression, shell/Python syntax, Ansible syntax,
+focused static contract, repository baseline, and whitespace validation.
+
 
 ## Portfolio evidence objective
 

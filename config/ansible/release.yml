@@ -1,0 +1,98 @@
+---
+- name: Stage backend release without activation
+  hosts: app
+  become: true
+  any_errors_fatal: true
+  vars:
+    release_transfer_dir: "/tmp/arp-release-{{ arp_release_sha }}"
+  tasks:
+    - name: Validate exact release inputs
+      ansible.builtin.assert:
+        that:
+          - arp_release_sha is match('^[0-9a-f]{40}$')
+          - arp_release_bundle_dir | length > 0
+    - name: Stage and install backend release
+      block:
+        - name: Create backend transfer directory
+          ansible.builtin.file: { path: "{{ release_transfer_dir }}", state: directory, mode: '0700' }
+        - name: Transfer backend release bundle
+          ansible.builtin.copy:
+            src: "{{ arp_release_bundle_dir }}/{{ item }}"
+            dest: "{{ release_transfer_dir }}/{{ item }}"
+            mode: '0600'
+          loop: [backend.jar, frontend.tar.gz, release-manifest.json]
+        - name: Install verified backend release
+          ansible.builtin.command:
+            argv: [/usr/local/lib/arp/deploy/release-mechanics.py, install, backend, "{{ release_transfer_dir }}", "{{ arp_release_sha }}"]
+      always:
+        - name: Remove backend transfer directory
+          ansible.builtin.file: { path: "{{ release_transfer_dir }}", state: absent }
+
+- name: Stage frontend release without activation
+  hosts: edge
+  become: true
+  any_errors_fatal: true
+  vars:
+    release_transfer_dir: "/tmp/arp-release-{{ arp_release_sha }}"
+  tasks:
+    - name: Validate exact release inputs
+      ansible.builtin.assert:
+        that:
+          - arp_release_sha is match('^[0-9a-f]{40}$')
+          - arp_release_bundle_dir | length > 0
+    - name: Stage and install frontend release
+      block:
+        - name: Create frontend transfer directory
+          ansible.builtin.file: { path: "{{ release_transfer_dir }}", state: directory, mode: '0700' }
+        - name: Transfer frontend release bundle
+          ansible.builtin.copy:
+            src: "{{ arp_release_bundle_dir }}/{{ item }}"
+            dest: "{{ release_transfer_dir }}/{{ item }}"
+            mode: '0600'
+          loop: [backend.jar, frontend.tar.gz, release-manifest.json]
+        - name: Install verified frontend release
+          ansible.builtin.command:
+            argv: [/usr/local/lib/arp/deploy/release-mechanics.py, install, frontend, "{{ release_transfer_dir }}", "{{ arp_release_sha }}"]
+      always:
+        - name: Remove frontend transfer directory
+          ansible.builtin.file: { path: "{{ release_transfer_dir }}", state: absent }
+
+- name: Preflight staged backend before any activation
+  hosts: app
+  become: true
+  any_errors_fatal: true
+  tasks:
+    - name: Verify installed backend release
+      ansible.builtin.command:
+        argv: [/usr/local/lib/arp/deploy/release-mechanics.py, verify-installed, backend, "{{ arp_release_sha }}"]
+      changed_when: false
+
+- name: Preflight staged frontend before any activation
+  hosts: edge
+  become: true
+  any_errors_fatal: true
+  tasks:
+    - name: Verify installed frontend release
+      ansible.builtin.command:
+        argv: [/usr/local/lib/arp/deploy/release-mechanics.py, verify-installed, frontend, "{{ arp_release_sha }}"]
+      changed_when: false
+
+- name: Activate backend and restart application
+  hosts: app
+  become: true
+  any_errors_fatal: true
+  tasks:
+    - name: Activate backend release
+      ansible.builtin.command:
+        argv: [/usr/local/lib/arp/deploy/release-mechanics.py, activate, backend, "{{ arp_release_sha }}"]
+    - name: Restart application for activated backend
+      ansible.builtin.systemd: { name: arp, state: restarted, enabled: true }
+
+- name: Activate frontend after backend succeeds
+  hosts: edge
+  become: true
+  any_errors_fatal: true
+  tasks:
+    - name: Activate frontend release
+      ansible.builtin.command:
+        argv: [/usr/local/lib/arp/deploy/release-mechanics.py, activate, frontend, "{{ arp_release_sha }}"]

@@ -76,7 +76,9 @@ with tempfile.TemporaryDirectory() as temporary:
     for component in ("backend", "frontend"):
         assert pointer(runtime, component) == B
         assert state(runtime, component) == {"current": B, "previous": A}
-        command("rollback", component, root=runtime)
+        command("verify-installed", component, B, root=runtime)
+        command("verify-rollback", component, A, root=runtime)
+        command("rollback", component, A, root=runtime)
         assert pointer(runtime, component) == A
         assert state(runtime, component) == {"current": A, "previous": B}
     assert state(runtime, "backend")["current"] == state(runtime, "frontend")["current"]
@@ -99,11 +101,17 @@ with tempfile.TemporaryDirectory() as temporary:
     assert pointer(runtime, "frontend") == A
 
     command("install", "backend", str(bundle_a), B, root=base / "mismatch", success=False)
-    command("rollback", "backend", root=base / "empty", success=False)
+    command("rollback", "backend", A, root=base / "empty", success=False)
+
+    # Rollback is explicit and only the recorded previous release is accepted.
+    command("verify-rollback", "backend", A, root=runtime, success=False)
+    command("rollback", "backend", A, root=runtime, success=False)
+    assert pointer(runtime, "backend") == A
 
     # Removing the retained rollback target fails closed without changing the pointer.
     (runtime / f"opt/arp/releases/{B}/frontend.tar.gz").unlink()
-    command("rollback", "frontend", root=runtime, success=False)
+    command("verify-rollback", "frontend", B, root=runtime, success=False)
+    command("rollback", "frontend", B, root=runtime, success=False)
     assert pointer(runtime, "frontend") == A
 
     for kind in ("traversal", "symlink", "hardlink", "fifo"):

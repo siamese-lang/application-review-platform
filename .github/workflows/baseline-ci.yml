@@ -299,6 +299,17 @@ jobs:
       - uses: actions/checkout@v4
       - name: Verify isolated release install, activation, and rollback
         run: python3 scripts/deploy/test-release-mechanics.py
+      - name: Verify Phase 2B runtime release contract
+        run: bash scripts/deploy/test-release-runtime-contract.sh
+      - name: Install Ansible for release playbook syntax
+        run: python -m pip install 'ansible-core>=2.17,<2.20'
+      - name: Check release and rollback playbook syntax
+        working-directory: config/ansible
+        run: |
+          ansible-playbook --inventory inventory/example.yml release.yml --syntax-check \
+            --extra-vars 'arp_release_sha=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa arp_release_bundle_dir=/tmp/bundle'
+          ansible-playbook --inventory inventory/example.yml rollback.yml --syntax-check \
+            --extra-vars 'arp_rollback_sha=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa arp_rollback_schema_compatible=true'
 
 
   m6-release-scope:
@@ -537,6 +548,10 @@ jobs:
         run: |
           ansible-playbook --inventory inventory/example.yml site.yml --syntax-check
           ansible-playbook --inventory 'localhost,' bootstrap-ops.yml --syntax-check
+          ansible-playbook --inventory inventory/example.yml release.yml --syntax-check \
+            --extra-vars 'arp_release_sha=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa arp_release_bundle_dir=/tmp/bundle'
+          ansible-playbook --inventory inventory/example.yml rollback.yml --syntax-check \
+            --extra-vars 'arp_rollback_sha=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa arp_rollback_schema_compatible=true'
       - name: Check deployment Python syntax
         run: python3 -m py_compile deploy/generate-inventory.py deploy/with-oslogin-ssh.py
       - name: Check deployment shell syntax

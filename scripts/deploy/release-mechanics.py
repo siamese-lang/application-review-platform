@@ -184,11 +184,29 @@ def activate(args: argparse.Namespace) -> None:
 
 
 def rollback(args: argparse.Namespace) -> None:
+    target_sha = require_sha(args.sha)
     root = Path(args.root).resolve()
     state = read_state(root, args.component)
     if state["current"] is None or state["previous"] is None:
         fail(f"no previous {args.component} release is available for rollback")
-    switch(root, args.component, state["previous"], state["current"])
+    if target_sha != state["previous"]:
+        fail(f"requested {args.component} rollback target is not the recorded previous release")
+    switch(root, args.component, target_sha, state["current"])
+
+
+def verify_installed_command(args: argparse.Namespace) -> None:
+    verify_installed(Path(args.root).resolve(), args.component, require_sha(args.sha))
+
+
+def verify_rollback(args: argparse.Namespace) -> None:
+    target_sha = require_sha(args.sha)
+    root = Path(args.root).resolve()
+    state = read_state(root, args.component)
+    if state["current"] is None or state["previous"] is None:
+        fail(f"no previous {args.component} release is available for rollback")
+    if target_sha != state["previous"]:
+        fail(f"requested {args.component} rollback target is not the recorded previous release")
+    verify_installed(root, args.component, target_sha)
 
 
 def parser() -> argparse.ArgumentParser:
@@ -205,8 +223,19 @@ def parser() -> argparse.ArgumentParser:
     activate_parser.add_argument("sha")
     activate_parser.add_argument("--root", default="/")
     activate_parser.set_defaults(action=activate)
+    verify_parser = subparsers.add_parser("verify-installed")
+    verify_parser.add_argument("component", choices=COMPONENTS)
+    verify_parser.add_argument("sha")
+    verify_parser.add_argument("--root", default="/")
+    verify_parser.set_defaults(action=verify_installed_command)
+    rollback_verify_parser = subparsers.add_parser("verify-rollback")
+    rollback_verify_parser.add_argument("component", choices=COMPONENTS)
+    rollback_verify_parser.add_argument("sha")
+    rollback_verify_parser.add_argument("--root", default="/")
+    rollback_verify_parser.set_defaults(action=verify_rollback)
     rollback_parser = subparsers.add_parser("rollback")
     rollback_parser.add_argument("component", choices=COMPONENTS)
+    rollback_parser.add_argument("sha")
     rollback_parser.add_argument("--root", default="/")
     rollback_parser.set_defaults(action=rollback)
     return result

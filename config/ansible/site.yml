@@ -13,7 +13,7 @@
   roles: [garage]
 - hosts: app
   become: true
-  roles: [app]
+  roles: [release_runtime, app]
 - hosts: edge
   become: true
-  roles: [edge]
+  roles: [release_runtime, edge]

@@ -20,7 +20,18 @@
     - { path: /etc/nginx/tls, mode: '0700' }
     - { path: /etc/nginx/snippets, mode: '0755' }
     - { path: /var/lib/acme, mode: '0755' }
-    - { path: /opt/arp/frontend/current, mode: '0755' }
+    - { path: /opt/arp/frontend/releases, mode: '0755' }
+- name: Inspect the frontend active pointer
+  ansible.builtin.stat:
+    path: /opt/arp/frontend/current
+    follow: false
+  register: frontend_current
+- name: Refuse a legacy real frontend current directory
+  ansible.builtin.assert:
+    that: "(not frontend_current.stat.exists) or (frontend_current.stat.islnk | default(false))"
+    fail_msg: >-
+      /opt/arp/frontend/current exists but is not a symlink. Preserve or migrate its
+      contents explicitly before using the M6 release path; Ansible will not delete it.
 - name: Install optional operator TLS certificate
   ansible.builtin.copy:
     src: "{{ tls_certificate_source }}"
