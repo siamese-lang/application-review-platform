@@ -25,7 +25,9 @@
 - Legacy Thymeleaf presentation code is removed; Spring Boot owns the `/api/v1` application boundary while Nginx owns browser presentation routing
 - Current implementation milestone: M6 Operations & Delivery
 - Active plan: `docs/plans/active/M6-operations-delivery.md`
-- M6 pre-implementation boundary: immutable backend/frontend release identity, GHCR artifact retention, versioned deploy/rollback, keyless GitHub→GCP delivery, and controlled real-cloud verification; no temporary preview environment
+- M6 Phase 1 release publication: complete; immutable backend/frontend bundle is retained in GHCR by full main SHA/digest
+- M6 Phase 2 versioned install/rollback mechanics: complete; exact-SHA app/edge install, paired preflight, explicit rollback, and Ansible final release path are verified repository-side without recreating GCP
+- Current M6 slice: Phase 3 keyless GitHub→GCP delivery identity and explicit exact-release deployment workflow; no GCP runtime creation until Phase 4
 
 This project is **production-like**, not a claim of real production operation. All users, organizations, applications, documents, workloads, and measurements are synthetic unless explicitly recorded otherwise.
 
