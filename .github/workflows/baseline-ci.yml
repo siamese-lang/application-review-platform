@@ -292,9 +292,37 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  m6-release-publish:
+
+  m6-release-scope:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      publish: ${{ steps.scope.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Determine whether the main revision changes deployable/runtime material
+        id: scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          before="${{ github.event.before }}"
+          if [[ ! "$before" =~ ^[0-9a-f]{40}$ || "$before" == "0000000000000000000000000000000000000000" ]]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if git diff --quiet "$before" "$GITHUB_SHA" -- . ':(exclude)docs/**' ':(exclude)README.md'; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "Only docs/README changed; no new runtime release will be published."
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  m6-release-publish:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.m6-release-scope.outputs.publish == 'true'
     needs:
+      - m6-release-scope
       - repository-baseline
       - m1-application
       - m4-infrastructure-static
@@ -367,9 +395,9 @@ jobs:
           {
             echo "## M6 immutable release"
             echo
-            echo "Source: `$GITHUB_SHA`"
-            echo "Tag: `$ref`"
-            echo "Digest: `$digest`"
+            printf 'Source: `%s`\n' "$GITHUB_SHA"
+            printf 'Tag: `%s`\n' "$ref"
+            printf 'Digest: `%s`\n' "$digest"
             echo
             echo "The artifact was pulled back by digest and the release manifest/checksums were re-verified."
           } >> "$GITHUB_STEP_SUMMARY"
