@@ -2,6 +2,7 @@
 - name: Preflight frontend rollback target without mutation
   hosts: edge
   become: true
+  any_errors_fatal: true
   tasks:
     - name: Validate explicit rollback inputs
       ansible.builtin.assert:
@@ -16,6 +17,7 @@
 - name: Preflight backend rollback target without mutation
   hosts: app
   become: true
+  any_errors_fatal: true
   tasks:
     - name: Verify retained backend rollback target and state
       ansible.builtin.command:
@@ -25,6 +27,7 @@
 - name: Roll frontend back first
   hosts: edge
   become: true
+  any_errors_fatal: true
   tasks:
     - name: Activate recorded previous frontend release
       ansible.builtin.command:
@@ -33,6 +36,7 @@
 - name: Roll backend back and restart application
   hosts: app
   become: true
+  any_errors_fatal: true
   tasks:
     - name: Activate recorded previous backend release
       ansible.builtin.command:
