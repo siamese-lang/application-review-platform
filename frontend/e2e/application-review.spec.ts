@@ -53,7 +53,7 @@ test('public applicant flow and reviewer workflow run against the real stack', a
   await expect(page.getByRole('heading', { name: 'Small Business Digital Adoption', exact: true })).toBeVisible()
   await expect(page.getByText('접수 중', { exact: true })).toBeVisible()
   await expect(page.getByText(/로그인.*회원가입.*신청서/)).toBeVisible()
-  await page.getByRole('link', { name: '회원가입', exact: true }).click()
+  await page.getByRole('complementary').getByRole('link', { name: '회원가입', exact: true }).click()
 
   await page.getByLabel('아이디').fill(applicant.username)
   await page.getByLabel('이름').fill(applicant.displayName)
