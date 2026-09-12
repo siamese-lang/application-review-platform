@@ -43,3 +43,15 @@
         argv: [/usr/local/lib/arp/deploy/release-mechanics.py, rollback, backend, "{{ arp_rollback_sha }}"]
     - name: Restart application for rolled-back backend
       ansible.builtin.systemd: { name: arp, state: restarted, enabled: true }
+    - name: Wait for rolled-back backend API readiness
+      ansible.builtin.uri:
+        url: http://127.0.0.1:8080/api/v1/programs?size=1
+        method: GET
+        status_code: 200
+        return_content: false
+        timeout: 5
+      register: rollback_readiness
+      retries: 30
+      delay: 2
+      until: rollback_readiness.status == 200
+      changed_when: false
