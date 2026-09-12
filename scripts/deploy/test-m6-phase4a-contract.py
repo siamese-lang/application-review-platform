@@ -33,6 +33,8 @@ assert "WHERE NOT EXISTS" in users and "htpasswd -bnBC 12" in users
 assert "echo \"$password\"" not in users and "echo \"$hash\"" not in users
 assert "Flyway V5 schema" in users
 assert "required_column_count <> 7" in users
+assert "DO $" in users
+assert "END $;" in users
 assert 'root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)' in users
 assert "git rev-parse --show-toplevel" not in users
 
