@@ -238,6 +238,153 @@ jobs:
             kill "$(cat ci-diagnostics/nginx-backend.pid)" 2>/dev/null || true
           fi
 
+
+  m6-release-bundle:
+    needs: [m1-application, m5-frontend]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Build frontend release
+        working-directory: frontend
+        run: npm run build
+      - name: Build backend release
+        run: ./mvnw -pl app -DskipTests package
+      - name: Build and verify release bundle twice
+        shell: bash
+        run: |
+          bash scripts/release/build-release-bundle.sh "$GITHUB_SHA" build/release/first
+          bash scripts/release/build-release-bundle.sh "$GITHUB_SHA" build/release/second
+          cmp build/release/first/backend.jar build/release/second/backend.jar
+          cmp build/release/first/frontend.tar.gz build/release/second/frontend.tar.gz
+          cmp build/release/first/release-manifest.json build/release/second/release-manifest.json
+          bash scripts/release/verify-release-bundle.sh build/release/first "$GITHUB_SHA"
+      - name: Prove checksum verification rejects tampering
+        shell: bash
+        run: |
+          cp -a build/release/first build/release/tampered
+          printf 'tamper' >> build/release/tampered/backend.jar
+          if bash scripts/release/verify-release-bundle.sh build/release/tampered "$GITHUB_SHA"; then
+            echo "tampered release bundle unexpectedly passed verification" >&2
+            exit 1
+          fi
+      - name: Upload verified release bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: m6-release-bundle-${{ github.sha }}
+          path: |
+            build/release/first/backend.jar
+            build/release/first/frontend.tar.gz
+            build/release/first/release-manifest.json
+          if-no-files-found: error
+          retention-days: 7
+
+  m6-release-publish:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs:
+      - repository-baseline
+      - m1-application
+      - m4-infrastructure-static
+      - m5-frontend
+      - m5-browser-e2e
+      - m5-nginx-routing
+      - m6-release-bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    env:
+      RELEASE_REPOSITORY: ghcr.io/siamese-lang/application-review-platform-release
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download verified release bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: m6-release-bundle-${{ github.sha }}
+          path: build/release/publish
+      - name: Verify downloaded release bundle
+        run: bash scripts/release/verify-release-bundle.sh build/release/publish "$GITHUB_SHA"
+      - name: Set up pinned ORAS 1.3.3
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d
+        with:
+          version: 1.3.3
+      - name: Authenticate to GHCR
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: printf '%s' "$GHCR_TOKEN" | oras login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+      - name: Publish or verify immutable release
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ci-diagnostics
+          ref="$RELEASE_REPOSITORY:$GITHUB_SHA"
+
+          if oras manifest fetch "$ref" >/dev/null 2>&1; then
+            digest="$(oras resolve "$ref")"
+            echo "Release tag already exists; verifying without overwriting: $ref@$digest"
+          else
+            (
+              cd build/release/publish
+              oras push \
+                --artifact-type application/vnd.siameselang.arp.release.v1 \
+                --annotation "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" \
+                --annotation "org.opencontainers.image.revision=$GITHUB_SHA" \
+                --format json \
+                "$ref" \
+                release-manifest.json:application/vnd.siameselang.arp.release-manifest.v1+json \
+                backend.jar:application/vnd.siameselang.arp.backend.v1+java-archive \
+                frontend.tar.gz:application/vnd.siameselang.arp.frontend.v1+tar+gzip \
+                | tee "$GITHUB_WORKSPACE/ci-diagnostics/release-publish.json"
+            )
+            digest="$(python3 -c 'import json; print(json.load(open("ci-diagnostics/release-publish.json", encoding="utf-8"))["digest"])')"
+          fi
+
+          if [[ ! "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "invalid OCI digest returned by GHCR: $digest" >&2
+            exit 1
+          fi
+
+          printf '%s\n' "$digest" > ci-diagnostics/release-digest.txt
+          rm -rf build/release/roundtrip
+          oras pull "$RELEASE_REPOSITORY@$digest" -o build/release/roundtrip
+          bash scripts/release/verify-release-bundle.sh build/release/roundtrip "$GITHUB_SHA"
+
+          {
+            echo "## M6 immutable release"
+            echo
+            echo "Source: `$GITHUB_SHA`"
+            echo "Tag: `$ref`"
+            echo "Digest: `$digest`"
+            echo
+            echo "The artifact was pulled back by digest and the release manifest/checksums were re-verified."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload release publication record
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m6-release-publish-${{ github.sha }}
+          path: |
+            build/release/publish/release-manifest.json
+            ci-diagnostics/release-digest.txt
+            ci-diagnostics/release-publish.json
+          if-no-files-found: ignore
+          retention-days: 30
+
   repository-baseline:
     runs-on: ubuntu-latest
     steps:
