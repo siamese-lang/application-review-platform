@@ -64,8 +64,8 @@ Current gaps:
 
 - `deploy/build-and-configure.sh` builds the JAR from the working tree and copies a local path through Ansible;
 - the M5 frontend static release has no versioned release/install/rollback path on `edge-01`;
-- backend and frontend are not yet bound together by one durable release manifest;
-- there is no retained artifact registry record suitable for redeploying an exact reviewed revision;
+- backend and frontend are now bound by the Phase 1 release manifest and retained GHCR artifact; deployment/rollback consumption of that artifact is still pending;
+- a retained artifact registry record now exists for exact reviewed revisions; Phase 2+ must consume it rather than rebuilding from a working tree;
 - there is no GitHub-to-GCP keyless deployment identity;
 - there is no controlled deployment workflow that accepts one explicit release revision/digest;
 - rollback is not implemented as a tested operational command;
@@ -366,9 +366,11 @@ Do not silently leave seven-role infrastructure running indefinitely.
 
 ### Phase 1 — Release artifact contract and CI publication
 
+Status: **COMPLETE**
+
 Repository-only; no GCP runtime.
 
-Implement:
+Implemented:
 
 - deterministic release-bundle script;
 - release manifest and SHA-256 verification;
@@ -376,9 +378,25 @@ Implement:
 - exact backend JAR selection;
 - pinned ORAS tooling;
 - GHCR OCI artifact publication for green `main` only;
-- CI test that extracts/verifies the bundle.
+- CI extraction/verification plus tamper rejection;
+- main-push release-scope gate so docs/README-only revisions do not publish redundant runtime artifacts.
 
-Done when an exact green `main` SHA has an immutable GHCR release reference/digest, the release bundle/manifest can be independently verified, and no GCP resources were changed. This is enabling evidence only; it does not by itself promote the M6 portfolio candidate.
+Completion evidence:
+
+- final Phase 1 source/main SHA: `9ad7f7215e1718ea02581ca812ceed9827163774`;
+- post-merge workflow run: `34670853384`;
+- required existing jobs: all SUCCESS;
+- `m6-release-scope`: SUCCESS;
+- `m6-release-bundle`: SUCCESS;
+- `m6-release-publish`: SUCCESS;
+- immutable GHCR tag: `ghcr.io/siamese-lang/application-review-platform-release:9ad7f7215e1718ea02581ca812ceed9827163774`;
+- OCI digest: `sha256:e54972565b6f78015263a3ef0700b0eba09d052c82cbd545afdd9fef5bc595d7`;
+- publication job pulled the artifact back by digest and re-ran the release-manifest/checksum verifier successfully;
+- no GCP runtime resource was created or changed by Phase 1.
+
+The earlier Phase 1 publication at `160051cf314843544da1c54124bf7c62e4177efb` was a successful intermediate release used to inspect the first real GHCR path. The completion record above supersedes it for subsequent M6 work.
+
+Phase 1 remains enabling evidence. It establishes immutable release identity and retention, but it does **not** prove deployment or rollback and therefore does not by itself make the M6 portfolio story ready.
 
 ### Phase 2 — Versioned install and rollback mechanics
 
