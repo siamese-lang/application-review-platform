@@ -16,23 +16,30 @@ M6 must prove that one reviewed repository revision can be:
 
 M6 is about **delivery and operational release control**, not observability, workload, performance, failure injection, backup implementation, or DR.
 
-## Current implementation slice — Phase 4 — runtime and secret preflight
+## Current implementation slice — Phase 4A — runtime/cloud preflight hardening
 
-Goal: recreate the frozen seven-role GCP runtime from the current repository state,
-activate the Phase 3 keyless delivery identity in the owner-bootstrap IAM root, and
-restore a controlled `ops-01` operations boundary with fresh synthetic runtime secrets.
+Goal: remove repository blockers before live recreation, define a reproducible read-only
+GCP readiness check, harden owner-bootstrap/runtime local-state handling, and prepare the
+Flyway-V5-compatible synthetic-user and secret paths. Phase 4A performs no cloud apply.
 
-Files/components: owner-bootstrap OpenTofu, runtime OpenTofu, `ops-01` bootstrap,
-SOPS/age material, synthetic runtime credentials/users, Garage bootstrap, and
-post-configuration no-drift verification.
+Files/components: read-only GCP preflight, owner-bootstrap/runtime plan wrappers,
+synthetic-user bootstrap, secret preparation wording, focused offline CI, and the
+Phase 4 operations runbook.
 
 Constraints: preserve the frozen M4/M5 runtime architecture; no M7 observability,
 no automatic application deployment, no rollback drill, no benchmark/fault/DR work,
 and no plaintext runtime secret in GitHub, prompts, logs, OpenTofu state, or evidence.
 
-Verification: live billing/API/quota preflight, reviewed owner-bootstrap/runtime plans,
-controlled apply, seven-role inventory checks, `ops-01` controlled-path readiness,
-fresh secret/bootstrap verification, and final OpenTofu no-drift plan.
+Verification: offline script/contracts, existing Phase 3 tests, repository baseline,
+OpenTofu formatting/initialization/validation, and shell syntax. No live readiness is
+claimed by Phase 4A.
+
+The next Phase 4 execution slice is owner-authenticated: run readiness; recover state;
+plan/apply the owner-bootstrap and runtime roots; bootstrap `ops-01`; rotate/encrypt
+secrets and configure the runtime; bootstrap Garage; and verify final no-drift plans.
+Synthetic privileged users are inserted only after the first Phase 5 backend startup
+runs Flyway V5; Phase 4 only prepares the compatible bootstrap and may prove its
+pre-V5 refusal. Do not mark Phase 4 complete after Phase 4A.
 
 
 ## Portfolio evidence objective
@@ -482,9 +489,10 @@ Completion evidence:
 Phase 3 proves the repository-defined delivery trust and artifact-selection/handoff contract only. Real WIF authentication, IAP/OS Login transport, runtime staging, deploy, rollback, and business smoke remain later runtime evidence, so the M6 portfolio candidate remains E1.
 
 
-### Phase 4 — Runtime and secret preflight
+### Phase 4 — Runtime and secret execution
 
-Real GCP begins here.
+Phase 4A hardens and statically verifies the repository path. The next owner-authenticated
+execution slice is where real GCP work begins.
 
 Perform:
 
@@ -495,10 +503,13 @@ Perform:
 - restore or rotate SOPS/age material safely;
 - fresh synthetic DB/Garage/application credentials;
 - Garage bootstrap;
-- synthetic privileged users against the final M5 schema;
+- prepare and validate the final-M5-schema synthetic-user bootstrap; actual insertion
+  follows the first Phase 5 backend/Flyway startup (unless an approved Flyway-only
+  schema activation path already exists);
 - verify no unexpected OpenTofu drift after configuration.
 
-Do not implement M7 observability services merely because `obs-01` exists.
+Do not manually apply Flyway SQL with `psql`, and do not implement M7 observability
+services or create `obs-01` in this seven-role runtime.
 
 ### Phase 5 — Exact release deployment and rollback drill
 

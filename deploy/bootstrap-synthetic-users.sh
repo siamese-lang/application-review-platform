@@ -41,14 +41,31 @@ ssh_cmd=(
 
 sql=$(mktemp)
 trap 'rm -f "$sql"' EXIT
+cat >"$sql" <<'SQL'
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'users'
+    GROUP BY table_schema, table_name
+    HAVING array_agg(column_name) @> ARRAY[
+      'username', 'password_hash', 'role', 'display_name', 'email', 'created_at', 'updated_at'
+    ]
+  ) THEN
+    RAISE EXCEPTION 'users table does not satisfy the Flyway V5 schema; start the backend and let Flyway complete first';
+  END IF;
+END $$;
+SQL
 for role in APPLICANT REVIEWER ADMIN; do
   var="SYNTHETIC_${role}_PASSWORD"
   password=${!var}
-  username="m4-${role,,}"
+  username="m6-${role,,}"
+  display_name="M6 Synthetic ${role,,}"
+  email="${username}@example.test"
   hash=$(htpasswd -bnBC 12 '' "$password" | tr -d ':\n')
   escaped_hash=${hash//\'/\'\'}
-  printf "INSERT INTO users (username, password_hash, role) SELECT '%s', '%s', '%s' WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = '%s');\n" \
-    "$username" "$escaped_hash" "$role" "$username" >>"$sql"
+  printf "INSERT INTO users (username, password_hash, role, display_name, email, created_at, updated_at) SELECT '%s', '%s', '%s', '%s', '%s', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = '%s');\n" \
+    "$username" "$escaped_hash" "$role" "$display_name" "$email" "$username" >>"$sql"
 done
 
 "${ssh_cmd[@]}" sudo -u postgres env PGOPTIONS=--client-min-messages=warning \

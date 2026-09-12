@@ -10,6 +10,15 @@ permissions:
   contents: read
 
 jobs:
+  m6-phase4a-repository-preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate offline Phase 4A contracts
+        run: |
+          python3 scripts/deploy/test-m6-phase4a-contract.py
+          bash -n deploy/m6-runtime-preflight.sh deploy/tofu-bootstrap-plan.sh deploy/tofu-init-plan.sh deploy/bootstrap-synthetic-users.sh deploy/prepare-secrets.sh
+
   m6-delivery-workflow-static:
     runs-on: ubuntu-latest
     steps:
@@ -584,7 +593,7 @@ jobs:
           test ! -e infra/opentofu/iam.tf
           grep -Fq 'enable-guest-attributes' infra/opentofu/compute.tf
           grep -Fq 'target_tags   = ["arp-ops"]' infra/opentofu/firewall.tf
-          grep -Fq 'init -lockfile=readonly' deploy/tofu-bootstrap-plan.sh
+          grep -Fq 'init -lockfile=readonly -backend-config="path=$state_path"' deploy/tofu-bootstrap-plan.sh
           grep -Fq 'init -lockfile=readonly -backend-config="path=$state_path"' deploy/tofu-init-plan.sh
           if grep -Fq 'init -reconfigure' deploy/tofu-init-plan.sh; then
             echo 'Runtime repeat planning must not bypass backend migration safeguards with -reconfigure.' >&2
