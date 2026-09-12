@@ -20,8 +20,10 @@ python3 - "$bundle_dir" "$expected_sha" <<'PY'
 import hashlib
 import json
 import pathlib
+import posixpath
 import re
 import sys
+import tarfile
 
 bundle = pathlib.Path(sys.argv[1])
 expected_sha = sys.argv[2]
@@ -57,25 +59,32 @@ for logical_name, expected_file in (("backend", "backend.jar"), ("frontend", "fr
         raise SystemExit(f"{logical_name} SHA-256 mismatch")
     if entry["sizeBytes"] != path.stat().st_size:
         raise SystemExit(f"{logical_name} size mismatch")
+
+archive = bundle / "frontend.tar.gz"
+found_index = False
+try:
+    with tarfile.open(archive, mode="r:gz") as tar:
+        for member in tar.getmembers():
+            name = member.name
+            normalized = posixpath.normpath(name)
+            if (
+                not name
+                or name.startswith("/")
+                or normalized != name.rstrip("/")
+                or normalized == ".."
+                or normalized.startswith("../")
+                or not (normalized == "dist" or normalized.startswith("dist/"))
+            ):
+                raise SystemExit(f"frontend archive contains an unsafe or unexpected path: {name}")
+            if not (member.isfile() or member.isdir()):
+                raise SystemExit(f"frontend archive contains a non-file entry: {name}")
+            if normalized == "dist/index.html" and member.isfile():
+                found_index = True
+except (OSError, tarfile.TarError) as exc:
+    raise SystemExit(f"invalid frontend archive: {exc}")
+
+if not found_index:
+    raise SystemExit("frontend archive does not contain regular file dist/index.html")
 PY
-
-while IFS= read -r entry; do
-  case "$entry" in
-    dist|dist/*) ;;
-    *)
-      echo "frontend archive contains an unexpected path: $entry" >&2
-      exit 1
-      ;;
-  esac
-  if [[ "$entry" == /* || "$entry" == ../* || "$entry" == *"/../"* || "$entry" == *"/.." ]]; then
-    echo "frontend archive contains an unsafe path: $entry" >&2
-    exit 1
-  fi
-done < <(tar -tzf "$bundle_dir/frontend.tar.gz")
-
-if ! tar -tzf "$bundle_dir/frontend.tar.gz" | grep -Fxq 'dist/index.html'; then
-  echo "frontend archive does not contain dist/index.html" >&2
-  exit 1
-fi
 
 echo "release bundle verified: $bundle_dir"
