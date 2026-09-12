@@ -292,6 +292,14 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  m6-release-install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify isolated release install, activation, and rollback
+        run: python3 scripts/deploy/test-release-mechanics.py
+
 
   m6-release-scope:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -330,6 +338,7 @@ jobs:
       - m5-browser-e2e
       - m5-nginx-routing
       - m6-release-bundle
+      - m6-release-install
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
