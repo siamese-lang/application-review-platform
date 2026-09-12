@@ -2,6 +2,19 @@ import { type FormEvent, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { ErrorNotice } from '../components/ErrorNotice'
+import type { Role } from '../types/api'
+
+const roleHome: Record<Role, string> = {
+  APPLICANT: '/programs',
+  REVIEWER: '/review',
+  ADMIN: '/admin',
+}
+
+function canReturnTo(role: Role, path: string) {
+  if (role === 'APPLICANT') return path === '/applications' || path.startsWith('/applications/')
+  if (role === 'REVIEWER') return path === '/review' || path.startsWith('/review/')
+  return path === '/admin' || path.startsWith('/admin/')
+}
 
 export function LoginPage() {
   const { login } = useAuth()
@@ -16,8 +29,9 @@ export function LoginPage() {
     setSubmitting(true)
     const data = new FormData(event.currentTarget)
     try {
-      await login({ username: String(data.get('username')), password: String(data.get('password')) })
-      navigate((location.state as { from?: string } | null)?.from ?? '/programs', { replace: true })
+      const current = await login({ username: String(data.get('username')), password: String(data.get('password')) })
+      const from = (location.state as { from?: string } | null)?.from
+      navigate(from && canReturnTo(current.role, from) ? from : roleHome[current.role], { replace: true })
     } catch (requestError) {
       setError(requestError)
     } finally {
