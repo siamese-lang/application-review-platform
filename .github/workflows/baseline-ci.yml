@@ -272,6 +272,15 @@ jobs:
           cmp build/release/first/frontend.tar.gz build/release/second/frontend.tar.gz
           cmp build/release/first/release-manifest.json build/release/second/release-manifest.json
           bash scripts/release/verify-release-bundle.sh build/release/first "$GITHUB_SHA"
+      - name: Prove checksum verification rejects tampering
+        shell: bash
+        run: |
+          cp -a build/release/first build/release/tampered
+          printf 'tamper' >> build/release/tampered/backend.jar
+          if bash scripts/release/verify-release-bundle.sh build/release/tampered "$GITHUB_SHA"; then
+            echo "tampered release bundle unexpectedly passed verification" >&2
+            exit 1
+          fi
       - name: Upload verified release bundle
         uses: actions/upload-artifact@v4
         with:
@@ -342,13 +351,7 @@ jobs:
                 frontend.tar.gz:application/vnd.siameselang.arp.frontend.v1+tar+gzip \
                 | tee "$GITHUB_WORKSPACE/ci-diagnostics/release-publish.json"
             )
-            digest="$(python3 - <<'PY'
-import json
-from pathlib import Path
-record = json.loads(Path("ci-diagnostics/release-publish.json").read_text(encoding="utf-8"))
-print(record["digest"])
-PY
-)"
+            digest="$(python3 -c 'import json; print(json.load(open("ci-diagnostics/release-publish.json", encoding="utf-8"))["digest"])')"
           fi
 
           if [[ ! "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then
