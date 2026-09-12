@@ -26,14 +26,14 @@ resource "google_iam_workload_identity_pool_provider" "github" {
   display_name                       = "ARP M6 release deployment"
 
   attribute_mapping = {
-    "google.subject"             = "assertion.sub"
+    "google.subject"                = "assertion.sub"
     "attribute.repository"          = "assertion.repository"
     "attribute.repository_id"       = "assertion.repository_id"
     "attribute.repository_owner"    = "assertion.repository_owner"
     "attribute.repository_owner_id" = "assertion.repository_owner_id"
     "attribute.ref"                 = "assertion.ref"
-    "attribute.workflow_ref"     = "assertion.workflow_ref"
-    "attribute.event_name"       = "assertion.event_name"
+    "attribute.workflow_ref"        = "assertion.workflow_ref"
+    "attribute.event_name"          = "assertion.event_name"
   }
 
   attribute_condition = <<-EOT
