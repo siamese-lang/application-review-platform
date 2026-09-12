@@ -211,7 +211,65 @@ Do not turn an architectural intention into a completed-experience claim before 
 
 Use synthetic users, organizations, applications, files, and workload data. Never use real personal/company data to make the project appear more realistic.
 
-## 8. Current milestone recovery rule
+
+## 8. Portfolio evidence operating rule
+
+The project is complete only when it produces explainable evidence, not when it accumulates technologies.
+
+Use `docs/portfolio/PORTFOLIO_EVIDENCE_MAP.md` as the durable portfolio-evidence control plane. It records current problem candidates, evidence maturity, missing gates, rejected résumé-driven additions, and which items are allowed to become primary stories.
+
+### Completion and portfolio-readiness are different
+
+A milestone may be technically complete while producing no new primary portfolio story.
+
+Examples:
+
+- M7 may successfully install/verify observability but remain enabling infrastructure.
+- M8 may prove that a hypothesized bottleneck is not material.
+- M9 may optimize only one query even if several technologies are available.
+- A technology such as Redis may remain absent because no measured requirement justifies it.
+
+Do not manufacture a problem so that a planned technology can be used.
+
+### Required evidence progression
+
+For a problem-solving claim, prefer:
+
+`assumption/context → observed problem → baseline → analysis → options → decision → change → comparable re-test → trade-off`
+
+Correctness/concurrency/recovery claims may use invariant/failure evidence instead of latency improvements, but must still distinguish observed facts from assumptions.
+
+Any candidate promoted beyond correctness-only evidence should receive a committed evidence card based on `docs/portfolio/EVIDENCE_CARD_TEMPLATE.md`.
+
+### Technology-introduction gate
+
+A new major technology outside the frozen architecture is rejected unless the active plan/ADR can answer:
+
+1. what current requirement is not adequately handled;
+2. what evidence shows it is material;
+3. what simpler option was considered first;
+4. what new operational/failure complexity is introduced;
+5. how the same condition will be re-tested.
+
+This prevents adding Redis, Kafka, Elasticsearch, Kubernetes, another datastore, or similar components merely for résumé breadth.
+
+### Final story budget
+
+M12 should normally select only **2–3 primary E5 stories**.
+
+The current strongest candidates are tracked in the evidence map. Supporting implementation, certifications, infrastructure, UI work, and rejected alternatives remain useful interview context but do not all become résumé bullets.
+
+### Milestone evidence update rule
+
+When a milestone or experiment changes evidence maturity:
+
+1. update the relevant Evidence Map row;
+2. create/update an Evidence Card when the item moves beyond E2;
+3. link retained code/test/CI/runtime/query-plan evidence;
+4. record a negative result when a hypothesis did not become a material problem;
+5. do not raise maturity based only on implementation intent.
+
+## 9. Current milestone recovery rule
 
 The current milestone and exact implementation checkpoint belong in the active plan, not in this evergreen document.
 
@@ -222,7 +280,8 @@ A new session must recover, in order:
 3. this document;
 4. `docs/WORKFLOW.md`;
 5. accepted ADRs and relevant frozen M0 documents;
-6. the current file under `docs/plans/active/`;
-7. current `main`, open PRs, and exact-head/post-merge CI state.
+6. `docs/portfolio/PORTFOLIO_EVIDENCE_MAP.md`;
+7. the current file under `docs/plans/active/`;
+8. current `main`, open PRs, and exact-head/post-merge CI state.
 
 If the repository cannot answer what has been completed and what the next slice is, repair the documentation before continuing implementation.
