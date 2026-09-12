@@ -2,3 +2,5 @@ project_id = "application-review-platform"
 # Put real principals only in an ignored local tfvars file.
 # The principal performing the initial runtime apply must be included here.
 # admin_oslogin_members = ["user:operator@example.invalid"]
+# GitHub trust defaults are intentionally repository-specific. Override only as part of
+# a reviewed trust-boundary change; see docs/operations/M6_DELIVERY_IDENTITY.md.
