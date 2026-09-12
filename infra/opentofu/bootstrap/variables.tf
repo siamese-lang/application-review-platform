@@ -9,15 +9,27 @@ variable "admin_oslogin_members" {
 }
 
 variable "github_repository_owner" {
-  description = "Exact GitHub owner trusted by the deployment identity provider."
+  description = "Exact GitHub owner name trusted by the deployment identity provider."
   type        = string
   default     = "siamese-lang"
 }
 
+variable "github_repository_owner_id" {
+  description = "Immutable GitHub owner ID trusted by the deployment identity provider."
+  type        = string
+  default     = "174786754"
+}
+
 variable "github_repository" {
-  description = "Exact owner/repository trusted by the deployment identity provider."
+  description = "Exact owner/repository name trusted by the deployment identity provider."
   type        = string
   default     = "siamese-lang/application-review-platform"
+}
+
+variable "github_repository_id" {
+  description = "Immutable GitHub repository ID trusted by the deployment identity provider."
+  type        = string
+  default     = "1363362616"
 }
 
 variable "github_deployment_workflow_ref" {
