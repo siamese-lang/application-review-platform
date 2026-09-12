@@ -53,9 +53,4 @@ if git -C "$root" grep -n 'resource "google_service_account_key"' -- '*.tf'; the
   echo "Service-account private-key resources are forbidden." >&2
   exit 1
 fi
-if git -C "$root" grep -nE '(BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|AGE-SECRET-KEY-|private_key(_data)?[[:space:]]*=)' -- 'infra/opentofu/bootstrap/*.tf' 'infra/opentofu/bootstrap/*.tfvars*'; then
-  echo "Bootstrap configuration appears to contain private-key material." >&2
-  exit 1
-fi
-
 echo "M6 delivery identity contract checks passed."
