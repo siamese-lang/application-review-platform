@@ -1,4 +1,4 @@
-import type { ApplicationStatus, AuditEventType, IntakeStatus, ProgramPublicationStatus, Role } from '../types/api'
+import type { ApplicationStatus, AttachmentStatus, AuditEventType, IntakeStatus, ProgramPublicationStatus, Role } from '../types/api'
 
 export const applicationStatusLabels: Record<ApplicationStatus, string> = {
   DRAFT: '작성 중', SUBMITTED: '제출 완료', IN_REVIEW: '심사 중',
@@ -9,6 +9,8 @@ export const intakeStatusLabels: Record<IntakeStatus, string> = {
 }
 export const roleLabels: Record<Role, string> = { APPLICANT: '신청자', REVIEWER: '심사자', ADMIN: '관리자' }
 export const publicationStatusLabels: Record<ProgramPublicationStatus, string> = { DRAFT: '작성 중', PUBLISHED: '게시 완료' }
+export const attachmentStatusLabels: Record<AttachmentStatus, string> = { PENDING: '처리 중', AVAILABLE: '업로드 완료', FAILED: '처리 실패', DELETE_PENDING: '삭제 중' }
+export const auditSubjectLabels = { APPLICATION: '신청서', PROGRAM: '지원사업', USER: '사용자' } as const
 export const auditEventLabels: Record<AuditEventType, string> = {
   APPLICATION_CREATED: '신청서 작성', APPLICATION_EDITED: '신청서 수정', APPLICATION_SUBMITTED: '신청서 제출',
   REVIEW_STARTED: '심사 시작', REVISION_REQUESTED: '보완 요청', APPLICATION_APPROVED: '신청 승인',
