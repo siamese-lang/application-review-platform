@@ -16,10 +16,10 @@ M6 must prove that one reviewed repository revision can be:
 
 M6 is about **delivery and operational release control**, not observability, workload, performance, failure injection, backup implementation, or DR.
 
-## Current implementation slice — Phase 3A — keyless delivery identity
+## Current implementation slice — Phase 3B — exact-release workflow and ops-01 handoff
 
-Goal: add repository-defined GitHub OIDC/GCP Workload Identity Federation and its
-least-privilege IAP/OS Login boundary without creating or mutating the GCP runtime.
+Goal: add the explicit exact-SHA/exact-digest workflow and its verified, stage-only
+IAP/OS Login handoff to `ops-01`, without activating application nodes.
 
 Files/components: owner-bootstrap IAM/OpenTofu, a repository/ref/workflow-constrained
 GitHub identity, focused static regression, and the identity side of the IAP/OS Login
@@ -32,9 +32,9 @@ while Phase 3 is being verified, and no arbitrary branch/floating-tag artifact.
 Verification: OpenTofu fmt/init/validate, focused identity static policy checks,
 provider-lock stability, existing baseline checks, and exact-head CI.
 
-Phase 3 is not complete. Phase 3B remains responsible for an explicit
-`workflow_dispatch` workflow, exact SHA/digest validation, GHCR pull-by-digest
-verification, WIF authentication, and the IAP/OS Login handoff to `ops-01`.
+Phase 3 is complete only after repository/static CI proves the explicit trigger,
+reviewed-main ancestry, exact digest and bundle verification, exact WIF configuration,
+fixed `ops-01` target, and absence of arbitrary artifact or command paths.
 
 
 ## Portfolio evidence objective
