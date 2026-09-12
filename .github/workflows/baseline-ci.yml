@@ -537,6 +537,8 @@ jobs:
         run: tofu -chdir=infra/opentofu/bootstrap init -backend=false -lockfile=readonly
       - name: Validate owner-bootstrap OpenTofu configuration
         run: tofu -chdir=infra/opentofu/bootstrap validate
+      - name: Verify M6 Phase 3A delivery identity contract
+        run: bash scripts/deploy/test-delivery-identity-contract.sh
       - name: Verify provider locks were not rewritten
         run: git diff --exit-code -- infra/opentofu/.terraform.lock.hcl infra/opentofu/bootstrap/.terraform.lock.hcl
       - name: Install Ansible and required collections

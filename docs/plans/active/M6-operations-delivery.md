@@ -16,23 +16,25 @@ M6 must prove that one reviewed repository revision can be:
 
 M6 is about **delivery and operational release control**, not observability, workload, performance, failure injection, backup implementation, or DR.
 
-## Current implementation slice — Phase 3
+## Current implementation slice — Phase 3A — keyless delivery identity
 
-Goal: add repository-defined GitHub OIDC/GCP Workload Identity Federation and an
-explicit, exact-release deployment workflow without creating or mutating the GCP
-runtime.
+Goal: add repository-defined GitHub OIDC/GCP Workload Identity Federation and its
+least-privilege IAP/OS Login boundary without creating or mutating the GCP runtime.
 
 Files/components: owner-bootstrap IAM/OpenTofu, a repository/ref/workflow-constrained
-GitHub identity, explicit workflow_dispatch release inputs, immutable GHCR resolution,
-and the IAP/OS Login handoff contract to ops-01.
+GitHub identity, focused static regression, and the identity side of the IAP/OS Login
+handoff contract to ops-01.
 
 Constraints: no service-account JSON key, no automatic main deployment, no GCP
 runtime creation, no runtime secret decryption on GitHub, no application deployment
 while Phase 3 is being verified, and no arbitrary branch/floating-tag artifact.
 
-Verification: OpenTofu fmt/init/validate, focused workflow/static policy checks,
-existing M6 release checks, exact-head CI, and proof that the workflow accepts only a
-reviewed main release identity/digest.
+Verification: OpenTofu fmt/init/validate, focused identity static policy checks,
+provider-lock stability, existing baseline checks, and exact-head CI.
+
+Phase 3 is not complete. Phase 3B remains responsible for an explicit
+`workflow_dispatch` workflow, exact SHA/digest validation, GHCR pull-by-digest
+verification, WIF authentication, and the IAP/OS Login handoff to `ops-01`.
 
 
 ## Portfolio evidence objective
@@ -463,6 +465,10 @@ Implement:
 - no long-lived GCP service-account key.
 
 Done when static CI is green and the workflow cannot deploy an arbitrary unreviewed artifact.
+
+Phase 3A defines and statically validates the keyless delivery identity. Phase 3B
+retains the explicit `workflow_dispatch`, exact SHA/digest validation, GHCR
+pull-by-digest verification, WIF authentication, and IAP/OS Login handoff to `ops-01`.
 
 ### Phase 4 — Runtime and secret preflight
 
