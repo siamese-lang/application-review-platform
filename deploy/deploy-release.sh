@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-root=$(git rev-parse --show-toplevel)
+root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 : "${ARP_RELEASE_BUNDLE_DIR:?Set the exact local release bundle directory on ops-01}"
 : "${ARP_RELEASE_SHA:?Set the full lowercase 40-character release source SHA}"
 [[ $ARP_RELEASE_SHA =~ ^[0-9a-f]{40}$ ]] || { echo 'ARP_RELEASE_SHA must be a full lowercase 40-character Git SHA.' >&2; exit 1; }
