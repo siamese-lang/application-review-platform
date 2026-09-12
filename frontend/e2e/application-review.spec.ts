@@ -52,7 +52,7 @@ test('public applicant flow and reviewer workflow run against the real stack', a
   await expect(page).toHaveURL(/\/programs\/\d+$/)
   await expect(page.getByRole('heading', { name: 'Small Business Digital Adoption', exact: true })).toBeVisible()
   await expect(page.getByText('접수 중', { exact: true })).toBeVisible()
-  await expect(page.getByText(/Log in.*register.*start an application/i)).toBeVisible()
+  await expect(page.getByText(/로그인.*회원가입.*신청서/)).toBeVisible()
   await page.getByRole('link', { name: '회원가입', exact: true }).click()
 
   await page.getByLabel('아이디').fill(applicant.username)
@@ -61,7 +61,7 @@ test('public applicant flow and reviewer workflow run against the real stack', a
   await page.getByLabel('비밀번호').fill(applicant.password)
   await page.getByRole('button', { name: '신청자 계정 만들기' }).click()
   await expect(page.getByRole('heading', { name: '회원가입 완료' })).toBeVisible()
-  await expect(page.getByText(/Sign in separately/i)).toBeVisible()
+  await expect(page.getByText(/신청자 계정이 만들어졌습니다/)).toBeVisible()
 
   await page.getByRole('link', { name: '로그인하기' }).click()
   await page.getByLabel('아이디').fill(applicant.username)
@@ -92,7 +92,7 @@ test('public applicant flow and reviewer workflow run against the real stack', a
   })
   await page.getByRole('button', { name: '파일 올리기' }).click()
   await expect(page.getByText('e2e-evidence.txt')).toBeVisible()
-  await expect(page.getByText(/AVAILABLE/)).toBeVisible()
+  await expect(page.getByText('업로드 완료', { exact: true })).toBeVisible()
 
   const downloadPromise = page.waitForEvent('download')
   await page.getByRole('button', { name: '다운로드' }).click()
@@ -137,7 +137,7 @@ test('public applicant flow and reviewer workflow run against the real stack', a
   await page.getByLabel('처리 사유').fill(revisionReason)
   await page.getByRole('button', { name: '보완 요청 보내기' }).click()
   await expect(page.getByRole('heading', { name: '심사 업무' })).toBeVisible()
-  await expect(page.getByText('Revision requested.')).toBeVisible()
+  await expect(page.getByText('보완을 요청했습니다.')).toBeVisible()
   await logout(page)
 
   await login(page, applicant.username, applicant.password)
@@ -162,13 +162,13 @@ test('public applicant flow and reviewer workflow run against the real stack', a
   await expect(page.getByText('심사 중', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: '승인' }).click()
   await expect(page.getByRole('heading', { name: '심사 업무' })).toBeVisible()
-  await expect(page.getByText('Application approved.')).toBeVisible()
+  await expect(page.getByText('신청을 승인했습니다.')).toBeVisible()
   await logout(page)
 
   await login(page, applicant.username, applicant.password)
   await openApplicantApplication(page)
-  await expect(page.getByText('Approved', { exact: true }).first()).toBeVisible()
-  await expect(page.getByText(/IN_REVIEW → APPROVED/)).toBeVisible()
+  await expect(page.getByText('승인', { exact: true }).first()).toBeVisible()
+  await expect(page.getByText(/심사 중 → 승인/)).toBeVisible()
   await expect(page.getByRole('link', { name: '수정' })).toHaveCount(0)
-  await expect(page.getByRole('button', { name: /Submit|Resubmit/ })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /최종 제출|다시 제출/ })).toHaveCount(0)
 })
