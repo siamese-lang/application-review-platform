@@ -49,7 +49,9 @@ test('public applicant flow and reviewer workflow run against the real stack', a
   await expect(page.getByRole('link', { name: 'Small Business Digital Adoption' })).toBeVisible()
 
   await page.getByRole('link', { name: 'Small Business Digital Adoption' }).click()
-  await expect(page.getByText('Open for applications')).toBeVisible()
+  await expect(page).toHaveURL(/\/programs\/\d+$/)
+  await expect(page.getByRole('heading', { name: 'Small Business Digital Adoption', exact: true })).toBeVisible()
+  await expect(page.getByText('Open for applications', { exact: true })).toBeVisible()
   await expect(page.getByText(/Log in.*register.*start an application/i)).toBeVisible()
   await page.getByRole('link', { name: 'register', exact: true }).click()
 
