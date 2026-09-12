@@ -16,6 +16,33 @@ When sources disagree, use this order:
 
 Chat history, model memory, Codex summaries, and verbal claims are not project state until the relevant decision or change is committed.
 
+## Bounded-context execution mode
+
+For day-to-day project work, use `docs/AI_PROJECT_STATE.md` as the short-lived execution checkpoint.
+
+A normal resume should read only:
+
+1. `AGENTS.md`;
+2. `docs/AI_PROJECT_STATE.md`;
+3. the current active milestone plan;
+4. the exact files, PR, workflow run, or live output needed for the current task.
+
+Do not reread every frozen document or reconstruct every completed milestone on each turn. Expand context only when the current task changes an architectural boundary, sources disagree, the active plan is insufficient, or the first causal failure cannot be established from the bounded context.
+
+Prefer one logical, verifiable result per work slice. Examples include one root-cause diagnosis, one minimal fix plus PR, one exact-head CI decision, or one live-operation checkpoint. A slice should stop at the next meaningful external execution boundary rather than precomputing unrelated later phases.
+
+For live failures, preserve this sequence:
+
+1. lock the exact command/run/SHA;
+2. identify the first meaningful causal failure;
+3. make the smallest supported change;
+4. re-run the same boundary;
+5. broaden scope only if the same failure remains unexplained.
+
+When a live GCP step exposes a small repository defect, fix that defect directly through the normal PR/CI flow. Do not restart milestone design or delegate to Codex unless the correction becomes a substantive multi-file implementation slice.
+
+The state file should be updated when the milestone, phase, live checkpoint, or immediate next work materially changes. It should stay short and should not duplicate architecture, plans, or evidence documents.
+
 ## Tool responsibilities
 
 ### GitHub repository
