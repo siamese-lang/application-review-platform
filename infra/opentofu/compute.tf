@@ -44,3 +44,12 @@ resource "google_compute_instance" "node" {
   }
   allow_stopping_for_update = true
 }
+
+
+resource "google_compute_instance_iam_member" "github_deploy_ops_viewer" {
+  project       = var.project_id
+  zone          = google_compute_instance.node["ops-01"].zone
+  instance_name = google_compute_instance.node["ops-01"].name
+  role          = "roles/compute.viewer"
+  member        = "serviceAccount:arp-m6-github-deploy@${var.project_id}.iam.gserviceaccount.com"
+}
