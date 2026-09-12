@@ -33,8 +33,8 @@ assert "WHERE NOT EXISTS" in users and "htpasswd -bnBC 12" in users
 assert "echo \"$password\"" not in users and "echo \"$hash\"" not in users
 assert "Flyway V5 schema" in users
 assert "required_column_count <> 7" in users
-assert "DO $" in users
-assert "END $;" in users
+assert "DO $$" in users
+assert "END $$;" in users
 assert 'root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)' in users
 assert "git rev-parse --show-toplevel" not in users
 
@@ -54,3 +54,6 @@ tracked = subprocess.check_output(["git", "ls-files"], cwd=ROOT, text=True).spli
 for name in tracked:
     assert not re.search(r"(?:\.tfstate(?:\.|$)|\.tfplan$|\.agekey$|\.dec\.ya?ml$)", name), name
 print("M6 Phase 4A offline contracts: PASS")
+
+assert "DO $\n" not in users
+assert "END $;\n" not in users
