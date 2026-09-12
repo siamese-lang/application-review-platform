@@ -7,22 +7,25 @@ This repository is the source of truth for the Application Review Platform. Read
 ## Required reading
 
 1. `README.md`
-2. `docs/PROJECT_EXECUTION.md`
-3. `docs/WORKFLOW.md`
-4. `docs/product/PRODUCT.md`
-5. `docs/domain/DOMAIN.md`
-6. `docs/architecture/ARCHITECTURE.md`
-7. `docs/security/SECURITY.md`
-8. `docs/data/DATA.md`
-9. `docs/operations/BACKUP_RECOVERY.md`
-10. `docs/workload/WORKLOAD.md`
-11. `docs/NON_GOALS.md`
-12. `docs/FREEZE_RECORD.md`
-13. The current plan under `docs/plans/active/`, when one exists
+2. `docs/AI_PROJECT_STATE.md`
+3. `docs/PROJECT_EXECUTION.md`
+4. `docs/WORKFLOW.md`
+5. `docs/product/PRODUCT.md`
+6. `docs/domain/DOMAIN.md`
+7. `docs/architecture/ARCHITECTURE.md`
+8. `docs/security/SECURITY.md`
+9. `docs/data/DATA.md`
+10. `docs/operations/BACKUP_RECOVERY.md`
+11. `docs/workload/WORKLOAD.md`
+12. `docs/NON_GOALS.md`
+13. `docs/FREEZE_RECORD.md`
+14. The current plan under `docs/plans/active/`, when one exists
 
 ## Working rules
 
 - Before changing anything, inspect the current intended base branch, active plan, relevant open PRs, and CI state. Do not infer repository state from chat history.
+- Use `docs/AI_PROJECT_STATE.md` as the fast-resume checkpoint. Start from its bounded current task and inspect only directly relevant files/runs first; do not rescan completed milestones or the whole repository unless a conflict, architectural decision, or unresolved causal failure requires broader context.
+- Prefer one logical, verifiable work result per interaction. Do not combine unrelated diagnosis, refactoring, deployment, evidence closeout, and next-milestone work in one slice.
 - Follow the tool responsibilities and branch/PR/CI flow in `docs/WORKFLOW.md`.
 - Work only on the current milestone unless the task explicitly changes it.
 - M0 architecture is frozen. Do not silently rewrite documentation to fit an implementation shortcut.
