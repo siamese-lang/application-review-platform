@@ -25,16 +25,6 @@ Do **not** rescan the entire repository or reconstruct completed milestones on e
 
 Use **one turn = one logical, verifiable work result**.
 
-Good units:
-
-- identify one failed workflow/job and its first causal error;
-- make one minimal repository fix and open/update its PR;
-- verify one exact-head CI result;
-- complete one bounded live-operation checkpoint;
-- close one phase after its done conditions are met.
-
-Avoid combining unrelated work such as root-cause analysis, architecture redesign, refactoring, deployment, evidence promotion, and the next milestone in one turn.
-
 For a failure:
 
 1. lock the exact command/run/SHA;
@@ -58,9 +48,9 @@ Do not invoke Codex merely because a live command failed when the root cause is 
 
 Repository: `siamese-lang/application-review-platform`
 
-Current main at this checkpoint:
+Current `main` at this checkpoint:
 
-`4c143d9f90960c941f4bc0c1c679d55be3658fb0`
+`a26193598d0fbcb5a2f6d468739b36b7aef3f0aa`
 
 Current milestone:
 
@@ -69,42 +59,59 @@ Current milestone:
 - Phase 2 — complete
 - Phase 3 — complete
 - Phase 4 — complete
-- Phase 5 — active
+- Phase 5 — complete
+- Phase 6 — active
 
 Current live environment:
 
 - frozen seven-role GCP runtime is running;
 - WIF/IAP/OS Login handoff is live;
-- TLS for the current edge IP is configured;
+- TLS for the edge public IP is configured;
 - PostgreSQL, Garage, Nginx, SOPS/age, and runtime prerequisites are configured;
-- runtime and owner-bootstrap OpenTofu roots were verified no-drift before Phase 5 execution.
+- final intended Release B is active on both backend and frontend.
 
-Recent concrete fixes:
+Final intended release:
 
-- PR #46: add only the instance-scoped `ops-01` Compute Viewer permission required by live `gcloud compute ssh` guest-attribute host-key lookup; project-wide Compute Viewer remains forbidden.
-- PR #47: restore PostgreSQL `DO $$ ... END $$;` quoting in the synthetic-user bootstrap and add regression coverage.
+- SHA: `a26193598d0fbcb5a2f6d468739b36b7aef3f0aa`
+- OCI digest: `sha256:63716c0ff1b679ef2293fe1be47183828c87f323d13d2842bb8e8e84d280345c`
+- exact-release handoff run: `34695033956`
 
-Phase 5 live progress:
+Retained rollback target:
 
-- GitHub exact-release handoff succeeded after PR #46.
-- Release A is staged and has been activated successfully.
-- Release A SHA:
-  `53f5796235114481c62d9d178e395738f486ea3e`
-- Release A OCI digest:
-  `sha256:0f3ec84718f001439b1cab365cfe8dc5f18246395f0dd0d3b71bb8d1398a49f9`
-- Observed activation result: Ansible recap reported `failed=0` for `app-01` and `edge-01`; `deploy-release exit=0`.
-- This activation result is a live checkpoint, not yet the completed M6 evidence claim.
+- Release A SHA: `53f5796235114481c62d9d178e395738f486ea3e`
+- OCI digest: `sha256:0f3ec84718f001439b1cab365cfe8dc5f18246395f0dd0d3b71bb8d1398a49f9`
+
+Phase 5 verified:
+
+- Flyway V1–V5 successful; failed migration count 0;
+- synthetic APPLICANT/REVIEWER/ADMIN identities bootstrapped without exposing credentials;
+- live HTTPS SPA/API/Garage business smoke passed;
+- Release B activated with backend/frontend `current=B`, `previous=A`;
+- schema-compatible B → A rollback succeeded;
+- observed rollback elapsed time: `38,346 ms`;
+- database migration rollback: **not performed**;
+- full HTTPS/API/Garage smoke passed after rollback;
+- Release B was restored and the final full smoke passed;
+- final backend/frontend state is `current=B`, `previous=A`;
+- sanitized evidence: `docs/operations/M6_PHASE5_RELEASE_ROLLBACK_EVIDENCE.md`;
+- Evidence Card: `docs/portfolio/M6_IMMUTABLE_RELEASE_ROLLBACK_EVIDENCE.md`;
+- Portfolio Evidence Map candidate maturity: E3.
+
+Recent concrete fix:
+
+- PR #49 corrected the synthetic-user PostgreSQL anonymous-block delimiter regression to exact `DO $$ ... END $$;` and added regression coverage.
 
 ## Immediate next work
 
-Continue **only** Block B:
+Continue **only Phase 6 closeout**, in this order:
 
-1. verify Flyway schema history through V5;
-2. bootstrap synthetic REVIEWER/ADMIN/APPLICANT users;
-3. run the Phase 5 HTTPS SPA/API/Garage business smoke;
-4. stop at the first causal failure, or record Block B pass.
+1. manually inspect the deployed HTTPS SPA pages required by the active plan;
+2. run final owner-bootstrap and runtime OpenTofu plans and verify no drift;
+3. explicitly choose and record runtime retain/destroy disposition;
+4. finalize M6 evidence maturity and closeout docs;
+5. move the M6 plan to completed, update README/state, require final exact-head CI, merge, and verify post-merge `main`.
 
-Do not yet start the rollback drill, evidence closeout, M7 work, or unrelated refactoring.
+Do not start M7 observability implementation yet.
 
 ## Do not revisit unless new evidence requires it
 
@@ -113,8 +120,8 @@ Do not yet start the rollback drill, evidence closeout, M7 work, or unrelated re
 - PostgreSQL/Garage choice;
 - seven-role GCP topology;
 - WIF trust model except for a concrete authorization failure;
-- Phase 1–4 design decisions;
-- runtime recreation/TLS bootstrap already completed for this M6 run.
+- Phase 1–5 design decisions;
+- Release A/B deployment and rollback drill already completed.
 
 ## Short resume prompt
 
