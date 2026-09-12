@@ -4,6 +4,7 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 iam="$root/infra/opentofu/bootstrap/iam.tf"
 variables="$root/infra/opentofu/bootstrap/variables.tf"
+runtime_compute="$root/infra/opentofu/compute.tf"
 
 require_fixed() {
   local needle="$1" file="$2"
@@ -38,9 +39,14 @@ require_fixed "expression  = \"destination.ip == '\${var.ops_private_ip}' && des
 require_fixed 'default     = "10.40.0.50"' "$variables"
 require_fixed 'service_account_id = google_service_account.ops.name' "$iam"
 
+require_fixed 'resource "google_compute_instance_iam_member" "github_deploy_ops_viewer"' "$runtime_compute"
+require_fixed 'instance_name = google_compute_instance.node["ops-01"].name' "$runtime_compute"
+require_fixed 'role          = "roles/compute.viewer"' "$runtime_compute"
+require_fixed 'member        = "serviceAccount:arp-m6-github-deploy@${var.project_id}.iam.gserviceaccount.com"' "$runtime_compute"
+
 if grep -Fq 'resource "google_project_iam_member" "github_deploy_compute_viewer"' "$iam" ||
    grep -Fq 'role    = "roles/compute.viewer"' "$iam"; then
-  echo "Dedicated GitHub identity must not receive redundant project-wide Compute Viewer access." >&2
+  echo "Dedicated GitHub identity must not receive project-wide Compute Viewer access." >&2
   exit 1
 fi
 

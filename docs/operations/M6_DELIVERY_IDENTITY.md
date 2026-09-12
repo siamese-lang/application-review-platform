@@ -28,7 +28,8 @@ in Phase 3A is intentional, so no current workflow can satisfy the complete cond
 
 `arp-m6-github-deploy` is separate from `arp-m4-ops`. It has only:
 
-- project `roles/compute.osAdminLogin` for the controlled, sudo-capable OS Login handoff; this role already includes the Compute instance/project read permissions required by the OS Login path, so a separate project-wide Compute Viewer grant is intentionally not used;
+- project `roles/compute.osAdminLogin` for the controlled, sudo-capable OS Login handoff;
+- instance-scoped `roles/compute.viewer` on `ops-01` only, because live `gcloud compute ssh` host-key verification reads `compute.instances.getGuestAttributes`, which is not included in `roles/compute.osAdminLogin`; project-wide Compute Viewer remains intentionally forbidden;
 - project `roles/iap.tunnelResourceAccessor`, conditioned on
   `destination.ip == '10.40.0.50' && destination.port == 22`;
 - `roles/iam.serviceAccountUser` on the specific `arp-m4-ops` service account attached
@@ -36,9 +37,10 @@ in Phase 3A is intentional, so no current workflow can satisfy the complete cond
 - `roles/iam.workloadIdentityUser` on the deployment service account for only the
   exact repository attribute principal set.
 
-The deployment identity receives no Compute Viewer, Compute/network administrator,
-runtime-secret, workload-service-account, or owner-bootstrap/runtime-apply grant
-directly. GitHub is not federated directly to `arp-m4-ops`.
+The deployment identity receives no project-wide Compute Viewer, Compute/network
+administrator, runtime-secret, workload-service-account, or owner-bootstrap/runtime-apply
+grant directly. Its only Compute Viewer grant is bound to the single `ops-01` instance
+to support authenticated SSH host-key retrieval. GitHub is not federated directly to `arp-m4-ops`.
 
 This separation limits the Google IAM permissions available before SSH, but successful
 OS Admin Login to `ops-01` intentionally crosses into the privileged operations
