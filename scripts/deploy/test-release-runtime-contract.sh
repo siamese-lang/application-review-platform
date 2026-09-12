@@ -6,6 +6,7 @@ cd "$root"
 
 bash -n deploy/configure-runtime.sh deploy/deploy-release.sh deploy/rollback-release.sh
 python3 -m py_compile scripts/deploy/release-mechanics.py
+grep -Fq 'unset ARP_APP_JAR ARP_APP_VERSION' deploy/configure-runtime.sh
 
 if ARP_ROLLBACK_SHA=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
   deploy/rollback-release.sh >/dev/null 2>&1; then
