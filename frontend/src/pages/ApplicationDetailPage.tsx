@@ -5,7 +5,7 @@ import { ErrorNotice } from '../components/ErrorNotice'
 import { StatusBadge } from '../components/StatusBadge'
 import type { ApplicationDetail, ApplicationHistory, Attachment } from '../types/api'
 import { formatMoney, formatTimestamp } from './ApplicationsPage'
-import { applicationStatusLabel } from '../utils/presentation'
+import { applicationStatusLabel, attachmentStatusLabels } from '../utils/presentation'
 
 const editable = (status: ApplicationDetail['status']) => status === 'DRAFT' || status === 'NEEDS_REVISION'
 const messages: Record<ApplicationDetail['status'], string> = {
