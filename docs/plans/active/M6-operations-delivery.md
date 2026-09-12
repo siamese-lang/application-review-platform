@@ -16,22 +16,23 @@ M6 must prove that one reviewed repository revision can be:
 
 M6 is about **delivery and operational release control**, not observability, workload, performance, failure injection, backup implementation, or DR.
 
-## Current implementation slice — Phase 2B
+## Current implementation slice — Phase 3
 
-Goal: connect an exact, locally retained Phase 1 bundle to app/edge release
-installation, activation, and explicit rollback through Ansible without a working-tree
-build.
+Goal: add repository-defined GitHub OIDC/GCP Workload Identity Federation and an
+explicit, exact-release deployment workflow without creating or mutating the GCP
+runtime.
 
-Files/components: shared release-runtime role, app/edge provisioning, dedicated
-release and rollback playbooks, operator wrappers, Phase 2A mechanics, and focused CI.
+Files/components: owner-bootstrap IAM/OpenTofu, a repository/ref/workflow-constrained
+GitHub identity, explicit workflow_dispatch release inputs, immutable GHCR resolution,
+and the IAP/OS Login handoff contract to ops-01.
 
-Constraints: preserve the optional M4 compatibility script and stable systemd/Nginx
-pointers; stage and preflight both hosts before activation; require paired rollback
-preflight and schema-compatibility acknowledgement; do not add GHCR/GCP delivery or
-runtime evidence in this slice.
+Constraints: no service-account JSON key, no automatic main deployment, no GCP
+runtime creation, no runtime secret decryption on GitHub, no application deployment
+while Phase 3 is being verified, and no arbitrary branch/floating-tag artifact.
 
-Verification: isolated filesystem regression, shell/Python syntax, Ansible syntax,
-focused static contract, repository baseline, and whitespace validation.
+Verification: OpenTofu fmt/init/validate, focused workflow/static policy checks,
+existing M6 release checks, exact-head CI, and proof that the workflow accepts only a
+reviewed main release identity/digest.
 
 
 ## Portfolio evidence objective
@@ -79,13 +80,10 @@ The repository already proves infrastructure provisioning and application behavi
 
 Current gaps:
 
-- `deploy/build-and-configure.sh` builds the JAR from the working tree and copies a local path through Ansible;
-- the M5 frontend static release has no versioned release/install/rollback path on `edge-01`;
-- backend and frontend are now bound by the Phase 1 release manifest and retained GHCR artifact; deployment/rollback consumption of that artifact is still pending;
-- a retained artifact registry record now exists for exact reviewed revisions; Phase 2+ must consume it rather than rebuilding from a working tree;
-- there is no GitHub-to-GCP keyless deployment identity;
-- there is no controlled deployment workflow that accepts one explicit release revision/digest;
-- rollback is not implemented as a tested operational command;
+- the legacy `deploy/build-and-configure.sh` remains only as the retained M4 compatibility path; the final M6 path no longer builds a working-tree JAR;
+- Phase 2 now provides versioned backend/frontend install, exact-SHA activation, paired preflight, and explicit rollback mechanics through Ansible, but they have not yet been exercised on a real VM runtime;
+- a retained GHCR artifact exists for exact reviewed revisions, but GitHub does not yet have a keyless, repository-constrained path that resolves an exact artifact and hands it to `ops-01`;
+- there is no controlled explicit deployment workflow that accepts and verifies one reviewed release revision/digest;
 - `deploy/cloud-smoke.sh` still describes the removed Thymeleaf/form-login interface and must not be used as M6 evidence in its current form;
 - current synthetic privileged-user bootstrap predates the final M5 identity fields and must be brought forward before cloud verification.
 
@@ -417,7 +415,9 @@ Phase 1 remains enabling evidence. It establishes immutable release identity and
 
 ### Phase 2 — Versioned install and rollback mechanics
 
-Repository-only/static or isolated CI where possible.
+Status: **COMPLETE**
+
+Repository-only/static or isolated CI; no GCP runtime was created.
 
 Implement:
 
@@ -433,6 +433,20 @@ Implement:
 Do not remove useful M4 provisioning scripts unless their replacement is verified.
 
 Done when deployment and rollback mechanics can be exercised safely without requiring a live production-like GCP environment.
+
+Completion evidence:
+
+- Phase 2A merged through PR #37 and established full-SHA retained install, checksum/source verification, active/previous metadata, atomic local symlink switching, explicit isolated rollback regression, and hardened frontend archive extraction;
+- Phase 2B merged through PR #38 and connected the same mechanics/verifier to the Ansible app/edge path, separated final M6 configuration from the legacy M4 local-JAR path, added exact release/rollback operator entry points, and enforced paired preflight/fail-closed play sequencing;
+- final Phase 2 main SHA: `d2d12f6f5abf662a4c7502aa164cafff341acb3b`;
+- post-merge workflow run `34675471075`: SUCCESS;
+- `m6-release-install`, Ansible syntax/static checks, and all existing baseline jobs: SUCCESS;
+- resulting immutable release: `ghcr.io/siamese-lang/application-review-platform-release:d2d12f6f5abf662a4c7502aa164cafff341acb3b`;
+- OCI digest: `sha256:0e5e54953a5bcdb81eadfc61cd2236010baed405fea72cbad1e93109caf0b60c`;
+- publish job pulled that release back by digest and re-ran the manifest/checksum verifier successfully;
+- no GCP runtime resource was created or changed in Phase 2.
+
+Phase 2 proves the repository-side install/rollback mechanics and orchestration contract only. It does not prove a real VM deployment, schema-compatible rollback, post-rollback business smoke, or recovery timing; the M6 portfolio candidate therefore remains E1 until later runtime evidence justifies promotion.
 
 ### Phase 3 — Keyless delivery identity and deployment workflow
 
