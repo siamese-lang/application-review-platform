@@ -26,7 +26,7 @@ grep -Fq 'MemoryMax={{ alloy_memory_limit }}' "$unit"
 grep -Fq 'CPUQuota={{ alloy_cpu_quota }}' "$unit"
 grep -Fq 'Environment="ARP_ALLOY_NODE={{ inventory_hostname }}"' "$unit"
 grep -Fq 'Environment="ARP_ALLOY_ROLE={{ alloy_node_role }}"' "$unit"
-grep -Fq 'Environment="ARP_PROMETHEUS_REMOTE_WRITE_URL=http://{{ observability_private_ip }}:9090/api/v1/write"' "$unit"
+grep -Fq 'ARP_PROMETHEUS_REMOTE_WRITE_URL=http://{{ '\''127.0.0.1'\'' if alloy_node_role == '\''observability'\'' else observability_private_ip }}:9090/api/v1/write' "$unit"
 
 grep -Fq 'logging {' "$config"
 grep -Fq 'level  = "info"' "$config"
