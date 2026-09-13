@@ -26,6 +26,7 @@ jobs:
             -e GF_USERS_ALLOW_SIGN_UP=false \
             -e GF_AUTH_ANONYMOUS_ENABLED=false \
             -v "$PWD/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro" \
+            -v "$PWD/monitoring/grafana/dashboards:/etc/grafana/dashboards:ro" \
             grafana/grafana:13.2.1
 
           cleanup() {
@@ -47,3 +48,8 @@ jobs:
           curl -fsS -u admin:ci-only http://127.0.0.1:3000/api/datasources/uid/prometheus >/dev/null
           curl -fsS -u admin:ci-only http://127.0.0.1:3000/api/datasources/uid/loki >/dev/null
           curl -fsS -u admin:ci-only http://127.0.0.1:3000/api/datasources/uid/tempo >/dev/null
+
+          curl -fsS -u admin:ci-only http://127.0.0.1:3000/api/dashboards/uid/arp-system-overview >/dev/null
+          curl -fsS -u admin:ci-only http://127.0.0.1:3000/api/dashboards/uid/arp-application-api >/dev/null
+          curl -fsS -u admin:ci-only http://127.0.0.1:3000/api/dashboards/uid/arp-postgresql >/dev/null
+          curl -fsS -u admin:ci-only http://127.0.0.1:3000/api/dashboards/uid/arp-garage >/dev/null
