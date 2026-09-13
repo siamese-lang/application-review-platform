@@ -77,17 +77,123 @@
         argv: [/usr/local/lib/arp/deploy/release-mechanics.py, verify-installed, frontend, "{{ arp_release_sha }}"]
       changed_when: false
 
-- name: Activate backend and restart application
+- name: Activate backend with bounded Flyway migration privilege
   hosts: app
   become: true
   any_errors_fatal: true
+  vars:
+    flyway_env_path: /etc/arp/arp-flyway.env
+    flyway_role: arp_flyway
+    db_host: "{{ groups['db'][0] }}"
   tasks:
-    - name: Activate backend release
-      ansible.builtin.command:
-        argv: [/usr/local/lib/arp/deploy/release-mechanics.py, activate, backend, "{{ arp_release_sha }}"]
-    - name: Restart application for activated backend
-      ansible.builtin.systemd: { name: arp, state: restarted, enabled: true }
-    - name: Wait for activated backend API readiness
+    - name: Validate migration secret input
+      ansible.builtin.assert:
+        that:
+          - db_migration_password is defined
+          - db_migration_password | length >= 32
+        fail_msg: db_migration_password must come from the encrypted runtime secret boundary.
+      no_log: true
+
+    - name: Initialize backend activation state
+      ansible.builtin.set_fact:
+        backend_activation_failed: false
+
+    - name: Activate backend through temporary migration role
+      block:
+        - name: Recreate temporary Flyway role
+          ansible.builtin.shell: |
+            set -euo pipefail
+            if [ "$(sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='{{ flyway_role }}'")" = 1 ]; then
+              sudo -u postgres psql -v ON_ERROR_STOP=1 -d arp -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE usename='{{ flyway_role }}' AND pid <> pg_backend_pid();"
+              sudo -u postgres psql -v ON_ERROR_STOP=1 -d arp -c "REASSIGN OWNED BY {{ flyway_role }} TO postgres;"
+              sudo -u postgres psql -v ON_ERROR_STOP=1 -d postgres -c "DROP ROLE {{ flyway_role }};"
+            fi
+            sudo -u postgres psql -v ON_ERROR_STOP=1 --set=role_password="$DB_MIGRATION_PASSWORD" <<'SQL'
+            CREATE ROLE arp_flyway LOGIN SUPERUSER NOREPLICATION CONNECTION LIMIT 1 PASSWORD :'role_password';
+            SQL
+          args:
+            executable: /bin/bash
+          environment:
+            DB_MIGRATION_PASSWORD: "{{ db_migration_password }}"
+          delegate_to: "{{ db_host }}"
+          no_log: true
+
+        - name: Install temporary Flyway environment
+          ansible.builtin.copy:
+            content: |
+              SPRING_FLYWAY_USER={{ flyway_role }}
+              SPRING_FLYWAY_PASSWORD={{ db_migration_password }}
+            dest: "{{ flyway_env_path }}"
+            owner: root
+            group: arp
+            mode: '0640'
+          no_log: true
+
+        - name: Activate backend release
+          ansible.builtin.command:
+            argv: [/usr/local/lib/arp/deploy/release-mechanics.py, activate, backend, "{{ arp_release_sha }}"]
+
+        - name: Restart application for Flyway migration
+          ansible.builtin.systemd:
+            name: arp
+            state: restarted
+            enabled: true
+            daemon_reload: true
+
+        - name: Wait for migrated backend API readiness
+          ansible.builtin.uri:
+            url: http://127.0.0.1:8080/api/v1/programs?size=1
+            method: GET
+            status_code: 200
+            return_content: false
+            timeout: 5
+          register: migration_readiness
+          retries: 30
+          delay: 2
+          until: migration_readiness.status == 200
+          changed_when: false
+      rescue:
+        - name: Record backend activation failure
+          ansible.builtin.set_fact:
+            backend_activation_failed: true
+      always:
+        - name: Remove temporary Flyway environment
+          ansible.builtin.file:
+            path: "{{ flyway_env_path }}"
+            state: absent
+          no_log: true
+
+        - name: Remove temporary Flyway role
+          ansible.builtin.shell: |
+            set -euo pipefail
+            if [ "$(sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='{{ flyway_role }}'")" = 1 ]; then
+              sudo -u postgres psql -v ON_ERROR_STOP=1 -d arp -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE usename='{{ flyway_role }}' AND pid <> pg_backend_pid();"
+              sudo -u postgres psql -v ON_ERROR_STOP=1 -d arp -c "REASSIGN OWNED BY {{ flyway_role }} TO postgres;"
+              sudo -u postgres psql -v ON_ERROR_STOP=1 -d postgres -c "DROP ROLE {{ flyway_role }};"
+            fi
+          args:
+            executable: /bin/bash
+          delegate_to: "{{ db_host }}"
+          no_log: true
+
+    - name: Stop application after failed migration activation
+      ansible.builtin.systemd:
+        name: arp
+        state: stopped
+      when: backend_activation_failed
+
+    - name: Fail release after cleaned migration activation failure
+      ansible.builtin.fail:
+        msg: Backend activation failed; temporary Flyway credentials and role were removed and the application was stopped.
+      when: backend_activation_failed
+
+    - name: Restart application with normal runtime database credentials
+      ansible.builtin.systemd:
+        name: arp
+        state: restarted
+        enabled: true
+
+    - name: Wait for final backend API readiness
       ansible.builtin.uri:
         url: http://127.0.0.1:8080/api/v1/programs?size=1
         method: GET
