@@ -208,22 +208,33 @@ Completed repository-side boundaries:
 
 The live environment is still the seven-node M6 runtime. `obs-01` is not live yet.
 
+## M7 CI consolidation
+
+The Phase 2 component CI has been consolidated into
+`.github/workflows/m7-observability-ci.yml`.
+
+Behavior after consolidation:
+
+- `baseline-ci` remains separate and unchanged;
+- the M7 workflow runs only for observability-related pull-request paths;
+- changed-file detection runs only the affected Prometheus/Loki/Tempo/Grafana/Alertmanager/
+  Alloy validation steps, while shared observability config changes validate all components;
+- the existing component repository-contract scripts and pinned upstream validators are
+  preserved;
+- redundant Loki/Tempo/Grafana/Alertmanager/Alloy workflow files are removed;
+- the M7 workflow no longer reruns on the post-merge `main` push.
+
+The `protect-main` required status contexts do not depend on the removed component workflow
+jobs; the required M7 infrastructure check remains provided by the existing baseline CI.
+
 ## Immediate next work
 
-Before starting M7 Phase 3 implementation, perform one bounded **CI consolidation** cleanup.
+Proceed to **M7 Phase 3 — Source instrumentation and secure telemetry pipelines** from the
+first incomplete work item in the active plan.
 
-Target CI shape:
-
-- keep `baseline-ci` separate;
-- consolidate Prometheus/Loki/Tempo/Grafana/Alertmanager/Alloy validation under
-  `.github/workflows/m7-observability-ci.yml`;
-- preserve the existing component repository-contract scripts and pinned upstream validators;
-- remove the redundant component workflow files only after the consolidated workflow proves
-  equivalent validation coverage;
-- do not add Phase 3 source instrumentation or perform live GCP changes in this cleanup.
-
-After CI consolidation is merged and green, proceed to **M7 Phase 3 — Source instrumentation
-and secure telemetry pipelines** from its first incomplete work item.
+Keep Phase 3 implementation bounded: introduce source telemetry only where the active plan
+requires it, preserve private/local management boundaries, and do not perform live GCP
+activation until Phase 4.
 
 Key constraints remain:
 
