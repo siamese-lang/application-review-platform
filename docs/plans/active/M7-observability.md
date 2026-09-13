@@ -591,7 +591,7 @@ No live GCP apply occurred in Phase 1. The live runtime remains the seven-node M
 
 ### Phase 2 — Central observability stack and Alloy baseline
 
-Status: **NEXT**
+Status: **COMPLETE**
 
 Create reproducible Ansible/config for:
 
@@ -614,7 +614,19 @@ Done condition:
 - configs are pinned/reproducible and validation is green repository-side;
 - no public listeners are introduced by infrastructure rules.
 
+Completion checkpoint:
+
+- Prometheus, Loki, Tempo, Grafana, Alertmanager, and the reusable Alloy baseline are pinned and repository-managed;
+- Grafana datasources and the bounded four-dashboard set are provisioned from repository files;
+- conservative structural Prometheus rules are repository-managed and validated with pinned promtool;
+- retention and runtime CPU/memory limits are bounded for the central stack;
+- component-specific upstream validation and baseline CI are green on the final Phase 2 implementation head;
+- no live GCP apply occurred in Phase 2 and the live environment remains the seven-node M6 runtime;
+- observability ingress remains restricted to the documented private/tag-based firewall paths.
+
 ### Phase 3 — Source instrumentation and secure telemetry pipelines
+
+Status: **NEXT**
 
 Implement the minimum source changes:
 
