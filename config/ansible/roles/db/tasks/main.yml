@@ -85,6 +85,18 @@
       changed=true
     fi
 
+    if ! PGPASSWORD="$DB_MONITOR_PASSWORD" psql \
+      --host=127.0.0.1 \
+      --username=arp_monitor \
+      --dbname=arp \
+      --tuples-only \
+      --command='SELECT 1' >/dev/null 2>&1; then
+      sudo -u postgres psql -v ON_ERROR_STOP=1 --set=password="$DB_MONITOR_PASSWORD" <<'SQL'
+    ALTER ROLE arp_monitor PASSWORD :'password';
+    SQL
+      changed=true
+    fi
+
     if [ "$changed" = true ]; then
       echo changed
     else
