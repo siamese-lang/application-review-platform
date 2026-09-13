@@ -50,11 +50,16 @@
 
 - name: Install repository-owned Grafana dashboards
   ansible.builtin.copy:
-    src: "{{ playbook_dir }}/../../monitoring/grafana/dashboards/"
-    dest: /etc/grafana/dashboards/
+    src: "{{ playbook_dir }}/../../monitoring/grafana/dashboards/{{ item }}"
+    dest: "/etc/grafana/dashboards/{{ item }}"
     owner: root
     group: root
     mode: '0644'
+  loop:
+    - system-overview.json
+    - application-api.json
+    - postgresql.json
+    - garage.json
   notify: Restart Grafana
 
 - name: Run pinned Grafana container
