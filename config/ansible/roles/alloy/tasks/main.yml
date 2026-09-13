@@ -54,6 +54,13 @@
     remote_src: true
     creates: "/opt/alloy-{{ alloy_version }}/alloy-linux-amd64"
 
+- name: Ensure extracted Alloy binary is executable
+  ansible.builtin.file:
+    path: "/opt/alloy-{{ alloy_version }}/alloy-linux-amd64"
+    owner: root
+    group: root
+    mode: '0755'
+
 - name: Link Alloy binary
   ansible.builtin.file:
     src: "/opt/alloy-{{ alloy_version }}/alloy-linux-amd64"

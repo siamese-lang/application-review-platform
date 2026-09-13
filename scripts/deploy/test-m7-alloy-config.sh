@@ -15,6 +15,8 @@ grep -Fq 'alloy_cpu_quota: 25%' "$vars"
 
 grep -Fq 'checksum: "sha256:{{ alloy_linux_amd64_sha256 }}"' "$tasks"
 grep -Fq 'alloy-linux-amd64.zip' "$tasks"
+grep -Fq 'Ensure extracted Alloy binary is executable' "$tasks"
+grep -Fq "mode: '0755'" "$tasks"
 grep -Fq '/etc/alloy/config.alloy' "$tasks"
 grep -Fq '/etc/alloy/postgres.alloy' "$tasks"
 grep -Fq '/etc/alloy/secrets/postgres-monitor-password' "$tasks"
