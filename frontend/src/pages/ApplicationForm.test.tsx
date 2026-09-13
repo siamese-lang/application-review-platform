@@ -51,7 +51,7 @@ describe('ApplicationForm', () => {
       </StrictMode>,
     )
 
-    const summary = await screen.findByLabelText('Short summary')
+    const summary = await screen.findByLabelText('요약')
     expect(summary).toHaveValue('Loaded summary')
 
     fireEvent.change(summary, { target: { value: 'User edit in progress' } })

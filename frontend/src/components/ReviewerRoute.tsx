@@ -4,8 +4,8 @@ import { useAuth } from '../auth/AuthContext'
 export function ReviewerRoute() {
   const { user, loading } = useAuth()
   const location = useLocation()
-  if (loading) return <section className="page"><div className="notice" role="status">Checking your session…</div></section>
+  if (loading) return <section className="page"><div className="notice" role="status">로그인 상태를 확인하는 중…</div></section>
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />
-  if (user.role !== 'REVIEWER') return <section className="page"><div className="notice error" role="alert"><strong>Reviewer access required.</strong><span>This page is available only to reviewer accounts.</span></div></section>
+  if (user.role !== 'REVIEWER') return <section className="page"><div className="notice error" role="alert"><strong>심사자 권한이 필요합니다.</strong><span>이 페이지는 심사자 계정만 이용할 수 있습니다.</span></div></section>
   return <Outlet />
 }
