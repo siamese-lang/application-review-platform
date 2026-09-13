@@ -57,6 +57,14 @@ fi
 grep -Fq 'prometheus.scrape "postgres"' "$postgres_alloy"
 grep -Fq 'scrape_interval = "15s"' "$postgres_alloy"
 grep -Fq 'forward_to      = [prometheus.remote_write.central.receiver]' "$postgres_alloy"
+grep -Fq "{% if alloy_node_role in ['edge', 'db'] %}" "$alloy_unit"
+grep -Fq 'SupplementaryGroups=adm' "$alloy_unit"
+grep -Fq 'loki.source.file "postgres"' "$postgres_alloy"
+grep -Fq '"__path__"    = "/var/log/postgresql/postgresql-*-main.log"' "$postgres_alloy"
+grep -Fq '"service"     = "postgresql"' "$postgres_alloy"
+grep -Fq '"stream"      = "database"' "$postgres_alloy"
+grep -Fq 'forward_to = [loki.write.central.receiver]' "$postgres_alloy"
+grep -Fq 'file_match {' "$postgres_alloy"
 
 if grep -Eq 'db_app_password|arp_app|10\.40\.0\.30:5432' "$postgres_alloy"; then
   echo 'PostgreSQL metrics must use the dedicated local monitoring credential.' >&2
