@@ -7,6 +7,8 @@ server {
   listen 80 default_server;
   access_log /var/log/nginx/arp-access.log arp_json;
   error_log /var/log/nginx/arp-error.log warn;
+  location ^~ /actuator { return 404; }
+  location ^~ /actuator { return 404; }
   location ^~ /.well-known/acme-challenge/ { root /var/lib/acme; }
   location / { return 301 https://$host$request_uri; }
 }
