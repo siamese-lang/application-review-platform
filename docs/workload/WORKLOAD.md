@@ -1,4 +1,4 @@
-# WORKLOAD — M0 Baseline amended by ADR-001 and ADR-002
+# WORKLOAD — M0 Baseline amended by ADR-001 and ADR-004
 
 Status: FROZEN EXCEPT AS AMENDED BY ACCEPTED ADRS
 
@@ -25,7 +25,7 @@ The workload percentages remain business-operation oriented and are retargeted f
 
 Include think time. `k6` runs from separate `loadgen-01` and enters through public `edge-01` rather than consuming application-host resources.
 
-Per ADR-002, `loadgen-01` does not need to occupy a Seoul runtime slot. After M7 the
+Per ADR-004, `loadgen-01` does not need to occupy a Seoul runtime slot. After M7 the
 primary `asia-northeast3` runtime intentionally uses all eight recorded instance slots,
 so the default M8 placement is another region, preferably `asia-northeast1` (Tokyo)
 when quota/capacity permits.
