@@ -33,6 +33,7 @@ test "$(grep -Fc 'editable: false' "$datasources")" -eq 3
 
 grep -Fq 'name: arp-observability' "$dashboard_provider"
 grep -Fq 'folder: Application Review Platform' "$dashboard_provider"
+grep -Fq 'disableDeletion: false' "$dashboard_provider"
 grep -Fq 'allowUiUpdates: false' "$dashboard_provider"
 grep -Fq 'path: /etc/grafana/dashboards' "$dashboard_provider"
 
