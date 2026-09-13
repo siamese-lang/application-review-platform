@@ -1,8 +1,8 @@
 # Evidence Card — Exact immutable release and schema-compatible rollback
 
-Status: DRAFT  
+Status: FINAL  
 Milestone: M6  
-Evidence maturity: E3  
+Evidence maturity: E5  
 Source release SHA: `a26193598d0fbcb5a2f6d468739b36b7aef3f0aa`
 
 ## Context / assumption
@@ -85,6 +85,13 @@ After rollback:
 
 Release B was then reactivated, both components again reported B as current and A as previous, and the full smoke passed a final time.
 
+Phase 6 then closed the operational controls around that experiment. Manual browser validation
+found and fixed bounded navigation/localization/pagination usability defects, the final reviewed
+UI release `9d5fda9871e479e05dc4641fccf7dea3145d2ad6` was published and activated by exact
+OCI digest, the full HTTPS/API/Garage smoke passed again, and both runtime and owner-bootstrap
+OpenTofu plans reported no changes. The live seven-role runtime is retained only for immediate
+M7 observability work and must be reconsidered at M7 closeout.
+
 ## Trade-off / limit
 
 The 38.346-second value is one observed drill result, not an SLA.
@@ -116,6 +123,7 @@ This evidence proves controlled release identity and one real rollback drill in 
   - Release B exact handoff run `34695033956`
 - runtime/query-plan/log evidence:
   - `docs/operations/M6_PHASE5_RELEASE_ROLLBACK_EVIDENCE.md`
+  - `docs/operations/M6_PHASE6_CLOSEOUT_EVIDENCE.md`
 
 ## Portfolio claim
 

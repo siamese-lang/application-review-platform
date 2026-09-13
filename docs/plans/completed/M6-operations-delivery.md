@@ -1,6 +1,6 @@
 # M6 Operations & Delivery — Execution Plan
 
-Status: ACTIVE
+Status: COMPLETE
 
 ## Goal
 
@@ -24,12 +24,16 @@ Flyway V5 verification, controlled synthetic-user bootstrap, real HTTPS SPA/API/
 business smoke, an actual schema-compatible rollback, post-rollback smoke, and return to
 the intended final release.
 
-The final intended release is
-`a26193598d0fbcb5a2f6d468739b36b7aef3f0aa`. The observed Release B → Release A
-rollback completed in `38,346 ms`; no database migration rollback was performed.
-Sanitized Phase 5 evidence is retained in
-`docs/operations/M6_PHASE5_RELEASE_ROLLBACK_EVIDENCE.md`, and the portfolio candidate
-has a dedicated Evidence Card.
+The Phase 5 rollback experiment used Release B
+`a26193598d0fbcb5a2f6d468739b36b7aef3f0aa` and Release A
+`53f5796235114481c62d9d178e395738f486ea3e`. The observed B → A rollback completed
+in `38,346 ms`; no database migration rollback was performed.
+
+Phase 6 usability remediation produced the final deployed M6 release
+`9d5fda9871e479e05dc4641fccf7dea3145d2ad6` with OCI digest
+`sha256:13c3d117eef036c6987f00faf44e01b86845528c62bab1a3ea0914a234a103d4`.
+Sanitized Phase 5 and Phase 6 evidence is retained under `docs/operations/`, and the
+portfolio candidate has a final E5 Evidence Card.
 
 Phase 6 now owns closeout only: manual browser inspection, final post-deploy
 infrastructure no-drift verification, explicit runtime retain/destroy disposition,
@@ -536,22 +540,29 @@ Completion evidence:
 
 ### Phase 6 — M6 evidence and lifecycle closeout
 
-Status: **ACTIVE**
+Status: **COMPLETE**
 
-Phase 5 already retained the release/rollback runtime evidence, promoted the candidate to E3, and added the required Evidence Card.
+Closeout evidence:
 
-Remaining closeout work:
+- bounded manual HTTPS browser validation covered public, applicant, reviewer, and admin surfaces;
+- role-aware post-login redirect handling, Korean public-service usability, and the misleading disabled-pagination cursor were fixed with focused regression coverage;
+- final deployed M6 release SHA:
+  `9d5fda9871e479e05dc4641fccf7dea3145d2ad6`;
+- final deployed OCI digest:
+  `sha256:13c3d117eef036c6987f00faf44e01b86845528c62bab1a3ea0914a234a103d4`;
+- final exact-release handoff run `34746439784`: SUCCESS;
+- backend/frontend release state verified the final SHA as current and
+  `60a7efe40dd7f3d6f0c0f10396246c4da4148cc4` as previous;
+- final HTTPS/API/Garage business smoke passed;
+- runtime OpenTofu plan: `No changes`, detailed exit code `0`;
+- owner-bootstrap OpenTofu plan: `No changes`;
+- lifecycle decision: retain the seven-role runtime for immediate M7 work and re-evaluate
+  retain/destroy at M7 closeout;
+- immutable release + rollback Evidence Card promoted to E5;
+- detailed closeout evidence:
+  `docs/operations/M6_PHASE6_CLOSEOUT_EVIDENCE.md`.
 
-1. manually inspect the real HTTPS SPA pages defined in the manual-browser-validation section;
-2. run final owner-bootstrap/runtime OpenTofu plans and retain the no-drift result;
-3. explicitly choose and record whether the seven-role runtime is retained for immediate M7 work or destroyed for cost control;
-4. review the M6 Evidence Card and evidence-map maturity honestly after those controls are complete;
-5. move this plan to `docs/plans/completed/`;
-6. update README and `docs/AI_PROJECT_STATE.md`;
-7. require final exact-head CI;
-8. merge and verify post-merge `main`.
-
-Do not begin M7 implementation until this closeout is complete.
+No M7 implementation was pulled into M6.
 
 ## Expected files/components
 

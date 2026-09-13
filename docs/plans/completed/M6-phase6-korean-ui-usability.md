@@ -1,6 +1,6 @@
 # M6 Phase 6 — Korean Public-Service UI Usability Remediation
 
-Status: ACTIVE SUBPLAN  
+Status: COMPLETE SUBPLAN  
 Parent milestone: M6 Operations & Delivery — Phase 6 closeout  
 Base revision: `d96af2e3c8c0b540e220fd4f01c7cc1356b24c0e`
 
@@ -194,3 +194,15 @@ This subplan is complete when a Korean-speaking reviewer can open the deployed S
 understand what service it is, what each role can do, and what each application/program
 state means without relying on source code or English domain terminology, while all
 existing business and security behavior remains green.
+
+
+## Completion result
+
+- Korean public-service wording, shared domain labels, Korean formatting, and bounded readability changes were deployed.
+- Role-aware login redirect behavior remained covered and correct.
+- Manual validation found one additional pagination affordance issue: disabled buttons used a wait cursor.
+- PR #55 changed the disabled cursor semantics and added a regression test proving admin application pagination requests page 1 and returns to page 0.
+- Final reviewed/deployed release:
+  `9d5fda9871e479e05dc4641fccf7dea3145d2ad6`.
+- Final HTTPS/API/Garage smoke passed.
+- This work remains KRDS-informed; no formal KRDS conformance claim is made.
