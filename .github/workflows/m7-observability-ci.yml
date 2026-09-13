@@ -16,11 +16,14 @@ on:
       - 'config/ansible/roles/alloy/**'
       - 'config/ansible/roles/edge/**'
       - 'config/ansible/roles/app/**'
+      - 'config/ansible/roles/db/**'
+      - 'config/secrets/runtime.schema.yaml'
       - 'app/pom.xml'
       - 'app/src/main/resources/application.yml'
       - 'scripts/deploy/test-m7-*-config.sh'
       - 'scripts/deploy/test-m7-nginx-logs.sh'
       - 'scripts/deploy/test-m7-spring-observability.sh'
+      - 'scripts/deploy/test-m7-postgres-metrics.sh'
 
 permissions:
   contents: read
@@ -68,6 +71,7 @@ jobs:
           component_flag alloy '^(monitoring/alloy/|config/ansible/roles/alloy/|scripts/deploy/test-m7-alloy-config\.sh$)'
           component_flag edge_logs '^(monitoring/alloy/|config/ansible/roles/edge/|scripts/deploy/test-m7-nginx-logs\.sh$)'
           component_flag spring_observability '^(app/pom\.xml$|app/src/main/resources/application\.yml$|config/ansible/roles/app/|config/ansible/roles/edge/templates/arp(-http)?\.conf\.j2$|monitoring/alloy/|config/ansible/roles/alloy/|scripts/deploy/test-m7-spring-observability\.sh$)'
+          component_flag postgres_metrics '^(config/ansible/roles/db/|config/secrets/runtime\.schema\.yaml$|monitoring/alloy/postgres\.alloy$|config/ansible/roles/alloy/(tasks/main\.yml|templates/alloy\.service\.j2)$|scripts/deploy/test-m7-postgres-metrics\.sh$)'
 
       - name: Validate Prometheus
         if: steps.changes.outputs.prometheus == 'true'
@@ -170,6 +174,10 @@ jobs:
         if: steps.changes.outputs.spring_observability == 'true'
         run: bash scripts/deploy/test-m7-spring-observability.sh
 
+      - name: Validate PostgreSQL metrics and credential contract
+        if: steps.changes.outputs.postgres_metrics == 'true'
+        run: bash scripts/deploy/test-m7-postgres-metrics.sh
+
       - name: Validate Alloy
         if: steps.changes.outputs.alloy == 'true'
         run: |
@@ -183,4 +191,4 @@ jobs:
             -e ARP_TEMPO_OTLP_HTTP_ENDPOINT=http://127.0.0.1:4318 \
             -v "$PWD/monitoring/alloy:/etc/alloy:ro" \
             grafana/alloy:v1.18.1 \
-            validate /etc/alloy/config.alloy
+            validate /etc/alloy

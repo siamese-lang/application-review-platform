@@ -1,0 +1,16 @@
+local.file "postgres_monitor_password" {
+  filename  = "/etc/alloy/secrets/postgres-monitor-password"
+  is_secret = true
+}
+
+prometheus.exporter.postgres "database" {
+  data_source_names = [
+    "postgresql://arp_monitor:" + encoding.url_encode(local.file.postgres_monitor_password.content) + "@127.0.0.1:5432/arp?sslmode=disable",
+  ]
+}
+
+prometheus.scrape "postgres" {
+  targets         = prometheus.exporter.postgres.database.targets
+  scrape_interval = "15s"
+  forward_to      = [prometheus.remote_write.central.receiver]
+}

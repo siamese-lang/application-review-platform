@@ -19,7 +19,7 @@ ExecStart=/usr/local/bin/alloy run \
   --storage.path=/var/lib/alloy \
   --server.http.listen-addr=127.0.0.1:12345 \
   --disable-reporting \
-  /etc/alloy/config.alloy
+  /etc/alloy
 Restart=on-failure
 RestartSec=5s
 MemoryMax={{ alloy_memory_limit }}
