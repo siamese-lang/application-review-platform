@@ -1,0 +1,84 @@
+---
+- name: Create Prometheus system user
+  ansible.builtin.user:
+    name: prometheus
+    system: true
+    create_home: false
+    shell: /usr/sbin/nologin
+
+- name: Format uninitialized observability data disk
+  community.general.filesystem:
+    fstype: ext4
+    dev: /dev/disk/by-id/google-arp-data
+
+- name: Mount observability data disk
+  ansible.posix.mount:
+    path: /srv/observability
+    src: /dev/disk/by-id/google-arp-data
+    fstype: ext4
+    opts: defaults,noatime
+    state: mounted
+
+- name: Create Prometheus directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: /etc/prometheus, owner: root, group: root, mode: '0755' }
+    - { path: /srv/observability/prometheus, owner: prometheus, group: prometheus, mode: '0750' }
+
+- name: Download pinned Prometheus archive
+  ansible.builtin.get_url:
+    url: "https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+    dest: "/var/cache/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+    checksum: "sha256:{{ prometheus_linux_amd64_sha256 }}"
+    mode: '0644'
+
+- name: Install pinned Prometheus archive
+  ansible.builtin.unarchive:
+    src: "/var/cache/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+    dest: /opt
+    remote_src: true
+    creates: "/opt/prometheus-{{ prometheus_version }}.linux-amd64/prometheus"
+
+- name: Link Prometheus binary
+  ansible.builtin.file:
+    src: "/opt/prometheus-{{ prometheus_version }}.linux-amd64/prometheus"
+    dest: /usr/local/bin/prometheus
+    state: link
+    force: true
+
+- name: Link promtool binary
+  ansible.builtin.file:
+    src: "/opt/prometheus-{{ prometheus_version }}.linux-amd64/promtool"
+    dest: /usr/local/bin/promtool
+    state: link
+    force: true
+
+- name: Install repository-owned Prometheus configuration
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../monitoring/prometheus/prometheus.yml"
+    dest: /etc/prometheus/prometheus.yml
+    owner: root
+    group: prometheus
+    mode: '0640'
+  notify: Restart Prometheus
+
+- name: Install Prometheus systemd unit
+  ansible.builtin.template:
+    src: prometheus.service.j2
+    dest: /etc/systemd/system/prometheus.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart Prometheus
+
+- name: Enable Prometheus
+  ansible.builtin.systemd_service:
+    name: prometheus
+    enabled: true
+    daemon_reload: true
+    state: started
