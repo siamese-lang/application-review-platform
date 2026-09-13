@@ -626,7 +626,7 @@ Completion checkpoint:
 
 ### Phase 3 — Source instrumentation and secure telemetry pipelines
 
-Status: **NEXT**
+Status: **COMPLETE**
 
 Implement the minimum source changes:
 
@@ -648,7 +648,34 @@ Done condition:
 - public Nginx cannot expose Actuator/collector/admin endpoints;
 - no secret or body logging is introduced.
 
+Completion checkpoint:
+
+- required edge/app/db/storage/observability nodes have repository-managed Alloy placement and host metrics;
+- Nginx access/error logs use bounded fields and exclude query strings, bodies, cookies, and authorization data;
+- Spring management and OTLP receivers remain loopback-only, with public Actuator routing denied;
+- application journal logs include trace/span/request correlation without promoting unbounded identifiers to Loki labels;
+- PostgreSQL uses a dedicated least-privileged monitoring login, private/local collection, and repository-managed metrics;
+- `pg_stat_statements` server preload is Ansible-owned while extension activation is Flyway-owned;
+- Garage metrics use a loopback-only token-protected admin listener and Garage logs use journald without Docker socket access;
+- runtime monitoring credentials are represented only by the existing SOPS/age secret schema;
+- exact-head `baseline-ci` and `m7-observability-ci` were green for the final Phase 3 implementation PR;
+- no live GCP apply occurred during Phase 3; the environment remains the seven-node M6 runtime and `obs-01` is still not live.
+
+Implementation merges:
+
+- PR #72 host metrics: `e4fd8c4d353c3d640d5667eddc2d8666345632be`;
+- PR #73 Nginx logs: `436f8bfd39a1d4cbf7be29279f2ead78394481f6`;
+- PR #74 Spring metrics/tracing: `e1c487e9b731a6a449d296516941fc4ba551a062`;
+- PR #75 PostgreSQL metrics: `5b1efb4e5f1951a2edaf0c12e44d70993da4b53f`;
+- PR #76 `pg_stat_statements`: `509f00dd021e55a87078674b0122cccca82347d2`;
+- PR #77 Garage metrics/logs: `982ca28779aff4218de95c93f9d765b060303c9f`;
+- PR #78 application log correlation: `c783c54edbd6022d11debc423957577901efc654`.
+
+Live signal arrival, dashboard population, alert firing/clearing, and isolation evidence remain Phase 4/5 work.
+
 ### Phase 4 — Live `obs-01` provisioning and telemetry activation
+
+Status: **NEXT**
 
 Use the existing controlled M6 operations path.
 
