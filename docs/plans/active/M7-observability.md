@@ -202,12 +202,41 @@ Add one private Compute Engine VM:
 - tags: `arp-observability`, `arp-managed`;
 - reuse the existing workload service-account boundary unless implementation proves a
   narrower/new identity is required;
-- initial cost-first size: `e2-medium`;
-- keep the normal 20 GiB boot disk for OS/configuration;
+- initial size: `e2-standard-2` so the full single-node observability stack has adequate memory headroom;
+- use a 20 GiB `pd-standard` boot disk for OS/configuration so M7 does not consume additional Seoul SSD quota;
 - add a 40 GiB `pd-standard` data disk mounted at `/srv/observability` for
   Prometheus/Loki/Tempo/Grafana runtime data.
 
 Do not silently resize existing business nodes.
+
+### Free Trial resource and quota strategy
+
+This project may spend the available Google Cloud Free Trial credit when doing so preserves
+useful failure domains, measurement isolation, or recovery evidence. Cost is controlled by
+runtime duration rather than collapsing architectural roles.
+
+M6 live evidence recorded these relevant `asia-northeast3` limits:
+
+- E2 CPUs: 32;
+- instances: 8;
+- in-use addresses: 4;
+- SSD total: 250 GiB.
+
+M7 intentionally consumes the eighth Seoul instance slot with `obs-01`. The retained
+`storage-03` workaround (`e2-small` plus `pd-standard` boot) remains. `obs-01` uses
+`pd-standard` for both its 20 GiB boot disk and 40 GiB observability data disk so the
+existing SSD-backed footprint is not pushed beyond the recorded 250 GiB limit.
+
+Later temporary resources follow ADR-002 rather than dismantling M7:
+
+- `loadgen-01`: another region by default, preferably Tokyo;
+- `backup-01`: another region by default when introduced;
+- temporary DR verification VMs: another region by default;
+- `app-02`: placement follows the actual scale-out experiment and is not automatically
+  moved cross-region.
+
+Before M7 live apply, rerun the read-only quota check and review the exact OpenTofu plan.
+Do not assume historical quota guarantees current capacity.
 
 If `obs-01` itself becomes CPU/memory/disk constrained during M7 verification, capture
 that evidence before resizing it. A measured `obs-01` size correction is allowed; it is
@@ -509,7 +538,7 @@ cardinality.
 
 ### Phase 1 — Repository observability foundation
 
-Status: **NEXT**
+Status: **IN REVIEW**
 
 Create the repository-side foundation only.
 
@@ -533,6 +562,20 @@ Done condition:
 - OpenTofu validation/plan fixtures show one bounded observability-node addition plus
   intended private firewall additions only;
 - no runtime apply has occurred.
+
+Current PR #58 implementation adds the repository foundation only. Its final reviewed
+contract includes:
+
+- private `obs-01` at `10.40.0.60`;
+- `e2-standard-2`;
+- 20 GiB `pd-standard` boot + 40 GiB `pd-standard` data disk;
+- tag-restricted telemetry ingress;
+- Grafana 3000 only from `arp-ops`;
+- generated `observability` inventory group;
+- repository-owned `monitoring/` structure;
+- M7 static CI contract.
+
+No live GCP apply belongs to Phase 1.
 
 ### Phase 2 — Central observability stack and Alloy baseline
 
