@@ -64,3 +64,10 @@
   notify:
     - Reload systemd
     - Restart Alloy
+
+- name: Enable Alloy service
+  ansible.builtin.systemd_service:
+    name: alloy
+    enabled: true
+    state: started
+    daemon_reload: true
