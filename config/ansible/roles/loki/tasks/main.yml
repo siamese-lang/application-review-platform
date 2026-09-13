@@ -1,0 +1,46 @@
+---
+- name: Install Loki container runtime dependencies
+  ansible.builtin.apt:
+    name: [docker.io, python3-requests]
+    state: present
+
+- name: Enable Docker service for Loki
+  ansible.builtin.systemd_service:
+    name: docker
+    enabled: true
+    state: started
+
+- name: Create Loki directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: /etc/loki, owner: root, group: root, mode: '0755' }
+    - { path: /srv/observability/loki, owner: '10001', group: '10001', mode: '0750' }
+
+- name: Install repository-owned Loki configuration
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../monitoring/loki/loki.yml"
+    dest: /etc/loki/loki.yml
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart Loki
+
+- name: Run pinned Loki container
+  community.docker.docker_container:
+    name: loki
+    image: "{{ loki_image }}"
+    pull: missing
+    restart_policy: unless-stopped
+    network_mode: host
+    memory: "{{ loki_memory_limit }}"
+    cpus: "{{ loki_cpu_limit }}"
+    volumes:
+      - /etc/loki/loki.yml:/etc/loki/loki.yml:ro
+      - /srv/observability/loki:/var/lib/loki
+    command: -config.file=/etc/loki/loki.yml
+    state: started
