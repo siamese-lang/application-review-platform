@@ -7,7 +7,7 @@
   roles: [ops]
 - hosts: observability
   become: true
-  roles: [prometheus]
+  roles: [prometheus, loki]
 - hosts: db
   become: true
   roles: [db]
