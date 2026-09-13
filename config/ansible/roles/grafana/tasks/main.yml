@@ -1,0 +1,62 @@
+---
+- name: Install Grafana container runtime dependencies
+  ansible.builtin.apt:
+    name: [docker.io, python3-requests]
+    state: present
+
+- name: Enable Docker service for Grafana
+  ansible.builtin.systemd_service:
+    name: docker
+    enabled: true
+    state: started
+
+- name: Require Grafana admin password from deployment environment
+  ansible.builtin.assert:
+    that:
+      - grafana_admin_password | length >= 16
+    fail_msg: ARP_GRAFANA_ADMIN_PASSWORD must be set to at least 16 characters.
+  no_log: true
+
+- name: Create Grafana directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: /etc/grafana/provisioning/datasources, owner: root, group: root, mode: '0755' }
+    - { path: /srv/observability/grafana, owner: '472', group: '0', mode: '0750' }
+
+- name: Install repository-owned Grafana datasource provisioning
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../monitoring/grafana/provisioning/datasources/datasources.yml"
+    dest: /etc/grafana/provisioning/datasources/datasources.yml
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart Grafana
+
+- name: Run pinned Grafana container
+  community.docker.docker_container:
+    name: grafana
+    image: "{{ grafana_image }}"
+    pull: missing
+    restart_policy: unless-stopped
+    network_mode: host
+    memory: "{{ grafana_memory_limit }}"
+    cpus: "{{ grafana_cpu_limit }}"
+    env:
+      GF_SERVER_HTTP_ADDR: "{{ observability_private_ip }}"
+      GF_SERVER_HTTP_PORT: "3000"
+      GF_SECURITY_ADMIN_USER: "admin"
+      GF_SECURITY_ADMIN_PASSWORD: "{{ grafana_admin_password }}"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+    volumes:
+      - /etc/grafana/provisioning:/etc/grafana/provisioning:ro
+      - /srv/observability/grafana:/var/lib/grafana
+    state: started
+  no_log: true
