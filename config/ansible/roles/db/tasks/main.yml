@@ -39,3 +39,60 @@
   args: { executable: /bin/bash }
   environment: { DB_PASSWORD: "{{ db_app_password }}" }
   no_log: true
+
+- name: Create dedicated PostgreSQL monitoring role
+  ansible.builtin.shell: |
+    set -euo pipefail
+    role_exists=$(sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='arp_monitor'")
+    changed=false
+
+    if [ "$role_exists" != 1 ]; then
+      sudo -u postgres psql -v ON_ERROR_STOP=1 --set=password="$DB_MONITOR_PASSWORD" <<'SQL'
+    CREATE ROLE arp_monitor
+      LOGIN
+      INHERIT
+      NOSUPERUSER
+      NOCREATEDB
+      NOCREATEROLE
+      NOREPLICATION
+      NOBYPASSRLS
+      CONNECTION LIMIT 5
+      PASSWORD :'password';
+    SQL
+      changed=true
+    fi
+
+    sudo -u postgres psql -v ON_ERROR_STOP=1 -d postgres <<'SQL'
+    ALTER ROLE arp_monitor
+      INHERIT
+      NOSUPERUSER
+      NOCREATEDB
+      NOCREATEROLE
+      NOREPLICATION
+      NOBYPASSRLS
+      CONNECTION LIMIT 5;
+    SQL
+
+    has_monitor=$(sudo -u postgres psql -tAc "SELECT pg_has_role('arp_monitor','pg_monitor','MEMBER')" postgres)
+    if [ "$has_monitor" != t ]; then
+      sudo -u postgres psql -v ON_ERROR_STOP=1 -d postgres -c "GRANT pg_monitor TO arp_monitor"
+      changed=true
+    fi
+
+    has_connect=$(sudo -u postgres psql -tAc "SELECT has_database_privilege('arp_monitor','arp','CONNECT')" postgres)
+    if [ "$has_connect" != t ]; then
+      sudo -u postgres psql -v ON_ERROR_STOP=1 -d postgres -c "GRANT CONNECT ON DATABASE arp TO arp_monitor"
+      changed=true
+    fi
+
+    if [ "$changed" = true ]; then
+      echo changed
+    else
+      echo unchanged
+    fi
+  args: { executable: /bin/bash }
+  environment:
+    DB_MONITOR_PASSWORD: "{{ db_monitor_password }}"
+  register: postgres_monitor_role
+  changed_when: "'changed' in postgres_monitor_role.stdout_lines"
+  no_log: true
