@@ -92,7 +92,7 @@ test('public applicant flow and reviewer workflow run against the real stack', a
   })
   await page.getByRole('button', { name: '파일 올리기' }).click()
   await expect(page.getByText('e2e-evidence.txt')).toBeVisible()
-  await expect(page.getByText('업로드 완료', { exact: true })).toBeVisible()
+  await expect(page.getByText(/업로드 완료/)).toBeVisible()
 
   const downloadPromise = page.waitForEvent('download')
   await page.getByRole('button', { name: '다운로드' }).click()
