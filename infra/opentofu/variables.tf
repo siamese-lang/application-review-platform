@@ -45,7 +45,7 @@ variable "machine_types" {
     db            = "e2-medium"
     storage       = "e2-medium"
     ops           = "e2-small"
-    observability = "e2-medium"
+    observability = "e2-standard-2"
   }
   validation {
     condition     = alltrue([for role in ["edge", "app", "db", "storage", "ops", "observability"] : contains(keys(var.machine_types), role)])
