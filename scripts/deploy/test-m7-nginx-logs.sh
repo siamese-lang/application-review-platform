@@ -48,7 +48,7 @@ grep -Fq 'file_match {' "$alloy"
 grep -Fq 'loki.write "central"' "$alloy"
 grep -Fq 'url = sys.env("ARP_LOKI_PUSH_URL")' "$alloy"
 
-grep -Fq "if alloy_node_role == 'edge'" "$alloy_unit"
+grep -Fq "{% if alloy_node_role in ['edge', 'db'] %}" "$alloy_unit"
 grep -Fq 'SupplementaryGroups=adm' "$alloy_unit"
 grep -Fq 'ARP_LOKI_PUSH_URL=http://' "$alloy_unit"
 grep -Fq ':3100/loki/api/v1/push' "$alloy_unit"

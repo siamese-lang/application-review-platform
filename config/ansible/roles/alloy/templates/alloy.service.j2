@@ -7,7 +7,7 @@ After=network-online.target
 Type=simple
 User=alloy
 Group=alloy
-{% if alloy_node_role == 'edge' %}
+{% if alloy_node_role in ['edge', 'db'] %}
 SupplementaryGroups=adm
 {% elif alloy_node_role in ['app', 'storage'] %}
 SupplementaryGroups=adm systemd-journal
