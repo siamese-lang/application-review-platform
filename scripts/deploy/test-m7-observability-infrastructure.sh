@@ -13,7 +13,7 @@ grep -Fq 'storage-03 = { role = "storage", zone = "${var.region}-c", ip = "10.40
 grep -Fq 'ops-01     = { role = "ops", zone = "${var.region}-a", ip = "10.40.0.50" }' infra/opentofu/locals.tf
 grep -Fq 'obs-01     = { role = "observability", zone = "${var.region}-a", ip = "10.40.0.60" }' infra/opentofu/locals.tf
 
-grep -Fq 'observability = "e2-medium"' infra/opentofu/variables.tf
+grep -Fq 'observability = "e2-standard-2"' infra/opentofu/variables.tf
 grep -Fq 'variable "observability_data_disk_size_gb"' infra/opentofu/variables.tf
 grep -Fq 'labels       = { milestone = each.key == "obs-01" ? "m7" : "m4", role = each.value.role }' infra/opentofu/compute.tf
 grep -Fq 'for_each = each.key == "edge-01" ? [1] : []' infra/opentofu/compute.tf
