@@ -1,0 +1,26 @@
+[Unit]
+Description=Prometheus
+Wants=network-online.target
+After=network-online.target
+RequiresMountsFor=/srv/observability
+
+[Service]
+Type=simple
+User=prometheus
+Group=prometheus
+ExecStart=/usr/local/bin/prometheus \
+  --config.file=/etc/prometheus/prometheus.yml \
+  --storage.tsdb.path=/srv/observability/prometheus \
+  --storage.tsdb.retention.time={{ prometheus_retention_time }} \
+  --storage.tsdb.retention.size={{ prometheus_retention_size }} \
+  --web.listen-address={{ observability_private_ip }}:9090 \
+  --web.enable-remote-write-receiver
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=5s
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
