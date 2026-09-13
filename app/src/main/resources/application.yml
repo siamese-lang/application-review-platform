@@ -53,3 +53,7 @@ management:
       export:
         otlp:
           endpoint: ${OTEL_TRACES_ENDPOINT:http://127.0.0.1:4318/v1/traces}
+
+logging:
+  pattern:
+    correlation: "[${spring.application.name:},traceId=%X{traceId:-},spanId=%X{spanId:-},requestId=%X{requestId:-}] "

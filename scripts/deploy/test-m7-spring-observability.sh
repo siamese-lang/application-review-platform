@@ -6,6 +6,8 @@ pom="$root/app/pom.xml"
 app_config="$root/app/src/main/resources/application.yml"
 app_env="$root/config/ansible/roles/app/templates/arp.env.j2"
 alloy="$root/monitoring/alloy/config.alloy"
+app_logs="$root/monitoring/alloy/app-logs.alloy"
+alloy_tasks="$root/config/ansible/roles/alloy/tasks/main.yml"
 alloy_unit="$root/config/ansible/roles/alloy/templates/alloy.service.j2"
 https_site="$root/config/ansible/roles/edge/templates/arp.conf.j2"
 http_site="$root/config/ansible/roles/edge/templates/arp-http.conf.j2"
@@ -47,6 +49,21 @@ grep -Fq 'endpoint = "127.0.0.1:4318"' "$alloy"
 grep -Fq 'traces = [otelcol.processor.batch.traces.input]' "$alloy"
 grep -Fq 'otelcol.exporter.otlphttp "tempo"' "$alloy"
 grep -Fq 'endpoint = sys.env("ARP_TEMPO_OTLP_HTTP_ENDPOINT")' "$alloy"
+
+grep -Fq 'correlation: "[${spring.application.name:},traceId=%X{traceId:-},spanId=%X{spanId:-},requestId=%X{requestId:-}] "' "$app_config"
+grep -Fq 'loki.source.journal "application"' "$app_logs"
+grep -Fq 'matches    = "_SYSTEMD_UNIT=arp.service"' "$app_logs"
+grep -Fq 'service     = "application-review-platform"' "$app_logs"
+grep -Fq 'stream      = "application"' "$app_logs"
+grep -Fq 'dest: /etc/alloy/app-logs.alloy' "$alloy_tasks"
+grep -Fq "when: alloy_node_role == 'app'" "$alloy_tasks"
+grep -Fq "{% elif alloy_node_role in ['app', 'storage'] %}" "$alloy_unit"
+grep -Fq 'SupplementaryGroups=adm systemd-journal' "$alloy_unit"
+
+if grep -Eq 'traceId.*target_label|spanId.*target_label|requestId.*target_label' "$app_logs"; then
+  echo 'Correlation identifiers must stay in log content, not Loki labels.' >&2
+  exit 1
+fi
 
 grep -Fq 'ARP_PROMETHEUS_REMOTE_WRITE_URL=http://{{ observability_private_ip }}:9090/api/v1/write' "$alloy_unit"
 grep -Fq 'ARP_LOKI_PUSH_URL=http://{{ observability_private_ip }}:3100/loki/api/v1/push' "$alloy_unit"

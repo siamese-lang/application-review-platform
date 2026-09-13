@@ -33,7 +33,7 @@ grep -Fq "when: alloy_node_role == 'storage'" "$alloy_tasks"
 grep -Fq "when: alloy_node_role != 'storage'" "$alloy_tasks"
 grep -Fq 'no_log: true' "$alloy_tasks"
 
-grep -Fq "{% elif alloy_node_role == 'storage' %}" "$alloy_unit"
+grep -Eq "\{% elif alloy_node_role == 'storage' %\}|\{% elif alloy_node_role in \['app', 'storage'\] %\}" "$alloy_unit"
 grep -Fq 'SupplementaryGroups=adm systemd-journal' "$alloy_unit"
 
 grep -Fq 'local.file "garage_metrics_token"' "$alloy_config"

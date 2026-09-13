@@ -1,0 +1,12 @@
+loki.source.journal "application" {
+  matches    = "_SYSTEMD_UNIT=arp.service"
+  max_age    = "1h"
+  forward_to = [loki.write.central.receiver]
+  labels = {
+    environment = "application-review-platform",
+    node        = sys.env("ARP_ALLOY_NODE"),
+    role        = sys.env("ARP_ALLOY_ROLE"),
+    service     = "application-review-platform",
+    stream      = "application",
+  }
+}

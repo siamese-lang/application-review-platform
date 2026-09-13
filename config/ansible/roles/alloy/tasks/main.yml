@@ -79,6 +79,23 @@
     mode: '0750'
   when: alloy_node_role in ['db', 'storage']
 
+- name: Install app-only application log Alloy configuration
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../monitoring/alloy/app-logs.alloy"
+    dest: /etc/alloy/app-logs.alloy
+    owner: root
+    group: alloy
+    mode: '0640'
+  when: alloy_node_role == 'app'
+  notify: Restart Alloy
+
+- name: Remove app-only Alloy log configuration from non-app nodes
+  ansible.builtin.file:
+    path: /etc/alloy/app-logs.alloy
+    state: absent
+  when: alloy_node_role != 'app'
+  notify: Restart Alloy
+
 - name: Install db-only PostgreSQL monitoring password
   ansible.builtin.copy:
     content: "{{ db_monitor_password }}"

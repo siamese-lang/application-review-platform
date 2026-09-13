@@ -9,7 +9,7 @@ User=alloy
 Group=alloy
 {% if alloy_node_role == 'edge' %}
 SupplementaryGroups=adm
-{% elif alloy_node_role == 'storage' %}
+{% elif alloy_node_role in ['app', 'storage'] %}
 SupplementaryGroups=adm systemd-journal
 {% endif %}
 Environment="ARP_ALLOY_NODE={{ inventory_hostname }}"
