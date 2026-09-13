@@ -22,6 +22,7 @@ grep -Fq 'address: 127.0.0.1' "$app_config"
 grep -Fq 'port: ${MANAGEMENT_SERVER_PORT:9091}' "$app_config"
 grep -Fq 'include: health,prometheus' "$app_config"
 grep -Fq 'probability: ${TRACING_SAMPLING_PROBABILITY:1.0}' "$app_config"
+grep -Fq 'enabled: false' "$app_config"
 grep -Fq 'endpoint: ${OTEL_TRACES_ENDPOINT:http://127.0.0.1:4318/v1/traces}' "$app_config"
 
 grep -Fq 'MANAGEMENT_SERVER_PORT=9091' "$app_env"
