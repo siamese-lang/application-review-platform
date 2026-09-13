@@ -28,3 +28,7 @@ loki_cpu_limit: 1.0
 tempo_image: grafana/tempo:3.0.2
 tempo_memory_limit: 1536m
 tempo_cpu_limit: 1.0
+grafana_image: grafana/grafana:13.2.1
+grafana_memory_limit: 512m
+grafana_cpu_limit: 0.5
+grafana_admin_password: "{{ lookup('env', 'ARP_GRAFANA_ADMIN_PASSWORD') }}"
