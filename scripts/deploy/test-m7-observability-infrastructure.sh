@@ -17,6 +17,7 @@ grep -Fq 'observability = "e2-medium"' infra/opentofu/variables.tf
 grep -Fq 'variable "observability_data_disk_size_gb"' infra/opentofu/variables.tf
 grep -Fq 'labels       = { milestone = each.key == "obs-01" ? "m7" : "m4", role = each.value.role }' infra/opentofu/compute.tf
 grep -Fq 'for_each = each.key == "edge-01" ? [1] : []' infra/opentofu/compute.tf
+grep -Fq 'each.key == "obs-01" ? "pd-standard" : "pd-balanced"' infra/opentofu/compute.tf
 grep -Fq 'each.key == "obs-01" ? [google_compute_disk.observability.id]' infra/opentofu/compute.tf
 
 grep -Fq 'resource "google_compute_disk" "observability"' infra/opentofu/disks.tf
