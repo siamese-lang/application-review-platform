@@ -26,6 +26,8 @@
     mode: "{{ item.mode }}"
   loop:
     - { path: /etc/grafana/provisioning/datasources, owner: root, group: root, mode: '0755' }
+    - { path: /etc/grafana/provisioning/dashboards, owner: root, group: root, mode: '0755' }
+    - { path: /etc/grafana/dashboards, owner: root, group: root, mode: '0755' }
     - { path: /srv/observability/grafana, owner: '472', group: '0', mode: '0750' }
 
 - name: Install repository-owned Grafana datasource provisioning
@@ -35,6 +37,29 @@
     owner: root
     group: root
     mode: '0644'
+  notify: Restart Grafana
+
+- name: Install repository-owned Grafana dashboard provisioning
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../monitoring/grafana/provisioning/dashboards/dashboards.yml"
+    dest: /etc/grafana/provisioning/dashboards/dashboards.yml
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart Grafana
+
+- name: Install repository-owned Grafana dashboards
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../monitoring/grafana/dashboards/{{ item }}"
+    dest: "/etc/grafana/dashboards/{{ item }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - system-overview.json
+    - application-api.json
+    - postgresql.json
+    - garage.json
   notify: Restart Grafana
 
 - name: Run pinned Grafana container
@@ -57,6 +82,7 @@
       GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
     volumes:
       - /etc/grafana/provisioning:/etc/grafana/provisioning:ro
+      - /etc/grafana/dashboards:/etc/grafana/dashboards:ro
       - /srv/observability/grafana:/var/lib/grafana
     state: started
   no_log: true
