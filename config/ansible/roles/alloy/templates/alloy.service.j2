@@ -1,0 +1,24 @@
+[Unit]
+Description=Grafana Alloy
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=alloy
+Group=alloy
+ExecStart=/usr/local/bin/alloy run \
+  --storage.path=/var/lib/alloy \
+  --server.http.listen-addr=127.0.0.1:12345 \
+  --disable-reporting \
+  /etc/alloy/config.alloy
+Restart=on-failure
+RestartSec=5s
+MemoryMax={{ alloy_memory_limit }}
+CPUQuota={{ alloy_cpu_quota }}
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
