@@ -5,6 +5,12 @@ global:
     environment: application-review-platform
     region: asia-northeast3
 
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - 10.40.0.60:9093
+
 scrape_configs:
   - job_name: prometheus
     static_configs:

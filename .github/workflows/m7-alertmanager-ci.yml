@@ -1,0 +1,25 @@
+name: m7-alertmanager-ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  m7-alertmanager-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate M7 Alertmanager repository contract
+        run: bash scripts/deploy/test-m7-alertmanager-config.sh
+      - name: Validate Alertmanager configuration with pinned amtool
+        run: |
+          docker run --rm \
+            --entrypoint /bin/amtool \
+            -v "$PWD/monitoring/alertmanager:/etc/alertmanager:ro" \
+            prom/alertmanager:v0.34.0 \
+            check-config /etc/alertmanager/alertmanager.yml

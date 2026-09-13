@@ -1,0 +1,26 @@
+[Unit]
+Description=Prometheus Alertmanager
+Wants=network-online.target
+After=network-online.target
+RequiresMountsFor=/srv/observability
+
+[Service]
+Type=simple
+User=alertmanager
+Group=alertmanager
+ExecStart=/usr/local/bin/alertmanager \
+  --config.file=/etc/alertmanager/alertmanager.yml \
+  --storage.path=/srv/observability/alertmanager \
+  --data.retention={{ alertmanager_retention_time }} \
+  --web.listen-address={{ observability_private_ip }}:9093 \
+  --cluster.listen-address=
+Restart=on-failure
+RestartSec=5s
+MemoryMax={{ alertmanager_memory_limit }}
+CPUQuota={{ alertmanager_cpu_quota }}
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
