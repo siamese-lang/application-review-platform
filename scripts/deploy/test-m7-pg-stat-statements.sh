@@ -15,7 +15,10 @@ if grep -Eiq 'CREATE[[:space:]]+INDEX|ALTER[[:space:]]+TABLE|EXPLAIN|pg_stat_sta
   exit 1
 fi
 
-if grep -R -Eiq 'CREATE[[:space:]]+EXTENSION([[:space:]]+IF[[:space:]]+NOT[[:space:]]+EXISTS)?[[:space:]]+pg_stat_statements'   "$root/config/ansible" "$root/deploy" "$root/scripts"; then
+if grep -R -Eiq \
+  --exclude='test-m7-pg-stat-statements.sh' \
+  'CREATE[[:space:]]+EXTENSION([[:space:]]+IF[[:space:]]+NOT[[:space:]]+EXISTS)?[[:space:]]+pg_stat_statements' \
+  "$root/config/ansible" "$root/deploy" "$root/scripts"; then
   echo 'pg_stat_statements schema activation must remain Flyway-owned.' >&2
   exit 1
 fi
