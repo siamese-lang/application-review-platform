@@ -9,3 +9,7 @@ rpc_secret = "{{ garage_rpc_secret }}"
 s3_region = "garage"
 api_bind_addr = "0.0.0.0:{{ garage_s3_port }}"
 root_domain = ".s3.garage"
+[admin]
+api_bind_addr = "127.0.0.1:3903"
+metrics_token = "{{ garage_metrics_token }}"
+metrics_require_token = true

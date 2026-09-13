@@ -21,6 +21,9 @@
     pull: missing
     restart_policy: unless-stopped
     network_mode: host
+    log_driver: journald
+    log_options:
+      tag: garage
     volumes: [/etc/garage/garage.toml:/etc/garage.toml:ro, /srv/garage:/var/lib/garage]
     command: /garage -c /etc/garage.toml server
     state: started
