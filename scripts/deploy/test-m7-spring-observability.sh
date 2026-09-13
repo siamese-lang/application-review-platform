@@ -48,12 +48,10 @@ grep -Fq 'traces = [otelcol.processor.batch.traces.input]' "$alloy"
 grep -Fq 'otelcol.exporter.otlphttp "tempo"' "$alloy"
 grep -Fq 'endpoint = sys.env("ARP_TEMPO_OTLP_HTTP_ENDPOINT")' "$alloy"
 
-grep -Fq 'ARP_TEMPO_OTLP_HTTP_ENDPOINT=http://' "$alloy_unit"
-grep -Fq ':4318' "$alloy_unit"
+grep -Fq 'ARP_PROMETHEUS_REMOTE_WRITE_URL=http://{{ observability_private_ip }}:9090/api/v1/write' "$alloy_unit"
+grep -Fq 'ARP_LOKI_PUSH_URL=http://{{ observability_private_ip }}:3100/loki/api/v1/push' "$alloy_unit"
+grep -Fq 'ARP_TEMPO_OTLP_HTTP_ENDPOINT=http://{{ observability_private_ip }}:4318' "$alloy_unit"
 
-if grep -Eq 'management:[[:space:]]*$' /dev/null; then
-  :
-fi
 if grep -Eq '0\.0\.0\.0:(9091|4318)' "$app_config" "$app_env" "$alloy" "$alloy_unit"; then
   echo 'Spring management and local OTLP receiver must remain loopback-only.' >&2
   exit 1
