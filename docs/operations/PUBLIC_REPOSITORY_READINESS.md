@@ -82,7 +82,7 @@ PUBLIC READINESS SECRET SCAN: PASS
 
 Repository search found no current tracked occurrences of:
 
-- `AGE-SECRET-KEY-`;
+- age private-key marker strings;
 - private-key PEM/OpenSSH headers;
 - real `db_app_password` values;
 - real Garage RPC/app secret values;
