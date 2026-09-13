@@ -7,9 +7,13 @@ After=network-online.target
 Type=simple
 User=alloy
 Group=alloy
+{% if alloy_node_role == 'edge' %}
+SupplementaryGroups=adm
+{% endif %}
 Environment="ARP_ALLOY_NODE={{ inventory_hostname }}"
 Environment="ARP_ALLOY_ROLE={{ alloy_node_role }}"
 Environment="ARP_PROMETHEUS_REMOTE_WRITE_URL=http://{{ '127.0.0.1' if alloy_node_role == 'observability' else observability_private_ip }}:9090/api/v1/write"
+Environment="ARP_LOKI_PUSH_URL=http://{{ '127.0.0.1' if alloy_node_role == 'observability' else observability_private_ip }}:3100/loki/api/v1/push"
 ExecStart=/usr/local/bin/alloy run \
   --storage.path=/var/lib/alloy \
   --server.http.listen-addr=127.0.0.1:12345 \
