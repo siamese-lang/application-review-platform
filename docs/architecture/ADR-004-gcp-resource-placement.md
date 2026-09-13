@@ -1,4 +1,4 @@
-# ADR-002 — Separate persistent Seoul runtime from temporary cross-region experiment resources
+# ADR-004 — Separate persistent Seoul runtime from temporary cross-region experiment resources
 
 Status: ACCEPTED
 

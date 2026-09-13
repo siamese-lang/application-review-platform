@@ -18,6 +18,7 @@
 - ADR-001: REST API + React SPA browser boundary accepted
 - ADR-002: applicant self-registration + controlled reviewer/admin provisioning accepted
 - ADR-003: admin program publication + derived intake window + generalized audit subjects accepted
+- ADR-004: persistent Seoul runtime + temporary cross-region experiment/recovery placement accepted
 - M5 Web/API & Product Surface: complete
 - M5 completed plan: `docs/plans/completed/M5-web-api-product-surface.md`
 - M5 final implementation PR #30 merged as `d8c34ebfa5a39cf253c5f9e1908d9a48cfa5bd88`; exact-head workflow `34614094018` and post-merge `main` workflow `34614462225` passed
@@ -32,7 +33,9 @@
 - Final deployed M6 OCI digest: `sha256:13c3d117eef036c6987f00faf44e01b86845528c62bab1a3ea0914a234a103d4`
 - Current implementation milestone: M7 Observability
 - Active plan: `docs/plans/active/M7-observability.md`
-- Current M7 slice: Phase 1 repository observability foundation; no live GCP change yet
+- M7 Phase 1 repository observability foundation: complete
+- Current M7 slice: Phase 2 central observability stack and Alloy baseline; no live GCP change yet
+- Repository visibility: public; `protect-main` ruleset active
 
 This project is **production-like**, not a claim of real production operation. All users, organizations, applications, documents, workloads, and measurements are synthetic unless explicitly recorded otherwise.
 
@@ -51,7 +54,7 @@ edge-01: Nginx
 
 The production browser/API path is same-origin through Nginx. Spring Security session authentication, Spring Session JDBC, CSRF protection, domain/service authorization, Flyway, PostgreSQL, Garage, and the split-role GCP IaaS boundary remain part of the architecture.
 
-See `docs/architecture/ADR-001-web-api-spa.md` for the browser/API decision, `docs/architecture/ADR-002-account-lifecycle.md` for public registration and privileged-role provisioning, and `docs/architecture/ADR-003-program-lifecycle.md` for program publication/intake and reviewer claim semantics.
+See `docs/architecture/ADR-001-web-api-spa.md` for the browser/API decision, `docs/architecture/ADR-002-account-lifecycle.md` for public registration and privileged-role provisioning, `docs/architecture/ADR-003-program-lifecycle.md` for program publication/intake and reviewer claim semantics, and `docs/architecture/ADR-004-gcp-resource-placement.md` for quota-aware runtime/experiment placement.
 
 ## Product workflow
 
@@ -86,7 +89,7 @@ Public registration always creates `APPLICANT`; browser clients cannot self-assi
 - The live M4 runtime was destroyed after verification/merge to stop unnecessary trial-credit consumption.
 - M6 recreated and verified the same seven-role runtime. Final runtime and owner-bootstrap OpenTofu plans are no-drift.
 - The current live runtime is still seven nodes; M7 targets an eight-node Seoul runtime by adding private `obs-01`.
-- Resource placement follows `docs/architecture/ADR-002-gcp-resource-placement.md`: preserve the Seoul runtime and place later temporary load/backup/DR resources cross-region by default rather than collapsing roles for quota/cost reasons.
+- Resource placement follows `docs/architecture/ADR-004-gcp-resource-placement.md`: preserve the Seoul runtime and place later temporary load/backup/DR resources cross-region by default rather than collapsing roles for quota/cost reasons.
 - Repository OpenTofu/Ansible plus sanitized M4/M6 evidence remain the reproducible record.
 
 See `docs/operations/GCP_BASELINE.md` and `docs/operations/M4_RUNTIME_EVIDENCE.md`.
@@ -109,6 +112,6 @@ Completed milestones retain their original numbering:
 
 M1 Business MVP → M2 Data Integrity → M3 Attachment → M4 Cloud Deployment
 
-Future plan after ADR-001/ADR-002/ADR-003:
+Future plan after ADR-001/ADR-002/ADR-003/ADR-004:
 
 M5 Web/API & Product Surface → M6 Operations & Delivery → M7 Observability → M8 Workload → M9 Performance → M10 Reliability → M11 DR → M12 Portfolio

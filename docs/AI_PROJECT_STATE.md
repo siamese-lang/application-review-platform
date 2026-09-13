@@ -59,7 +59,8 @@ Milestone state:
 - M5 Web/API & Product Surface — complete
 - M6 Operations & Delivery — complete
 - M7 Observability — ACTIVE
-- M7 Phase 1 repository observability foundation — IN REVIEW (PR #58)
+- M7 Phase 1 repository observability foundation — complete
+- M7 Phase 2 central observability stack and Alloy baseline — NEXT
 
 M6 completed plan:
 
@@ -86,7 +87,7 @@ applied yet.
 
 Source of truth:
 
-- `docs/architecture/ADR-002-gcp-resource-placement.md`
+- `docs/architecture/ADR-004-gcp-resource-placement.md`
 - `docs/architecture/ARCHITECTURE.md`
 - `docs/FREEZE_RECORD.md`
 - `docs/workload/WORKLOAD.md`
@@ -166,45 +167,57 @@ Evidence:
 
 `docs/plans/active/M7-observability.md`
 
+## Public repository and M7 Phase 1 closeout
+
+The repository is now **public**.
+
+Public-transition verification:
+
+- public-readiness secret/history audit: passed;
+- no credential rotation or history rewrite required;
+- repository ruleset `protect-main`: active;
+- force-push/deletion blocked on the default branch;
+- pull request required;
+- strict required CI checks configured;
+- PR #58 M7 Phase 1 merge:
+  `dfeb5cab85698812294878bcf3a154d5d628967b`;
+- PR #58 exact-head CI `34752303087`: SUCCESS;
+- PR #59 browser-E2E locator correction merge:
+  `3f7de55356e097793debf3f97e3480667d5bb6a5`;
+- PR #59 exact-head CI `34752944074`: SUCCESS;
+- final post-merge `main` CI `34753065713`: SUCCESS.
+
+The public transition solved the private-repository GitHub Actions minute exhaustion
+without replacing the established CI platform.
+
 ## Immediate next work
 
-Pause PR #58 merge until the **public repository readiness** gate is complete.
+Execute **M7 Phase 2 — Central observability stack and Alloy baseline** only.
 
-Reason:
+Phase 2 is repository-side work. Build reproducible, pinned configuration/Ansible for:
 
-- the private repository exhausted its included GitHub Actions allowance;
-- public standard GitHub-hosted runners can continue the existing CI without a platform
-  migration;
-- this repository is intended to become a portfolio repository.
+- Prometheus;
+- Loki;
+- Tempo;
+- Grafana;
+- Alertmanager;
+- Grafana Alloy;
+- datasource provisioning;
+- bounded dashboards/rules;
+- retention/resource limits;
+- configuration validation in CI where supported.
 
-Public-transition source of truth:
+Do **not** apply live GCP infrastructure in Phase 2. `obs-01` still does not exist live.
 
-`docs/operations/PUBLIC_REPOSITORY_READINESS.md`
+Key constraints:
 
-Required sequence:
-
-1. rerun the repository-owned Gitleaks history/current-tree scan from the latest PR #58 head;
-2. require zero non-allowlisted findings;
-3. review historical Actions logs/artifacts for secret exposure;
-4. manually switch repository visibility to public;
-5. immediately configure/verify `main` branch protection/ruleset;
-6. rerun PR #58 exact-head CI using public-repository hosted runners;
-7. merge PR #58 only when all required jobs are green;
-8. verify post-merge `main` CI;
-9. mark M7 Phase 1 COMPLETE;
-10. begin Phase 2 central observability stack repository implementation.
-
-Do not replace the established CI with Jenkins/Cloud Build/self-hosted runners merely to
-work around the private-repository minute cap unless public-readiness fails for a concrete
-security reason.
-
-M7 architecture constraints remain unchanged:
-
-- preserve the existing seven live nodes until reviewed M7 live apply;
-- target the documented eight-node Seoul runtime; do not shrink it for cost reasons;
+- preserve the existing seven-node live runtime;
+- target the documented eight-node Seoul runtime for Phase 4 activation;
 - no public Grafana/Actuator/telemetry exposure;
+- no plaintext runtime secrets;
 - no M8 workload or M9 optimization;
-- follow ADR-002 for later cross-region temporary resources.
+- follow ADR-004 for later cross-region temporary resources;
+- use pinned versions, never floating `latest`.
 
 ## Do not revisit unless new evidence requires it
 
