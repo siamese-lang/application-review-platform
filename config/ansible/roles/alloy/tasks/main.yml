@@ -77,6 +77,23 @@
     mode: '0640'
   notify: Restart Alloy
 
+- name: Install observability-only application health probe Alloy configuration
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../monitoring/alloy/observability-probe.alloy"
+    dest: /etc/alloy/observability-probe.alloy
+    owner: root
+    group: alloy
+    mode: '0640'
+  when: alloy_node_role == 'observability'
+  notify: Restart Alloy
+
+- name: Remove observability-only application health probe from non-observability nodes
+  ansible.builtin.file:
+    path: /etc/alloy/observability-probe.alloy
+    state: absent
+  when: alloy_node_role != 'observability'
+  notify: Restart Alloy
+
 - name: Create role-specific Alloy secret directory
   ansible.builtin.file:
     path: /etc/alloy/secrets

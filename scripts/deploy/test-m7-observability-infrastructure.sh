@@ -29,6 +29,11 @@ grep -Fq 'resource "google_compute_firewall" "telemetry_observability"' infra/op
 grep -Fq 'source_tags = ["arp-edge", "arp-app", "arp-db", "arp-storage"]' infra/opentofu/firewall.tf
 grep -Fq 'target_tags = ["arp-observability"]' infra/opentofu/firewall.tf
 grep -Fq 'ports    = ["9090", "3100", "4317", "4318"]' infra/opentofu/firewall.tf
+grep -Fq 'resource "google_compute_firewall" "observability_app_probe"' infra/opentofu/firewall.tf
+grep -Fq 'name        = "arp-observability-to-app-probe"' infra/opentofu/firewall.tf
+grep -Fq 'source_tags = ["arp-observability"]' infra/opentofu/firewall.tf
+grep -Fq 'target_tags = ["arp-app"]' infra/opentofu/firewall.tf
+grep -Fq 'ports    = ["8080"]' infra/opentofu/firewall.tf
 grep -Fq 'resource "google_compute_firewall" "ops_grafana"' infra/opentofu/firewall.tf
 grep -Fq 'source_tags = ["arp-ops"]' infra/opentofu/firewall.tf
 grep -Fq 'ports    = ["3000"]' infra/opentofu/firewall.tf
