@@ -14,7 +14,7 @@ if ARP_ROLLBACK_SHA=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
   exit 1
 fi
 
-if rg -n 'mvnw|maven|npm|vite|app/target|ARP_APP_JAR' deploy/deploy-release.sh; then
+if grep -En 'mvnw|maven|npm|vite|app/target|ARP_APP_JAR' deploy/deploy-release.sh; then
   echo 'final release wrapper must not build or discover a local JAR' >&2
   exit 1
 fi
@@ -79,7 +79,13 @@ if grep -Fq 'Require a built application artifact' config/ansible/roles/app/task
   exit 1
 fi
 grep -Fq 'when: app_jar_source | length > 0' config/ansible/roles/app/tasks/main.yml
-if rg -U 'path: /opt/arp/frontend/current[^\n]*\n[^\n]*state: directory' config/ansible/roles/edge/tasks/main.yml; then
+if python3 - <<'PY'
+from pathlib import Path
+import re
+text = Path("config/ansible/roles/edge/tasks/main.yml").read_text()
+raise SystemExit(0 if re.search(r"path: /opt/arp/frontend/current[^\n]*\n[^\n]*state: directory", text) else 1)
+PY
+then
   echo 'edge role recreates the active frontend pointer as a directory' >&2
   exit 1
 fi
@@ -87,7 +93,7 @@ grep -Fq 'ExecStart=/usr/bin/java -jar /opt/arp/application.jar' config/ansible/
 grep -Fq 'root /opt/arp/frontend/current;' config/ansible/roles/edge/templates/arp.conf.j2
 
 for forbidden in ghcr.io gcloud google-github-actions workflow_dispatch; do
-  if rg -n "$forbidden" deploy/deploy-release.sh deploy/rollback-release.sh config/ansible/release.yml config/ansible/rollback.yml; then
+  if grep -En "$forbidden" deploy/deploy-release.sh deploy/rollback-release.sh config/ansible/release.yml config/ansible/rollback.yml; then
     echo "Phase 2B unexpectedly contains GitHub/GCP delivery mutation: $forbidden" >&2
     exit 1
   fi

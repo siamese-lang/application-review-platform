@@ -6,6 +6,7 @@ Wants=network-online.target
 User=arp
 Group=arp
 EnvironmentFile=/etc/arp/arp.env
+EnvironmentFile=-/etc/arp/arp-flyway.env
 ExecStart=/usr/bin/java -jar /opt/arp/application.jar
 Restart=on-failure
 NoNewPrivileges=true
