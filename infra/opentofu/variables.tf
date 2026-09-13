@@ -33,18 +33,23 @@ variable "garage_data_disk_size_gb" {
   type    = number
   default = 30
 }
+variable "observability_data_disk_size_gb" {
+  type    = number
+  default = 40
+}
 variable "machine_types" {
   type = map(string)
   default = {
-    edge    = "e2-small"
-    app     = "e2-medium"
-    db      = "e2-medium"
-    storage = "e2-medium"
-    ops     = "e2-small"
+    edge          = "e2-small"
+    app           = "e2-medium"
+    db            = "e2-medium"
+    storage       = "e2-medium"
+    ops           = "e2-small"
+    observability = "e2-standard-2"
   }
   validation {
-    condition     = alltrue([for role in ["edge", "app", "db", "storage", "ops"] : contains(keys(var.machine_types), role)])
-    error_message = "machine_types must define edge, app, db, storage, and ops."
+    condition     = alltrue([for role in ["edge", "app", "db", "storage", "ops", "observability"] : contains(keys(var.machine_types), role)])
+    error_message = "machine_types must define edge, app, db, storage, ops, and observability."
   }
 }
 variable "node_machine_type_overrides" {
@@ -61,13 +66,14 @@ variable "node_machine_type_overrides" {
         "storage-02",
         "storage-03",
         "ops-01",
+        "obs-01",
       ], name)
     ])
-    error_message = "node_machine_type_overrides may contain only known M4 node names."
+    error_message = "node_machine_type_overrides may contain only known runtime node names."
   }
 }
 variable "node_boot_disk_type_overrides" {
-  description = "Optional per-node boot disk type overrides for quota recovery without changing healthy nodes."
+  description = "Optional per-node boot-disk overrides for quota recovery without changing healthy nodes."
   type        = map(string)
   default     = {}
   validation {
@@ -81,8 +87,9 @@ variable "node_boot_disk_type_overrides" {
         "storage-02",
         "storage-03",
         "ops-01",
+        "obs-01",
       ], name) && contains(["pd-balanced", "pd-standard"], disk_type)
     ])
-    error_message = "node_boot_disk_type_overrides may contain only known M4 node names and pd-balanced/pd-standard values."
+    error_message = "node_boot_disk_type_overrides may contain only known runtime nodes and pd-balanced/pd-standard values."
   }
 }

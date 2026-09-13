@@ -71,6 +71,30 @@ resource "google_compute_firewall" "garage_rpc" {
   }
 }
 
+resource "google_compute_firewall" "telemetry_observability" {
+  name        = "arp-telemetry-to-observability"
+  network     = google_compute_network.m4.name
+  direction   = "INGRESS"
+  source_tags = ["arp-edge", "arp-app", "arp-db", "arp-storage"]
+  target_tags = ["arp-observability"]
+  allow {
+    protocol = "tcp"
+    ports    = ["9090", "3100", "4317", "4318"]
+  }
+}
+
+resource "google_compute_firewall" "ops_grafana" {
+  name        = "arp-ops-to-grafana"
+  network     = google_compute_network.m4.name
+  direction   = "INGRESS"
+  source_tags = ["arp-ops"]
+  target_tags = ["arp-observability"]
+  allow {
+    protocol = "tcp"
+    ports    = ["3000"]
+  }
+}
+
 resource "google_compute_firewall" "ops_ssh" {
   name        = "arp-ops-to-managed-ssh"
   network     = google_compute_network.m4.name

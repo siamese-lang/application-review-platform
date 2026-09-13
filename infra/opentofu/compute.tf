@@ -4,18 +4,23 @@ resource "google_compute_instance" "node" {
   zone         = each.value.zone
   machine_type = lookup(var.node_machine_type_overrides, each.key, var.machine_types[each.value.role])
   tags         = concat(["arp-${each.value.role}", "arp-managed"], each.key == "storage-01" ? ["arp-garage-endpoint"] : [])
-  labels       = { milestone = "m4", role = each.value.role }
+  labels       = { milestone = each.key == "obs-01" ? "m7" : "m4", role = each.value.role }
 
   boot_disk {
     initialize_params {
       image = var.boot_image
       size  = var.boot_disk_size_gb
-      type  = lookup(var.node_boot_disk_type_overrides, each.key, "pd-balanced")
+      type  = lookup(var.node_boot_disk_type_overrides, each.key, each.key == "obs-01" ? "pd-standard" : "pd-balanced")
     }
   }
 
   dynamic "attached_disk" {
-    for_each = each.key == "db-01" ? [google_compute_disk.db.id] : each.value.role == "storage" ? [google_compute_disk.garage[each.key].id] : []
+    for_each = (
+      each.key == "db-01" ? [google_compute_disk.db.id] :
+      each.value.role == "storage" ? [google_compute_disk.garage[each.key].id] :
+      each.key == "obs-01" ? [google_compute_disk.observability.id] :
+      []
+    )
     content {
       source      = attached_disk.value
       device_name = "arp-data"

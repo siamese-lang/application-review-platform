@@ -1,4 +1,4 @@
-# WORKLOAD — M0 Baseline amended by ADR-001
+# WORKLOAD — M0 Baseline amended by ADR-001 and ADR-002
 
 Status: FROZEN EXCEPT AS AMENDED BY ACCEPTED ADRS
 
@@ -24,6 +24,21 @@ The workload percentages remain business-operation oriented and are retargeted f
 - attachment upload/download API: 5%
 
 Include think time. `k6` runs from separate `loadgen-01` and enters through public `edge-01` rather than consuming application-host resources.
+
+Per ADR-002, `loadgen-01` does not need to occupy a Seoul runtime slot. After M7 the
+primary `asia-northeast3` runtime intentionally uses all eight recorded instance slots,
+so the default M8 placement is another region, preferably `asia-northeast1` (Tokyo)
+when quota/capacity permits.
+
+Cross-region placement changes interpretation, not the workload contract:
+
+- k6 end-to-end timings include client/network latency;
+- Nginx upstream timing, Spring server metrics/traces, and PostgreSQL statistics isolate
+  server-side behavior;
+- before/after performance comparisons must use the same load-generator region, dataset,
+  seed, API mix, VU profile, and duration;
+- do not colocate k6 on `obs-01`, `app-01`, or another measured runtime node to avoid
+  quota limits.
 
 The React static asset path is not the primary performance target. Static asset delivery may be checked separately, while business performance measurements focus on edge → API → PostgreSQL/Garage behavior.
 

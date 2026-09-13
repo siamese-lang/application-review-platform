@@ -59,7 +59,7 @@ Milestone state:
 - M5 Web/API & Product Surface — complete
 - M6 Operations & Delivery — complete
 - M7 Observability — ACTIVE
-- M7 Phase 1 repository observability foundation — NEXT
+- M7 Phase 1 repository observability foundation — IN REVIEW (PR #58)
 
 M6 completed plan:
 
@@ -71,6 +71,9 @@ M6 Phase 6 usability plan:
 
 ## Current live environment
 
+Current live state is still the **seven-node M6 runtime**. M7 `obs-01` has not been
+applied yet.
+
 - frozen seven-role GCP runtime is running;
 - WIF/IAP/OS Login release handoff is live;
 - TLS public edge, PostgreSQL, Garage, Nginx, SOPS/age, and release activation are healthy;
@@ -78,6 +81,58 @@ M6 Phase 6 usability plan:
 - owner-bootstrap OpenTofu plan: no changes;
 - lifecycle decision: retain the seven-role runtime for immediate M7 work and re-evaluate
   retain/destroy at M7 closeout.
+
+## M7 target runtime and Free Trial resource strategy
+
+Source of truth:
+
+- `docs/architecture/ADR-002-gcp-resource-placement.md`
+- `docs/architecture/ARCHITECTURE.md`
+- `docs/FREEZE_RECORD.md`
+- `docs/workload/WORKLOAD.md`
+- `docs/plans/active/M7-observability.md`
+
+Do not reinterpret this from chat history.
+
+After M7 live activation, the persistent Seoul runtime is intentionally **eight VMs**:
+
+- `edge-01`
+- `app-01`
+- `db-01`
+- `storage-01`
+- `storage-02`
+- `storage-03`
+- `ops-01`
+- `obs-01`
+
+`obs-01` target:
+
+- region/zone: `asia-northeast3-a`;
+- private IP: `10.40.0.60`;
+- machine type: `e2-standard-2`;
+- boot: 20 GiB `pd-standard`;
+- observability data: 40 GiB `pd-standard`;
+- no public IP.
+
+Why:
+
+- M6 evidence recorded Seoul quota of 8 instances, 32 E2 CPUs, and 250 GiB SSD total;
+- M7 deliberately consumes the eighth instance;
+- `pd-standard` on `obs-01` avoids exceeding the recorded SSD quota;
+- the user explicitly allows the $300/90-day Free Trial credit to be spent when it
+  preserves useful architecture/measurement boundaries.
+
+Future temporary resources must not cause the persistent Seoul topology to be collapsed:
+
+- `loadgen-01`: cross-region by default, preferably `asia-northeast1` (Tokyo);
+- `backup-01`: cross-region by default when introduced;
+- temporary DR verification VMs: cross-region by default;
+- `app-02`: only if measured scale-out evidence requires it; placement is decided by
+  that experiment, not automatically moved cross-region.
+
+For cross-region k6, compare runs from the same loadgen region and separate end-to-end
+client/network latency from Nginx upstream, Spring/trace, and PostgreSQL server evidence.
+Do not run k6 on `obs-01` or a measured business VM merely to bypass quota.
 
 Final deployed M6 release:
 
@@ -113,20 +168,43 @@ Evidence:
 
 ## Immediate next work
 
-Execute **M7 Phase 1 — Repository observability foundation** only.
+Pause PR #58 merge until the **public repository readiness** gate is complete.
 
-Phase 1 owns repository-side OpenTofu/inventory/Ansible-grouping/monitoring structure and
-static validation for the new private `obs-01` boundary. It must not apply live GCP changes.
+Reason:
 
-Key constraints:
+- the private repository exhausted its included GitHub Actions allowance;
+- public standard GitHub-hosted runners can continue the existing CI without a platform
+  migration;
+- this repository is intended to become a portfolio repository.
 
-- preserve the existing seven-role runtime;
-- add `obs-01` as a private observability failure domain;
+Public-transition source of truth:
+
+`docs/operations/PUBLIC_REPOSITORY_READINESS.md`
+
+Required sequence:
+
+1. rerun the repository-owned Gitleaks history/current-tree scan from the latest PR #58 head;
+2. require zero non-allowlisted findings;
+3. review historical Actions logs/artifacts for secret exposure;
+4. manually switch repository visibility to public;
+5. immediately configure/verify `main` branch protection/ruleset;
+6. rerun PR #58 exact-head CI using public-repository hosted runners;
+7. merge PR #58 only when all required jobs are green;
+8. verify post-merge `main` CI;
+9. mark M7 Phase 1 COMPLETE;
+10. begin Phase 2 central observability stack repository implementation.
+
+Do not replace the established CI with Jenkins/Cloud Build/self-hosted runners merely to
+work around the private-repository minute cap unless public-readiness fails for a concrete
+security reason.
+
+M7 architecture constraints remain unchanged:
+
+- preserve the existing seven live nodes until reviewed M7 live apply;
+- target the documented eight-node Seoul runtime; do not shrink it for cost reasons;
 - no public Grafana/Actuator/telemetry exposure;
 - no M8 workload or M9 optimization;
-- no new portfolio claim merely for installing the observability stack.
-
-The M6 post-merge main CI run `34747634769` completed SUCCESS before M7 implementation.
+- follow ADR-002 for later cross-region temporary resources.
 
 ## Do not revisit unless new evidence requires it
 

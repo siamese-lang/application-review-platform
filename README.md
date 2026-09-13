@@ -85,7 +85,8 @@ Public registration always creates `APPLICANT`; browser clients cannot self-assi
 - M4 proved the seven-role IaaS topology with HTTPS and end-to-end business/attachment smoke.
 - The live M4 runtime was destroyed after verification/merge to stop unnecessary trial-credit consumption.
 - M6 recreated and verified the same seven-role runtime. Final runtime and owner-bootstrap OpenTofu plans are no-drift.
-- The seven-role runtime is retained for immediate M7 Observability work and must be re-evaluated at M7 closeout for cost control.
+- The current live runtime is still seven nodes; M7 targets an eight-node Seoul runtime by adding private `obs-01`.
+- Resource placement follows `docs/architecture/ADR-002-gcp-resource-placement.md`: preserve the Seoul runtime and place later temporary load/backup/DR resources cross-region by default rather than collapsing roles for quota/cost reasons.
 - Repository OpenTofu/Ansible plus sanitized M4/M6 evidence remain the reproducible record.
 
 See `docs/operations/GCP_BASELINE.md` and `docs/operations/M4_RUNTIME_EVIDENCE.md`.

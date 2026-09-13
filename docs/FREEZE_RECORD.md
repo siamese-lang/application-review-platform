@@ -34,6 +34,24 @@ The detailed rationale and consequences are recorded in `docs/architecture/ADR-0
 
 This amendment deliberately occurs after M4 and before future delivery/observability/workload work so those milestones target the final browser/API boundary.
 
+### ADR-002 — Persistent Seoul runtime + temporary cross-region experiment resources (2026-09-13)
+
+The project keeps the primary service/runtime failure domains in `asia-northeast3`
+(Seoul), including the M7 `obs-01` observability node.
+
+The Google Cloud Free Trial quota recorded during M6 allows eight Seoul instances. M7
+intentionally consumes the eighth slot. Temporary experiment/recovery resources such as
+`loadgen-01`, `backup-01`, and DR verification VMs therefore use another region by
+default, with `asia-northeast1` (Tokyo) preferred when quota/capacity permits.
+
+This does not weaken the M0 cost/separation rule. Available promotional credit may be used
+to preserve meaningful failure and measurement boundaries; runtime duration is controlled
+instead of collapsing roles. A temporary application-tier `app-02` remains subject to
+the actual scale-out experiment and is not automatically moved cross-region.
+
+Detailed rationale and measurement consequences are recorded in
+`docs/architecture/ADR-002-gcp-resource-placement.md`.
+
 ## ADR boundary
 
 An approved ADR is required before adding or replacing a database, Redis/cache, queue, primary object storage product, Kubernetes, authentication system, microservice split, managed application cloud service, DB failover design, backup architecture, or another change that contradicts an explicit frozen/non-goal architectural boundary.
