@@ -7,6 +7,7 @@ locals {
     storage-02 = { role = "storage", zone = "${var.region}-b", ip = "10.40.0.42" }
     storage-03 = { role = "storage", zone = "${var.region}-c", ip = "10.40.0.43" }
     ops-01     = { role = "ops", zone = "${var.region}-a", ip = "10.40.0.50" }
+    obs-01     = { role = "observability", zone = "${var.region}-a", ip = "10.40.0.60" }
   }
   storage_nodes                  = { for name, node in local.nodes : name => node if node.role == "storage" }
   ops_service_account_email      = "arp-m4-ops@${var.project_id}.iam.gserviceaccount.com"
