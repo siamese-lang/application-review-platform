@@ -1,0 +1,47 @@
+groups:
+  - name: arp-structural-availability
+    rules:
+      - alert: ARPTargetUnavailable
+        expr: up == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Monitored target unavailable"
+          description: "{{ $labels.job }} target {{ $labels.instance }} has been unreachable for 5 minutes."
+
+      - alert: ARPApplicationHealthUnavailable
+        expr: probe_success == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Application health unavailable"
+          description: "Health probe {{ $labels.instance }} has failed continuously for 5 minutes."
+
+      - alert: ARPPostgreSQLUnavailable
+        expr: pg_up == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL unavailable"
+          description: "PostgreSQL exporter reports database target {{ $labels.instance }} unavailable for 5 minutes."
+
+  - name: arp-structural-capacity
+    rules:
+      - alert: ARPFilesystemFreeSpaceCritical
+        expr: |
+          (
+            node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs"}
+            /
+            node_filesystem_size_bytes{fstype!~"tmpfs|overlay|squashfs"}
+          ) < 0.10
+          and on (instance, device, mountpoint)
+          node_filesystem_readonly == 0
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Filesystem free space critically low"
+          description: "Filesystem {{ $labels.mountpoint }} on {{ $labels.instance }} has less than 10% free space for 10 minutes."
