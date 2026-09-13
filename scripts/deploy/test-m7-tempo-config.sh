@@ -20,6 +20,7 @@ grep -Fq 'command: -target=all -config.file=/etc/tempo/tempo.yml' "$tasks"
 
 grep -Fq 'http_listen_address: 127.0.0.1' "$config"
 grep -Fq 'grpc_listen_address: 127.0.0.1' "$config"
+grep -Fq 'grpc_listen_port: 9096' "$config"
 grep -Fq 'endpoint: "10.40.0.60:4317"' "$config"
 grep -Fq 'endpoint: "10.40.0.60:4318"' "$config"
 grep -Fq 'backend: local' "$config"
