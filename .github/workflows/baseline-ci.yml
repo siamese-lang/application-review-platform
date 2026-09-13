@@ -10,6 +10,13 @@ permissions:
   contents: read
 
 jobs:
+  m7-observability-infrastructure-static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate M7 Phase 1 observability infrastructure contract
+        run: bash scripts/deploy/test-m7-observability-infrastructure.sh
+
   m6-phase4a-repository-preflight:
     runs-on: ubuntu-latest
     steps:
@@ -370,6 +377,7 @@ jobs:
       - m5-nginx-routing
       - m6-release-bundle
       - m6-release-install
+      - m7-observability-infrastructure-static
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
