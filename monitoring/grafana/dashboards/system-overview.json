@@ -13,7 +13,7 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "Target availability. Phase 3 will add node-local Alloy targets and the public health probe.",
+      "description": "Target availability from Prometheus self-scrape and node-local Alloy exporters.",
       "fieldConfig": {
         "defaults": {
           "mappings": [],
@@ -71,7 +71,7 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "Linux host CPU utilization once prometheus.exporter.unix is wired in Phase 3.",
+      "description": "Linux host CPU utilization from node-local Alloy Unix exporter metrics.",
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
@@ -113,7 +113,7 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "Linux host memory utilization once prometheus.exporter.unix is wired in Phase 3.",
+      "description": "Linux host memory utilization from node-local Alloy Unix exporter metrics.",
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
@@ -197,7 +197,7 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "Public/application health probe contract. The probe source is added in Phase 3.",
+      "description": "Edge-local HTTPS reachability through Nginx to the application API. Public TLS/path integrity remains covered by the deployment smoke.",
       "fieldConfig": {
         "defaults": {
           "unit": "none",
@@ -226,12 +226,12 @@
       },
       "targets": [
         {
-          "expr": "probe_success",
+          "expr": "probe_success{job=\"application-api\",node=\"edge-01\",role=\"edge\"}",
           "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ],
-      "title": "Public / Application Health",
+      "title": "Application Health Probe",
       "type": "timeseries"
     }
   ],
