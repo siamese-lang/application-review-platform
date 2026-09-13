@@ -1,0 +1,28 @@
+prometheus.exporter.blackbox "application" {
+  config = "{ modules: { http_2xx: { prober: http, timeout: 5s, http: { method: GET, valid_status_codes: [200], tls_config: { insecure_skip_verify: true } } } } }"
+
+  target {
+    name    = "application-api"
+    address = "https://127.0.0.1/api/v1/programs?size=1"
+    module  = "http_2xx"
+    labels = {
+      "probe"   = "edge-local-https",
+      "service" = "application-review-platform",
+    }
+  }
+}
+
+discovery.relabel "application_probe" {
+  targets = prometheus.exporter.blackbox.application.targets
+
+  rule {
+    source_labels = ["__param_target"]
+    target_label  = "instance"
+  }
+}
+
+prometheus.scrape "application_probe" {
+  targets         = discovery.relabel.application_probe.output
+  scrape_interval = "15s"
+  forward_to      = [prometheus.remote_write.central.receiver]
+}
