@@ -5,6 +5,9 @@
 - hosts: ops
   become: true
   roles: [ops]
+- hosts: observability
+  become: true
+  roles: [prometheus]
 - hosts: db
   become: true
   roles: [db]

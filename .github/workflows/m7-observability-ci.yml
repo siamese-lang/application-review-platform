@@ -1,0 +1,25 @@
+name: m7-observability-ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  m7-prometheus-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate M7 Prometheus repository contract
+        run: bash scripts/deploy/test-m7-prometheus-config.sh
+      - name: Validate Prometheus configuration with pinned promtool
+        run: |
+          docker run --rm \
+            --entrypoint /bin/promtool \
+            -v "$PWD/monitoring/prometheus:/etc/prometheus:ro" \
+            prom/prometheus:v3.13.3 \
+            check config /etc/prometheus/prometheus.yml

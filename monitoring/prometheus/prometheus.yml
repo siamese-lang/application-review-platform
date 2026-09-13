@@ -1,0 +1,16 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    environment: application-review-platform
+    region: asia-northeast3
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets:
+          - 10.40.0.60:9090
+        labels:
+          node: obs-01
+          role: observability
+          service: prometheus

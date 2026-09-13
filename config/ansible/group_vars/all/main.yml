@@ -17,3 +17,8 @@ opentofu_version: 1.12.6
 opentofu_linux_amd64_sha256: 5dc43da4f750f33873dc25e94587128709e819e544b7be9016b255316153c3a8
 sops_version: 3.10.2
 sops_linux_amd64_sha256: 79b0f844237bd4b0446e4dc884dbc1765fc7dedc3968f743d5949c6f2e701739
+observability_private_ip: 10.40.0.60
+prometheus_version: 3.13.3
+prometheus_linux_amd64_sha256: b349c732d8a853e657d0e7ae1bbad4d11b586615fb65fdc59d896b9f869c001e
+prometheus_retention_time: 3d
+prometheus_retention_size: 12GB
