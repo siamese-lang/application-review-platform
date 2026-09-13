@@ -70,14 +70,14 @@
     mode: '0640'
   notify: Restart Alloy
 
-- name: Create db-only Alloy secret directory
+- name: Create role-specific Alloy secret directory
   ansible.builtin.file:
     path: /etc/alloy/secrets
     state: directory
     owner: root
     group: alloy
     mode: '0750'
-  when: alloy_node_role == 'db'
+  when: alloy_node_role in ['db', 'storage']
 
 - name: Install db-only PostgreSQL monitoring password
   ansible.builtin.copy:
@@ -108,6 +108,37 @@
     - /etc/alloy/postgres.alloy
     - /etc/alloy/secrets/postgres-monitor-password
   when: alloy_node_role != 'db'
+  notify: Restart Alloy
+
+- name: Install storage-only Garage metrics token
+  ansible.builtin.copy:
+    content: "{{ garage_metrics_token }}"
+    dest: /etc/alloy/secrets/garage-metrics-token
+    owner: root
+    group: alloy
+    mode: '0640'
+  when: alloy_node_role == 'storage'
+  no_log: true
+  notify: Restart Alloy
+
+- name: Install storage-only Garage Alloy configuration
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../monitoring/alloy/garage.alloy"
+    dest: /etc/alloy/garage.alloy
+    owner: root
+    group: alloy
+    mode: '0640'
+  when: alloy_node_role == 'storage'
+  notify: Restart Alloy
+
+- name: Remove storage-only Alloy files from non-storage nodes
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/alloy/garage.alloy
+    - /etc/alloy/secrets/garage-metrics-token
+  when: alloy_node_role != 'storage'
   notify: Restart Alloy
 
 - name: Install Alloy systemd unit
