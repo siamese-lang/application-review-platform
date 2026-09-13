@@ -1,0 +1,34 @@
+local.file "garage_metrics_token" {
+  filename  = "/etc/alloy/secrets/garage-metrics-token"
+  is_secret = true
+}
+
+prometheus.scrape "garage" {
+  targets = [
+    {
+      "__address__" = "127.0.0.1:3903",
+      "service"     = "garage",
+    },
+  ]
+  metrics_path    = "/metrics"
+  scrape_interval = "15s"
+  forward_to      = [prometheus.remote_write.central.receiver]
+
+  authorization {
+    type        = "Bearer"
+    credentials = local.file.garage_metrics_token.content
+  }
+}
+
+loki.source.journal "garage" {
+  matches    = "SYSLOG_IDENTIFIER=garage"
+  max_age    = "1h"
+  forward_to = [loki.write.central.receiver]
+  labels = {
+    environment = "application-review-platform",
+    node        = sys.env("ARP_ALLOY_NODE"),
+    role        = sys.env("ARP_ALLOY_ROLE"),
+    service     = "garage",
+    stream      = "container",
+  }
+}
