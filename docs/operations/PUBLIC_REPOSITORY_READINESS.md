@@ -1,6 +1,6 @@
 # Public Repository Readiness
 
-Status: READY FOR VISIBILITY SWITCH  
+Status: COMPLETE  
 Date: 2026-09-13
 
 ## Why the repository is being made public
@@ -19,12 +19,14 @@ security reason.
 
 ## Current repository state
 
-- repository visibility: private;
+- repository visibility: **public**;
 - default branch: `main`;
-- current `main` protection flag observed through GitHub API: false;
-- active implementation PR: #58;
-- PR #58 current work includes M7 Phase 1 and ADR-002 resource-placement documentation;
-- visibility has **not** yet been changed.
+- repository ruleset: `protect-main`, active;
+- default branch deletion and non-fast-forward/force-push are blocked;
+- changes require a pull request;
+- strict required status checks are enabled;
+- M7 Phase 1 PR #58 is merged;
+- post-merge E2E locator correction PR #59 is merged.
 
 ## Secret scan finding
 
@@ -65,18 +67,18 @@ Reproducible scanner:
 
 `scripts/security/public-readiness-secret-scan.sh`
 
-The scanner uses Gitleaks `v8.29.1`, redacts finding content, and checks both Git history
-and the current tree.
+The scanner uses Gitleaks `v8.29.1`, redacts finding content, and checks Git history
+without scanning local untracked build/cache directories.
 
-The final public-readiness secret gate is:
+The final history scan completed with:
 
 ```text
-history scan exit code: 0
-current tree exit code: 0
-history findings: 0
-current-tree findings: 0
-PUBLIC READINESS SECRET SCAN: PASS
+scan exit code: 0
+findings: 0
 ```
+
+Current tracked files were reviewed separately and no real secret/private-key material was
+identified.
 
 ## Current-tree inspection
 
@@ -122,18 +124,19 @@ No credential rotation or Git history rewrite is required by this audit.
 
 ## Public-transition gates
 
-The repository must not be made public until all of these are satisfied:
+All public-transition gates are complete:
 
-1. final Gitleaks history/current-tree scan passes with zero non-allowlisted findings;
-2. current tracked secret/private-key search remains clean;
-3. deployment workflow review confirms fork/PR code cannot obtain the trusted GCP
-   deployment identity;
-4. historical Actions logs/artifacts are reviewed for operational secret exposure;
-5. public visibility is enabled manually in GitHub repository settings;
-6. immediately after visibility change, `main` protection/ruleset is configured;
-7. PR #58 exact-head CI is rerun using free public-repository standard runners;
-8. PR #58 merges only when required checks are green;
-9. post-merge `main` CI passes.
+1. **PASS** — final Gitleaks history scan: zero non-allowlisted findings;
+2. **PASS** — current tracked secret/private-key search clean;
+3. **PASS** — deployment workflow/fork trust boundary reviewed;
+4. **PASS** — historical Actions logs/artifacts reviewed with no runtime-secret exposure;
+5. **PASS** — repository visibility changed to public;
+6. **PASS** — `protect-main` ruleset created and active;
+7. **PASS** — PR #58 exact-head CI `34752303087`;
+8. **PASS** — PR #58 merged as `dfeb5cab85698812294878bcf3a154d5d628967b`;
+9. **PASS** — post-merge E2E locator regression isolated and corrected by PR #59;
+10. **PASS** — PR #59 exact-head CI `34752944074`;
+11. **PASS** — final post-merge `main` CI `34753065713`.
 
 ## Deployment identity boundary after publication
 
@@ -154,27 +157,24 @@ The M6 exact-release handoff remains constrained by:
 These controls must be rechecked after visibility changes, not redesigned merely because
 the source becomes public.
 
-## Required main protection after publication
+## Main protection after publication
 
-The private GitHub Free repository currently reports `main` as unprotected.
+The active `protect-main` ruleset targets the default branch and currently enforces:
 
-After the repository becomes public, configure a ruleset/branch policy that at minimum:
+- pull requests before merge;
+- zero required approvals for this single-maintainer repository;
+- strict required status checks;
+- branch deletion prevention;
+- non-fast-forward/force-push prevention.
 
-- requires changes through a pull request;
-- prevents force pushes to `main`;
-- prevents branch deletion;
-- requires the baseline CI checks used by the project before merge;
-- preserves administrator recovery only where necessary.
-
-Do not mark public transition complete until this is verified.
+The required checks cover repository/application/infrastructure/frontend/browser/Nginx
+and M6/M7 delivery/static contracts. Push-only release scope/publication jobs are not PR
+merge requirements.
 
 ## Remaining work
 
-Immediate next work:
+The public-transition work is closed.
 
-1. perform the manual repository visibility switch from private to public;
-2. create/verify the `main` ruleset immediately after the switch;
-3. rerun PR #58 exact-head CI;
-4. merge only after all required checks pass;
-5. verify post-merge `main` CI;
-6. continue M7 Phase 2 only after the public transition is closed.
+Project execution resumes from M7 Phase 2 in
+`docs/plans/active/M7-observability.md`. This document remains the durable record of why
+the repository became public and which security/CI gates were verified.
