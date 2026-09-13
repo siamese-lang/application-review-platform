@@ -58,7 +58,8 @@ Milestone state:
 - M4 Cloud Deployment — complete
 - M5 Web/API & Product Surface — complete
 - M6 Operations & Delivery — complete
-- M7 Observability — next; implementation not started
+- M7 Observability — ACTIVE
+- M7 Phase 1 repository observability foundation — NEXT
 
 M6 completed plan:
 
@@ -106,19 +107,26 @@ Evidence:
 - `docs/portfolio/M6_IMMUTABLE_RELEASE_ROLLBACK_EVIDENCE.md`
 - `docs/portfolio/PORTFOLIO_EVIDENCE_MAP.md`
 
+## Current active plan
+
+`docs/plans/active/M7-observability.md`
+
 ## Immediate next work
 
-Do **not** resume M6 implementation.
+Execute **M7 Phase 1 — Repository observability foundation** only.
 
-Next work is to create the bounded **M7 Observability active plan** from the frozen
-architecture and evidence requirements before changing runtime configuration.
+Phase 1 owns repository-side OpenTofu/inventory/Ansible-grouping/monitoring structure and
+static validation for the new private `obs-01` boundary. It must not apply live GCP changes.
 
-M7 is primarily enabling evidence infrastructure. It must make later M8–M10 workload,
-performance, and failure questions measurable; merely installing
-Prometheus/Loki/Tempo/Grafana/Alertmanager/Alloy is not a portfolio claim.
+Key constraints:
 
-The existing seven-role runtime is intentionally retained for this immediate next
-milestone. Do not recreate it or destroy it during planning.
+- preserve the existing seven-role runtime;
+- add `obs-01` as a private observability failure domain;
+- no public Grafana/Actuator/telemetry exposure;
+- no M8 workload or M9 optimization;
+- no new portfolio claim merely for installing the observability stack.
+
+The M6 post-merge main CI run `34747634769` completed SUCCESS before M7 implementation.
 
 ## Do not revisit unless new evidence requires it
 
