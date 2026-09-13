@@ -10,7 +10,7 @@ config="$root/monitoring/loki/loki.yml"
 grep -Fq 'loki_image: grafana/loki:3.7.7' "$vars"
 grep -Fq 'loki_memory_limit: 1g' "$vars"
 grep -Fq 'loki_cpu_limit: 1.0' "$vars"
-grep -Fq 'roles: [prometheus, loki]' "$site"
+grep -Eq 'roles: \[[^]]*loki[^]]*\]' "$site"
 
 grep -Fq 'image: "{{ loki_image }}"' "$tasks"
 grep -Fq 'memory: "{{ loki_memory_limit }}"' "$tasks"

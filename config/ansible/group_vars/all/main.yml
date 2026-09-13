@@ -25,3 +25,6 @@ prometheus_retention_size: 12GB
 loki_image: grafana/loki:3.7.7
 loki_memory_limit: 1g
 loki_cpu_limit: 1.0
+tempo_image: grafana/tempo:3.0.2
+tempo_memory_limit: 1536m
+tempo_cpu_limit: 1.0
