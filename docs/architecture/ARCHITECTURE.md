@@ -1,8 +1,8 @@
-# ARCHITECTURE — M0 Baseline amended by ADR-001
+# ARCHITECTURE — M0 Baseline amended by accepted ADRs
 
 Status: FROZEN EXCEPT AS AMENDED BY ACCEPTED ADRS
 
-The original M0 architecture remains the baseline. `ADR-001-web-api-spa.md` supersedes the original final-browser choice of Spring MVC + Thymeleaf and the blanket React-SPA non-goal. Other M0 boundaries remain in force.
+The original M0 architecture remains the baseline. Accepted ADRs supersede only the boundaries they explicitly amend. `ADR-001-web-api-spa.md` replaces the original final-browser choice, while `ADR-004-gcp-resource-placement.md` records the quota-driven regional placement strategy. Other M0 boundaries remain in force.
 
 ## Architectural boundaries
 
@@ -42,7 +42,7 @@ OpenTofu / Ansible / deploy scripts / encrypted secrets / state → GCP
 
 Temporary resources only when required: `loadgen-01` for k6, `app-02` for scale-out experiments, and new DR VMs for recovery exercises.
 
-Resource placement follows ADR-002:
+Resource placement follows ADR-004:
 
 - persistent service/runtime nodes remain in `asia-northeast3` (Seoul);
 - after M7, Seoul intentionally contains eight persistent VMs including `obs-01`;
@@ -100,7 +100,7 @@ placement is the default capacity strategy for `loadgen-01`, `backup-01`, and DR
 verification VMs. Cross-region workload results must separate client/network latency from
 Nginx upstream, Spring, trace, and PostgreSQL server-side measurements.
 
-See `ADR-002-gcp-resource-placement.md`.
+See `ADR-004-gcp-resource-placement.md`.
 
 ## Failure-domain principle
 
