@@ -47,6 +47,7 @@ for dashboard in \
 done
 
 grep -Fq '"uid": "arp-system-overview"' "$dashboard_dir/system-overview.json"
+grep -Fq 'probe_success{job=\\"integrations/blackbox/application-api\\",node=\\"obs-01\\",role=\\"observability\\"}' "$dashboard_dir/system-overview.json"
 grep -Fq '"uid": "arp-application-api"' "$dashboard_dir/application-api.json"
 grep -Fq '"uid": "arp-postgresql"' "$dashboard_dir/postgresql.json"
 grep -Fq '"uid": "arp-garage"' "$dashboard_dir/garage.json"
