@@ -24,3 +24,35 @@ prometheus.remote_write "central" {
     url = sys.env("ARP_PROMETHEUS_REMOTE_WRITE_URL")
   }
 }
+
+loki.source.file "nginx" {
+  targets = [
+    {
+      "__path__"    = "/var/log/nginx/arp-access.log",
+      "environment" = "application-review-platform",
+      "node"        = sys.env("ARP_ALLOY_NODE"),
+      "role"        = sys.env("ARP_ALLOY_ROLE"),
+      "service"     = "nginx",
+      "stream"      = "access",
+    },
+    {
+      "__path__"    = "/var/log/nginx/arp-error.log",
+      "environment" = "application-review-platform",
+      "node"        = sys.env("ARP_ALLOY_NODE"),
+      "role"        = sys.env("ARP_ALLOY_ROLE"),
+      "service"     = "nginx",
+      "stream"      = "error",
+    },
+  ]
+  forward_to = [loki.write.central.receiver]
+
+  file_match {
+    enabled = true
+  }
+}
+
+loki.write "central" {
+  endpoint {
+    url = sys.env("ARP_LOKI_PUSH_URL")
+  }
+}
