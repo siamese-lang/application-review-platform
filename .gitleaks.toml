@@ -1,0 +1,16 @@
+title = "Application Review Platform gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Known synthetic password used only by the M5 auth/program integration test"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "line"
+paths = [
+  '''^app/src/test/java/com/siameselang/arp/api/M5AuthProgramApiIntegrationTest\.java$'''
+]
+regexes = [
+  '''"password"\s*:\s*"synthetic-pass-123"'''
+]
