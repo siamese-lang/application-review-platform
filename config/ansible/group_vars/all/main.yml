@@ -37,3 +37,7 @@ alertmanager_linux_amd64_sha256: 19c75a11d8c03dc4ade7abdbddfb3a8f28c9e7b000d0849
 alertmanager_retention_time: 120h
 alertmanager_memory_limit: 256M
 alertmanager_cpu_quota: 25%
+alloy_version: 1.18.1
+alloy_linux_amd64_sha256: fac853cbc3983a50a2368f9a685b31f74392ae86dd6155461b11a911c07b483c
+alloy_memory_limit: 256M
+alloy_cpu_quota: 25%
