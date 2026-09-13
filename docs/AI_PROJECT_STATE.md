@@ -60,7 +60,8 @@ Milestone state:
 - M6 Operations & Delivery — complete
 - M7 Observability — ACTIVE
 - M7 Phase 1 repository observability foundation — complete
-- M7 Phase 2 central observability stack and Alloy baseline — NEXT
+- M7 Phase 2 central observability stack and Alloy baseline — complete
+- M7 Phase 3 source instrumentation and secure telemetry pipelines — NEXT
 
 M6 completed plan:
 
@@ -190,31 +191,46 @@ Public-transition verification:
 The public transition solved the private-repository GitHub Actions minute exhaustion
 without replacing the established CI platform.
 
+## M7 Phase 2 closeout
+
+Phase 2 is complete on repository state ending at main
+`fc10d4a78994d4fe8df403ff5dfe39c2f02dc9f5`.
+
+Completed repository-side boundaries:
+
+- pinned Prometheus, Loki, Tempo, Grafana, Alertmanager, and reusable Alloy configuration;
+- Grafana datasource provisioning and the bounded four-dashboard set;
+- conservative structural Prometheus alert rules;
+- bounded retention plus CPU/memory limits for the central stack;
+- upstream-supported config validation and repository contract checks;
+- no plaintext application/DB/Garage runtime credentials;
+- no live GCP apply and no public observability listener introduced.
+
+The live environment is still the seven-node M6 runtime. `obs-01` is not live yet.
+
 ## Immediate next work
 
-Execute **M7 Phase 2 — Central observability stack and Alloy baseline** only.
+Before starting M7 Phase 3 implementation, perform one bounded **CI consolidation** cleanup.
 
-Phase 2 is repository-side work. Build reproducible, pinned configuration/Ansible for:
+Target CI shape:
 
-- Prometheus;
-- Loki;
-- Tempo;
-- Grafana;
-- Alertmanager;
-- Grafana Alloy;
-- datasource provisioning;
-- bounded dashboards/rules;
-- retention/resource limits;
-- configuration validation in CI where supported.
+- keep `baseline-ci` separate;
+- consolidate Prometheus/Loki/Tempo/Grafana/Alertmanager/Alloy validation under
+  `.github/workflows/m7-observability-ci.yml`;
+- preserve the existing component repository-contract scripts and pinned upstream validators;
+- remove the redundant component workflow files only after the consolidated workflow proves
+  equivalent validation coverage;
+- do not add Phase 3 source instrumentation or perform live GCP changes in this cleanup.
 
-Do **not** apply live GCP infrastructure in Phase 2. `obs-01` still does not exist live.
+After CI consolidation is merged and green, proceed to **M7 Phase 3 — Source instrumentation
+and secure telemetry pipelines** from its first incomplete work item.
 
-Key constraints:
+Key constraints remain:
 
-- preserve the existing seven-node live runtime;
-- target the documented eight-node Seoul runtime for Phase 4 activation;
+- preserve the existing seven-node live runtime until Phase 4 activation;
 - no public Grafana/Actuator/telemetry exposure;
-- no plaintext runtime secrets;
+- no plaintext runtime secrets or body/authorization logging;
+- preserve all M1–M6 behavior and release mechanics;
 - no M8 workload or M9 optimization;
 - follow ADR-004 for later cross-region temporary resources;
 - use pinned versions, never floating `latest`.
