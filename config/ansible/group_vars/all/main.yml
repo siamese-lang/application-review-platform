@@ -22,6 +22,8 @@ prometheus_version: 3.13.3
 prometheus_linux_amd64_sha256: b349c732d8a853e657d0e7ae1bbad4d11b586615fb65fdc59d896b9f869c001e
 prometheus_retention_time: 3d
 prometheus_retention_size: 12GB
+prometheus_memory_limit: 1536M
+prometheus_cpu_quota: 75%
 loki_image: grafana/loki:3.7.7
 loki_memory_limit: 1g
 loki_cpu_limit: 1.0
