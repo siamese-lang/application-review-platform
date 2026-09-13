@@ -61,7 +61,8 @@ Milestone state:
 - M7 Observability — ACTIVE
 - M7 Phase 1 repository observability foundation — complete
 - M7 Phase 2 central observability stack and Alloy baseline — complete
-- M7 Phase 3 source instrumentation and secure telemetry pipelines — NEXT
+- M7 Phase 3 source instrumentation and secure telemetry pipelines — complete
+- M7 Phase 4 live obs-01 provisioning and telemetry activation — NEXT
 
 M6 completed plan:
 
@@ -227,23 +228,54 @@ Behavior after consolidation:
 The `protect-main` required status contexts do not depend on the removed component workflow
 jobs; the required M7 infrastructure check remains provided by the existing baseline CI.
 
+## M7 Phase 3 closeout
+
+Phase 3 repository instrumentation is complete on main
+`c783c54edbd6022d11debc423957577901efc654`.
+
+Completed boundaries:
+
+- Alloy host metrics on required edge/app/db/storage/observability roles;
+- Nginx access/error logs to Loki with bounded fields and no query/body/auth logging;
+- Spring Actuator/Prometheus metrics plus OTLP tracing through loopback-local collection;
+- application journal logs with trace/span/request correlation and stable low-cardinality labels;
+- dedicated least-privileged PostgreSQL monitoring credentials and Alloy PostgreSQL metrics;
+- Ansible-managed `pg_stat_statements` preload plus Flyway-owned extension migration;
+- Garage loopback metrics with SOPS/age token protection and journald log collection;
+- no public Actuator/Garage admin/collector endpoint;
+- no Docker socket access for Garage log collection;
+- no live GCP apply in Phase 3.
+
+Final Phase 3 PR #78 exact-head
+`60aefdfbfb781349c74075ee2190712d118ab4bd` passed both `baseline-ci` and
+`m7-observability-ci`, then merged as
+`c783c54edbd6022d11debc423957577901efc654`.
+
+The live environment is still the seven-node M6 runtime. `obs-01` has not been provisioned,
+and repository-side telemetry configuration has not yet been activated live.
+
 ## Immediate next work
 
-Proceed to **M7 Phase 3 — Source instrumentation and secure telemetry pipelines** from the
-first incomplete work item in the active plan.
+Proceed to **M7 Phase 4 — Live `obs-01` provisioning and telemetry activation**.
 
-Keep Phase 3 implementation bounded: introduce source telemetry only where the active plan
-requires it, preserve private/local management boundaries, and do not perform live GCP
-activation until Phase 4.
+The first incomplete operation is intentionally read/review-first:
+
+1. lock the exact reviewed `main` SHA;
+2. from the controlled M6 operations path, run a live OpenTofu **plan only** using the retained
+   state and the existing `storage-03` capacity overrides;
+3. verify that the plan adds only the intended M7 observability resources/firewall delta and
+   does not replace or destroy any of the existing seven runtime nodes;
+4. do not apply until that exact plan boundary has been reviewed.
 
 Key constraints remain:
 
-- preserve the existing seven-node live runtime until Phase 4 activation;
+- preserve the existing seven-node live runtime until the reviewed Phase 4 apply;
 - no public Grafana/Actuator/telemetry exposure;
 - no plaintext runtime secrets or body/authorization logging;
-- preserve all M1–M6 behavior and release mechanics;
+- preserve all M1–M6 behavior and immutable release mechanics;
+- no manual working-tree JAR deployment;
 - no M8 workload or M9 optimization;
-- follow ADR-004 for later cross-region temporary resources;
+- follow ADR-004 for cross-region temporary resources;
 - use pinned versions, never floating `latest`.
 
 ## Do not revisit unless new evidence requires it
