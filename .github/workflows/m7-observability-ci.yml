@@ -3,30 +3,163 @@ name: m7-observability-ci
 on:
   pull_request:
     branches: [main]
-  push:
-    branches: [main]
+    paths:
+      - '.github/workflows/m7-observability-ci.yml'
+      - 'monitoring/**'
+      - 'config/ansible/group_vars/all/main.yml'
+      - 'config/ansible/site.yml'
+      - 'config/ansible/roles/prometheus/**'
+      - 'config/ansible/roles/loki/**'
+      - 'config/ansible/roles/tempo/**'
+      - 'config/ansible/roles/grafana/**'
+      - 'config/ansible/roles/alertmanager/**'
+      - 'config/ansible/roles/alloy/**'
+      - 'scripts/deploy/test-m7-*-config.sh'
 
 permissions:
   contents: read
 
 jobs:
-  m7-prometheus-config:
+  m7-observability-config:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate M7 Prometheus repository contract
-        run: bash scripts/deploy/test-m7-prometheus-config.sh
-      - name: Validate Prometheus configuration with pinned promtool
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Detect changed observability components
+        id: changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
+          set -euo pipefail
+          changed="$(mktemp)"
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" > "$changed"
+          cat "$changed"
+
+          shared=false
+          if grep -Eq '^(\.github/workflows/m7-.*-ci\.yml|config/ansible/group_vars/all/main\.yml|config/ansible/site\.yml)$' "$changed"; then
+            shared=true
+          fi
+
+          component_flag() {
+            name="$1"
+            pattern="$2"
+            value=false
+            if [[ "$shared" == true ]] || grep -Eq "$pattern" "$changed"; then
+              value=true
+            fi
+            echo "$name=$value" >> "$GITHUB_OUTPUT"
+          }
+
+          component_flag prometheus '^(monitoring/prometheus/|config/ansible/roles/prometheus/|scripts/deploy/test-m7-prometheus-config\.sh$)'
+          component_flag loki '^(monitoring/loki/|config/ansible/roles/loki/|scripts/deploy/test-m7-loki-config\.sh$)'
+          component_flag tempo '^(monitoring/tempo/|config/ansible/roles/tempo/|scripts/deploy/test-m7-tempo-config\.sh$)'
+          component_flag grafana '^(monitoring/grafana/|config/ansible/roles/grafana/|scripts/deploy/test-m7-grafana-config\.sh$)'
+          component_flag alertmanager '^(monitoring/alertmanager/|config/ansible/roles/alertmanager/|scripts/deploy/test-m7-alertmanager-config\.sh$)'
+          component_flag alloy '^(monitoring/alloy/|config/ansible/roles/alloy/|scripts/deploy/test-m7-alloy-config\.sh$)'
+
+      - name: Validate Prometheus
+        if: steps.changes.outputs.prometheus == 'true'
+        run: |
+          set -euo pipefail
+          bash scripts/deploy/test-m7-prometheus-config.sh
           docker run --rm \
             --entrypoint /bin/promtool \
             -v "$PWD/monitoring/prometheus:/etc/prometheus:ro" \
             prom/prometheus:v3.13.3 \
             check config /etc/prometheus/prometheus.yml
-      - name: Validate Prometheus alert rules with pinned promtool
-        run: |
           docker run --rm \
             --entrypoint /bin/promtool \
             -v "$PWD/monitoring/prometheus:/etc/prometheus:ro" \
             prom/prometheus:v3.13.3 \
             check rules /etc/prometheus/rules/structural-alerts.yml
+
+      - name: Validate Loki
+        if: steps.changes.outputs.loki == 'true'
+        run: |
+          set -euo pipefail
+          bash scripts/deploy/test-m7-loki-config.sh
+          docker run --rm \
+            -v "$PWD/monitoring/loki:/etc/loki:ro" \
+            grafana/loki:3.7.7 \
+            -config.file=/etc/loki/loki.yml \
+            -verify-config=true
+
+      - name: Validate Tempo
+        if: steps.changes.outputs.tempo == 'true'
+        run: |
+          set -euo pipefail
+          bash scripts/deploy/test-m7-tempo-config.sh
+          docker run --rm \
+            -v "$PWD/monitoring/tempo:/etc/tempo:ro" \
+            grafana/tempo:3.0.2 \
+            -target=all \
+            -config.file=/etc/tempo/tempo.yml \
+            -config.verify=true
+
+      - name: Validate Grafana
+        if: steps.changes.outputs.grafana == 'true'
+        run: |
+          set -euo pipefail
+          bash scripts/deploy/test-m7-grafana-config.sh
+
+          docker run -d --name m7-grafana-ci --network host \
+            -e GF_SERVER_HTTP_ADDR=127.0.0.1 \
+            -e GF_SECURITY_ADMIN_USER=admin \
+            -e GF_SECURITY_ADMIN_PASSWORD=ci-only-password \
+            -e GF_USERS_ALLOW_SIGN_UP=false \
+            -e GF_AUTH_ANONYMOUS_ENABLED=false \
+            -v "$PWD/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro" \
+            -v "$PWD/monitoring/grafana/dashboards:/etc/grafana/dashboards:ro" \
+            grafana/grafana:13.2.1
+
+          cleanup() {
+            docker logs m7-grafana-ci || true
+            docker rm -f m7-grafana-ci >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          ready=false
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3000/api/health >/dev/null; then
+              ready=true
+              break
+            fi
+            sleep 1
+          done
+          test "$ready" = true
+
+          curl -fsS -u admin:ci-only-password http://127.0.0.1:3000/api/datasources/uid/prometheus >/dev/null
+          curl -fsS -u admin:ci-only-password http://127.0.0.1:3000/api/datasources/uid/loki >/dev/null
+          curl -fsS -u admin:ci-only-password http://127.0.0.1:3000/api/datasources/uid/tempo >/dev/null
+          curl -fsS -u admin:ci-only-password http://127.0.0.1:3000/api/dashboards/uid/arp-system-overview >/dev/null
+          curl -fsS -u admin:ci-only-password http://127.0.0.1:3000/api/dashboards/uid/arp-application-api >/dev/null
+          curl -fsS -u admin:ci-only-password http://127.0.0.1:3000/api/dashboards/uid/arp-postgresql >/dev/null
+          curl -fsS -u admin:ci-only-password http://127.0.0.1:3000/api/dashboards/uid/arp-garage >/dev/null
+
+          cleanup
+          trap - EXIT
+
+      - name: Validate Alertmanager
+        if: steps.changes.outputs.alertmanager == 'true'
+        run: |
+          set -euo pipefail
+          bash scripts/deploy/test-m7-alertmanager-config.sh
+          docker run --rm \
+            --entrypoint /bin/amtool \
+            -v "$PWD/monitoring/alertmanager:/etc/alertmanager:ro" \
+            prom/alertmanager:v0.34.0 \
+            check-config /etc/alertmanager/alertmanager.yml
+
+      - name: Validate Alloy
+        if: steps.changes.outputs.alloy == 'true'
+        run: |
+          set -euo pipefail
+          bash scripts/deploy/test-m7-alloy-config.sh
+          docker run --rm \
+            -v "$PWD/monitoring/alloy:/etc/alloy:ro" \
+            grafana/alloy:v1.18.1 \
+            validate /etc/alloy/config.alloy
