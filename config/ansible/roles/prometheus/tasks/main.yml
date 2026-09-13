@@ -16,7 +16,7 @@
     path: /srv/observability
     src: /dev/disk/by-id/google-arp-data
     fstype: ext4
-    opts: defaults,noatime
+    opts: "defaults,noatime"
     state: mounted
 
 - name: Create Prometheus directories
