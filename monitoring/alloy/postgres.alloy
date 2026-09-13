@@ -14,3 +14,21 @@ prometheus.scrape "postgres" {
   scrape_interval = "15s"
   forward_to      = [prometheus.remote_write.central.receiver]
 }
+
+loki.source.file "postgres" {
+  targets = [
+    {
+      "__path__"    = "/var/log/postgresql/postgresql-*-main.log",
+      "environment" = "application-review-platform",
+      "node"        = sys.env("ARP_ALLOY_NODE"),
+      "role"        = sys.env("ARP_ALLOY_ROLE"),
+      "service"     = "postgresql",
+      "stream"      = "database",
+    },
+  ]
+  forward_to = [loki.write.central.receiver]
+
+  file_match {
+    enabled = true
+  }
+}
