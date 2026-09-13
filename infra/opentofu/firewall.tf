@@ -35,6 +35,18 @@ resource "google_compute_firewall" "edge_app" {
   }
 }
 
+resource "google_compute_firewall" "observability_app_probe" {
+  name        = "arp-observability-to-app-probe"
+  network     = google_compute_network.m4.name
+  direction   = "INGRESS"
+  source_tags = ["arp-observability"]
+  target_tags = ["arp-app"]
+  allow {
+    protocol = "tcp"
+    ports    = ["8080"]
+  }
+}
+
 resource "google_compute_firewall" "app_db" {
   name        = "arp-app-to-db"
   network     = google_compute_network.m4.name
