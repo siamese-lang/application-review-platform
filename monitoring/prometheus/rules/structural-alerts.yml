@@ -11,13 +11,13 @@ groups:
           description: "{{ $labels.job }} target {{ $labels.instance }} has been unreachable for 5 minutes."
 
       - alert: ARPApplicationHealthUnavailable
-        expr: probe_success == 0
+        expr: probe_success{job="application-api",node="edge-01",role="edge"} == 0
         for: 5m
         labels:
           severity: critical
         annotations:
           summary: "Application health unavailable"
-          description: "Health probe {{ $labels.instance }} has failed continuously for 5 minutes."
+          description: "Edge-local application probe {{ $labels.instance }} has failed continuously for 5 minutes."
 
       - alert: ARPPostgreSQLUnavailable
         expr: pg_up == 0
