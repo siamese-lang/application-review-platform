@@ -1,4 +1,20 @@
 ---
+- name: Resolve Alloy node role label
+  ansible.builtin.set_fact:
+    alloy_node_role: >-
+      {{ 'edge' if 'edge' in group_names
+         else 'app' if 'app' in group_names
+         else 'db' if 'db' in group_names
+         else 'storage' if 'storage' in group_names
+         else 'observability' if 'observability' in group_names
+         else 'unsupported' }}
+
+- name: Reject unsupported Alloy placement
+  ansible.builtin.assert:
+    that:
+      - alloy_node_role != 'unsupported'
+    fail_msg: Alloy is only supported on edge/app/db/storage/observability nodes in M7 Phase 3.
+
 - name: Install Alloy archive dependency
   ansible.builtin.apt:
     name: unzip
