@@ -37,9 +37,9 @@ Planning base:
 
 This is the M6 closeout merge commit.
 
-Before this plan PR is merged, the M6 post-merge baseline workflow
-`34747634769` must be SUCCESS. If that run fails, stop and repair the M6 closeout
-boundary before beginning M7 implementation.
+M6 post-merge baseline workflow `34747634769`: **SUCCESS**.
+
+The M6 closeout boundary is therefore fully green before M7 implementation begins.
 
 M6 left the live environment in this state:
 
