@@ -203,8 +203,9 @@ Add one private Compute Engine VM:
 - reuse the existing workload service-account boundary unless implementation proves a
   narrower/new identity is required;
 - initial cost-first size: `e2-medium`;
-- observability storage: a small dedicated persistent disk or explicitly sized boot disk,
-  using short retention.
+- keep the normal 20 GiB boot disk for OS/configuration;
+- add a 40 GiB `pd-standard` data disk mounted at `/srv/observability` for
+  Prometheus/Loki/Tempo/Grafana runtime data.
 
 Do not silently resize existing business nodes.
 
@@ -221,8 +222,9 @@ archive:
 - Loki: approximately 72 hours;
 - Tempo: approximately 24 hours.
 
-Exact sizes/retention may be adjusted during implementation only to fit the measured VM
-and disk envelope. The reason must be recorded.
+The 40 GiB data disk and the retention values are the initial M7 contract. Resize or
+retention changes are allowed only after measured `obs-01` resource pressure or quota
+evidence is captured, and the reason must be recorded.
 
 Durable experiment evidence belongs in sanitized repository evidence documents, not in
 indefinitely retained observability storage.
@@ -237,16 +239,23 @@ Expected private telemetry paths:
 - logs → Loki;
 - OTLP traces → Tempo.
 
-Only the required ports are opened from the relevant managed-node tags to
-`arp-observability`.
+Only the required ports are opened from the relevant role tags to
+`arp-observability`:
+
+- Prometheus remote-write: TCP 9090;
+- Loki ingest: TCP 3100;
+- Tempo OTLP: TCP 4317/4318.
+
+Grafana TCP 3000 is reachable only from the `arp-ops` source tag. Prometheus/Loki/Tempo
+query/admin ports are not opened for operator browsing from the Internet.
 
 Grafana access is restricted to the operations path. Do not add a public Grafana firewall
 rule.
 
 Where a source can be scraped locally, keep the source listener on loopback:
 
-- Spring Boot management/Prometheus endpoint;
-- Garage admin/metrics endpoint where supported;
+- Spring Boot management/Prometheus endpoint on `127.0.0.1:9091`;
+- Garage admin/metrics endpoint on loopback where supported by Garage 2.4.1;
 - local system metrics/exporters.
 
 This avoids creating new cross-node scrape surfaces on the business VMs.
@@ -326,6 +335,17 @@ M7 may add the minimum Spring Boot-supported dependencies/configuration for:
 - Actuator;
 - Prometheus-format Micrometer metrics;
 - Micrometer/OpenTelemetry tracing with OTLP export.
+
+The intended local path is:
+
+```text
+Spring management 127.0.0.1:9091 /actuator/prometheus
+          │ scrape
+          ▼
+      Alloy on app-01 ──remote_write──> Prometheus on obs-01
+
+Spring OTLP traces ──> Alloy 127.0.0.1:4318 ──OTLP──> Tempo on obs-01
+```
 
 Expose the management listener only on loopback or an otherwise explicitly private local
 boundary. Do not proxy `/actuator/**` through public Nginx.
