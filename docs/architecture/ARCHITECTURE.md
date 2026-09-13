@@ -42,6 +42,15 @@ OpenTofu / Ansible / deploy scripts / encrypted secrets / state → GCP
 
 Temporary resources only when required: `loadgen-01` for k6, `app-02` for scale-out experiments, and new DR VMs for recovery exercises.
 
+Resource placement follows ADR-002:
+
+- persistent service/runtime nodes remain in `asia-northeast3` (Seoul);
+- after M7, Seoul intentionally contains eight persistent VMs including `obs-01`;
+- temporary load/backup/DR resources use another region by default, with
+  `asia-northeast1` (Tokyo) preferred when quota/capacity permits;
+- `app-02` is not automatically cross-region because a scale-out experiment may require
+  it to participate in the primary application tier.
+
 ## Browser and API principles
 
 - React + TypeScript is the supported browser presentation after M5.
@@ -74,6 +83,24 @@ Thymeleaf migration presentation code was removed in M5. React/Vite static asset
 GCP is primarily the IaaS execution environment. Compute Engine, Persistent Disk, VPC, Firewall, IAP, and Cloud NAT are allowed baseline capabilities. Cloud SQL, GKE, managed Redis, and managed application storage are not baseline components.
 
 The frontend static build remains part of the edge release rather than becoming a new managed hosting dependency merely for convenience.
+
+## Resource placement and Free Trial quota
+
+The project runs on Google Cloud Free Trial credit, but credit conservation is not an
+architecture goal. Available promotional credit may be spent when it preserves useful
+failure domains or measurement quality.
+
+The observed Seoul quota is the hard planning constraint: M6 recorded 8 instances and
+250 GiB SSD total. M7 consumes the eighth instance with `obs-01`. The observability node
+uses `e2-standard-2`, a 20 GiB `pd-standard` boot disk, and a 40 GiB `pd-standard`
+data disk so the added node does not consume additional SSD quota.
+
+Later temporary resources do not justify dismantling this topology. Cross-region
+placement is the default capacity strategy for `loadgen-01`, `backup-01`, and DR
+verification VMs. Cross-region workload results must separate client/network latency from
+Nginx upstream, Spring, trace, and PostgreSQL server-side measurements.
+
+See `ADR-002-gcp-resource-placement.md`.
 
 ## Failure-domain principle
 
