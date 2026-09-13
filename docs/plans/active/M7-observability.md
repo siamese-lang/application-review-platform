@@ -227,7 +227,7 @@ M7 intentionally consumes the eighth Seoul instance slot with `obs-01`. The reta
 `pd-standard` for both its 20 GiB boot disk and 40 GiB observability data disk so the
 existing SSD-backed footprint is not pushed beyond the recorded 250 GiB limit.
 
-Later temporary resources follow ADR-002 rather than dismantling M7:
+Later temporary resources follow ADR-004 rather than dismantling M7:
 
 - `loadgen-01`: another region by default, preferably Tokyo;
 - `backup-01`: another region by default when introduced;
@@ -538,7 +538,7 @@ cardinality.
 
 ### Phase 1 — Repository observability foundation
 
-Status: **IN REVIEW**
+Status: **COMPLETE**
 
 Create the repository-side foundation only.
 
@@ -563,8 +563,9 @@ Done condition:
   intended private firewall additions only;
 - no runtime apply has occurred.
 
-Current PR #58 implementation adds the repository foundation only. Its final reviewed
-contract includes:
+Phase 1 completed with the repository foundation only.
+
+Final contract:
 
 - private `obs-01` at `10.40.0.60`;
 - `e2-standard-2`;
@@ -573,11 +574,24 @@ contract includes:
 - Grafana 3000 only from `arp-ops`;
 - generated `observability` inventory group;
 - repository-owned `monitoring/` structure;
-- M7 static CI contract.
+- M7 static CI contract;
+- ADR-004 cross-region resource-placement strategy.
 
-No live GCP apply belongs to Phase 1.
+Verification boundary:
+
+- implementation PR #58 merged as `dfeb5cab85698812294878bcf3a154d5d628967b`;
+- PR #58 exact-head CI `34752303087`: SUCCESS;
+- post-merge browser E2E locator regression was isolated to a non-unique status-text
+  locator and corrected by PR #59;
+- PR #59 exact-head CI `34752944074`: SUCCESS;
+- final post-merge `main` CI `34753065713`: SUCCESS;
+- repository visibility is public and `protect-main` ruleset enforcement is active.
+
+No live GCP apply occurred in Phase 1. The live runtime remains the seven-node M6 runtime.
 
 ### Phase 2 — Central observability stack and Alloy baseline
+
+Status: **NEXT**
 
 Create reproducible Ansible/config for:
 
