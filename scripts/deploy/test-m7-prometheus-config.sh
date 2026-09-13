@@ -33,6 +33,7 @@ grep -Fq '/etc/prometheus/rules/*.yml' "$config"
 grep -Fq 'monitoring/prometheus/rules/structural-alerts.yml' "$tasks"
 grep -Fq 'alert: ARPTargetUnavailable' "$rules"
 grep -Fq 'alert: ARPApplicationHealthUnavailable' "$rules"
+grep -Fq 'probe_success{job="integrations/blackbox/application-api",node="obs-01",role="observability"} == 0' "$rules"
 grep -Fq 'alert: ARPPostgreSQLUnavailable' "$rules"
 grep -Fq 'alert: ARPFilesystemFreeSpaceCritical' "$rules"
 test "$(grep -Fc 'severity: critical' "$rules")" -eq 3
