@@ -24,6 +24,30 @@ describe('admin product surface', () => {
 
   it('requests user role, application status, and audit event filters', async () => { const fetch = vi.fn(() => json(page([]))); vi.stubGlobal('fetch', fetch); const { unmount } = render(<MemoryRouter><AdminUsersPage/></MemoryRouter>); await waitFor(() => expect(fetch).toHaveBeenCalled()); fireEvent.change(screen.getByLabelText('역할'), { target: { value: 'ADMIN' } }); await waitFor(() => expect(fetch).toHaveBeenCalledWith(expect.stringContaining('role=ADMIN'), expect.anything())); unmount(); render(<MemoryRouter><AdminApplicationsPage/></MemoryRouter>); fireEvent.change(screen.getByLabelText('진행 상태'), { target: { value: 'APPROVED' } }); await waitFor(() => expect(fetch).toHaveBeenCalledWith(expect.stringContaining('status=APPROVED'), expect.anything())); cleanup(); render(<MemoryRouter><AdminAuditsPage/></MemoryRouter>); fireEvent.change(screen.getByLabelText('이벤트 유형'), { target: { value: 'PROGRAM_PUBLISHED' } }); await waitFor(() => expect(fetch).toHaveBeenCalledWith(expect.stringContaining('eventType=PROGRAM_PUBLISHED'), expect.anything())); expect(screen.queryByText(/passwordHash/i)).not.toBeInTheDocument() })
 
+  it('moves admin application pagination forward and back through API pages', async () => {
+    const application = { id: 8, program: { id: 4, code: 'PROGRAM-2026', title: 'Program title' }, applicant: { id: 2, username: 'applicant', displayName: 'Applicant', role: 'APPLICANT' }, reviewer: null, applicantOrganizationName: 'Synthetic Org', projectTitle: 'First page project', requestedAmount: 2000, status: 'SUBMITTED', version: 2, createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-02T00:00:00Z' }
+    const fetch = vi.fn((url: string) => {
+      const pageNumber = Number(new URLSearchParams(url.split('?')[1]).get('page') ?? '0')
+      return json({ items: [{ ...application, id: pageNumber === 0 ? 8 : 9, projectTitle: pageNumber === 0 ? 'First page project' : 'Second page project' }], page: pageNumber, size: 20, totalElements: 21, totalPages: 2 })
+    })
+    vi.stubGlobal('fetch', fetch)
+    render(<MemoryRouter><AdminApplicationsPage/></MemoryRouter>)
+
+    expect(await screen.findByText('First page project')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '이전' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: '다음' })).toBeEnabled()
+
+    fireEvent.click(screen.getByRole('button', { name: '다음' }))
+    expect(await screen.findByText('Second page project')).toBeInTheDocument()
+    await waitFor(() => expect(fetch).toHaveBeenCalledWith(expect.stringContaining('page=1'), expect.anything()))
+    expect(screen.getByRole('button', { name: '이전' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: '다음' })).toBeDisabled()
+
+    fireEvent.click(screen.getByRole('button', { name: '이전' }))
+    expect(await screen.findByText('First page project')).toBeInTheDocument()
+    await waitFor(() => expect(fetch).toHaveBeenLastCalledWith(expect.stringContaining('page=0'), expect.anything()))
+  })
+
   it('links application and program audit subjects but leaves users as text', async () => { const actor = { id: 1, username: 'admin', displayName: 'Administrator', role: 'ADMIN' }; vi.stubGlobal('fetch', vi.fn(() => json(page([{ id: 1, eventType: 'APPLICATION_CREATED', occurredAt: '2026-01-01T00:00:00Z', actor, subjectType: 'APPLICATION', subjectId: 8 }, { id: 2, eventType: 'PROGRAM_CREATED', occurredAt: '2026-01-01T00:00:00Z', actor, subjectType: 'PROGRAM', subjectId: 4 }, { id: 3, eventType: 'USER_REGISTERED', occurredAt: '2026-01-01T00:00:00Z', actor, subjectType: 'USER', subjectId: 2 }])))); render(<MemoryRouter><AdminAuditsPage/></MemoryRouter>); expect(await screen.findByRole('link', { name: '신청서 #8' })).toHaveAttribute('href', '/admin/applications/8'); expect(screen.getByRole('link', { name: '지원사업 #4' })).toHaveAttribute('href', '/admin/programs/4'); expect(screen.getByText('사용자 #2').closest('a')).toBeNull() })
 
   it('renders full read-only application detail and actor history', async () => { const detail = { id: 8, program: { id: 4, code: 'PROGRAM-2026', title: 'Program title' }, applicant: { id: 2, username: 'applicant', displayName: 'Applicant', role: 'APPLICANT' }, reviewer: null, applicantOrganizationName: 'Synthetic Org', projectTitle: 'Project', shortSummary: 'Full summary', requestedAmount: 2000, detailedPlan: 'Full detailed plan', status: 'SUBMITTED', version: 2, createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-02T00:00:00Z' }; vi.stubGlobal('fetch', vi.fn((url:string) => url.endsWith('/history') ? json([{ id: 1, changedAt: detail.updatedAt, fromStatus: 'DRAFT', toStatus: 'SUBMITTED', changedBy: { id: 2, username: 'applicant', displayName: 'Applicant', role: 'APPLICANT' }, reason: 'Ready for review' }]) : json(detail))); render(<MemoryRouter initialEntries={['/admin/applications/8']}><Routes><Route path="/admin/applications/:applicationId" element={<AdminApplicationDetailPage/>}/></Routes></MemoryRouter>); expect(await screen.findByText('Full detailed plan')).toBeInTheDocument(); expect(screen.getByText(/Applicant \(신청자\)/)).toBeInTheDocument(); expect(screen.getByText('Ready for review')).toBeInTheDocument(); expect(screen.queryByRole('button')).not.toBeInTheDocument() })
