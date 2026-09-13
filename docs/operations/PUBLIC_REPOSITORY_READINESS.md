@@ -98,6 +98,28 @@ Tracked secret-related files are schemas/examples/scripts only:
 Runtime plaintext, the age private identity, OpenTofu state, generated inventory, and
 decrypted SOPS material remain outside Git or ignored.
 
+## Completed public-readiness audit
+
+Secret-history gate:
+
+- Gitleaks v8.29.1 rerun from the PR #58 branch: 0 findings;
+- the earlier four generic-api-key findings were the fixed synthetic test password
+  `synthetic-pass-123` in one integration-test file;
+- the allowlist is restricted to that rule, file, and literal test pattern.
+
+Actions/log/artifact gate:
+
+- all six M6 exact-release handoff runs were reviewed;
+- GitHub/GHCR token values were masked as `***`;
+- Google WIF logs exposed only temporary credential-file paths, not credential contents;
+- no DB/Garage/SOPS/age runtime secret was found in the reviewed deployment logs;
+- retained release artifacts contain build outputs, manifests, checksums, and publication
+  metadata rather than target-host runtime secret files;
+- production runtime credentials remain injected on the target VM through the Ansible
+  environment-file path and are not part of the release bundle.
+
+No credential rotation or Git history rewrite is required by this audit.
+
 ## Public-transition gates
 
 The repository must not be made public until all of these are satisfied:
