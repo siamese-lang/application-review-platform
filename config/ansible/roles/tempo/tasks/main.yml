@@ -1,0 +1,46 @@
+---
+- name: Install Tempo container runtime dependencies
+  ansible.builtin.apt:
+    name: [docker.io, python3-requests]
+    state: present
+
+- name: Enable Docker service for Tempo
+  ansible.builtin.systemd_service:
+    name: docker
+    enabled: true
+    state: started
+
+- name: Create Tempo directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: /etc/tempo, owner: root, group: root, mode: '0755' }
+    - { path: /srv/observability/tempo, owner: '10001', group: '10001', mode: '0750' }
+
+- name: Install repository-owned Tempo configuration
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../monitoring/tempo/tempo.yml"
+    dest: /etc/tempo/tempo.yml
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart Tempo
+
+- name: Run pinned Tempo container
+  community.docker.docker_container:
+    name: tempo
+    image: "{{ tempo_image }}"
+    pull: missing
+    restart_policy: unless-stopped
+    network_mode: host
+    memory: "{{ tempo_memory_limit }}"
+    cpus: "{{ tempo_cpu_limit }}"
+    volumes:
+      - /etc/tempo/tempo.yml:/etc/tempo/tempo.yml:ro
+      - /srv/observability/tempo:/var/tempo
+    command: -target=all -config.file=/etc/tempo/tempo.yml
+    state: started
