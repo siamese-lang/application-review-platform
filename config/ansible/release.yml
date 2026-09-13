@@ -193,7 +193,7 @@
         state: restarted
         enabled: true
 
-    - name: Wait for final backend API readiness
+    - name: Wait for activated backend API readiness
       ansible.builtin.uri:
         url: http://127.0.0.1:8080/api/v1/programs?size=1
         method: GET
