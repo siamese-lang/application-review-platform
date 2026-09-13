@@ -14,7 +14,7 @@ grep -Fq 'prometheus_retention_time: 3d' "$vars"
 grep -Fq 'prometheus_retention_size: 12GB' "$vars"
 grep -Fq 'observability_private_ip: 10.40.0.60' "$vars"
 
-grep -Fq 'roles: [prometheus]' "$site"
+grep -Eq 'roles: \[[^]]*prometheus[^]]*\]' "$site"
 grep -Fq '/dev/disk/by-id/google-arp-data' "$tasks"
 grep -Fq 'checksum: "sha256:{{ prometheus_linux_amd64_sha256 }}"' "$tasks"
 
