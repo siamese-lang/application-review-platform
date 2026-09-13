@@ -30,7 +30,9 @@
 - M6 portfolio candidate: E5 in `docs/portfolio/M6_IMMUTABLE_RELEASE_ROLLBACK_EVIDENCE.md`
 - Final deployed M6 release SHA: `9d5fda9871e479e05dc4641fccf7dea3145d2ad6`
 - Final deployed M6 OCI digest: `sha256:13c3d117eef036c6987f00faf44e01b86845528c62bab1a3ea0914a234a103d4`
-- Next milestone: M7 Observability; implementation has not started
+- Current implementation milestone: M7 Observability
+- Active plan: `docs/plans/active/M7-observability.md`
+- Current M7 slice: Phase 1 repository observability foundation; no live GCP change yet
 
 This project is **production-like**, not a claim of real production operation. All users, organizations, applications, documents, workloads, and measurements are synthetic unless explicitly recorded otherwise.
 
