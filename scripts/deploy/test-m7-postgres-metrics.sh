@@ -49,8 +49,11 @@ grep -Fq 'local.file "postgres_monitor_password"' "$postgres_alloy"
 grep -Fq 'filename  = "/etc/alloy/secrets/postgres-monitor-password"' "$postgres_alloy"
 grep -Fq 'is_secret = true' "$postgres_alloy"
 grep -Fq 'prometheus.exporter.postgres "database"' "$postgres_alloy"
-grep -Fq 'encoding.url_encode(local.file.postgres_monitor_password.content)' "$postgres_alloy"
-grep -Fq '@127.0.0.1:5432/arp?sslmode=disable' "$postgres_alloy"
+grep -Fq 'local.file.postgres_monitor_password.content + "@127.0.0.1:5432/arp?sslmode=disable"' "$postgres_alloy"
+if grep -Fq 'convert.nonsensitive' "$postgres_alloy"; then
+  echo 'PostgreSQL monitoring credential must remain a secret in Alloy.' >&2
+  exit 1
+fi
 grep -Fq 'prometheus.scrape "postgres"' "$postgres_alloy"
 grep -Fq 'scrape_interval = "15s"' "$postgres_alloy"
 grep -Fq 'forward_to      = [prometheus.remote_write.central.receiver]' "$postgres_alloy"
