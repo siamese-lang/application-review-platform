@@ -32,3 +32,8 @@ grafana_image: grafana/grafana:13.2.1
 grafana_memory_limit: 512m
 grafana_cpu_limit: 0.5
 grafana_admin_password: "{{ lookup('env', 'ARP_GRAFANA_ADMIN_PASSWORD') }}"
+alertmanager_version: 0.34.0
+alertmanager_linux_amd64_sha256: 19c75a11d8c03dc4ade7abdbddfb3a8f28c9e7b000d0849cda0cd71dffd74a03
+alertmanager_retention_time: 120h
+alertmanager_memory_limit: 256M
+alertmanager_cpu_quota: 25%
