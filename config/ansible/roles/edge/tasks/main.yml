@@ -126,6 +126,25 @@
   args:
     follow: true
   register: edge_tls_private_key
+- name: Install privacy-safe Nginx observability log format
+  ansible.builtin.template:
+    src: arp-observability.conf.j2
+    dest: /etc/nginx/conf.d/arp-observability.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload Nginx
+- name: Create Nginx observability log files
+  ansible.builtin.copy:
+    content: ''
+    dest: "{{ item }}"
+    owner: root
+    group: adm
+    mode: '0640'
+    force: false
+  loop:
+    - /var/log/nginx/arp-access.log
+    - /var/log/nginx/arp-error.log
 - name: Install SPA and API routing contract
   ansible.builtin.copy:
     src: arp-spa.conf
