@@ -34,7 +34,7 @@ The detailed rationale and consequences are recorded in `docs/architecture/ADR-0
 
 This amendment deliberately occurs after M4 and before future delivery/observability/workload work so those milestones target the final browser/API boundary.
 
-### ADR-002 — Persistent Seoul runtime + temporary cross-region experiment resources (2026-09-13)
+### ADR-004 — Persistent Seoul runtime + temporary cross-region experiment resources (2026-09-13)
 
 The project keeps the primary service/runtime failure domains in `asia-northeast3`
 (Seoul), including the M7 `obs-01` observability node.
@@ -50,7 +50,7 @@ instead of collapsing roles. A temporary application-tier `app-02` remains subje
 the actual scale-out experiment and is not automatically moved cross-region.
 
 Detailed rationale and measurement consequences are recorded in
-`docs/architecture/ADR-002-gcp-resource-placement.md`.
+`docs/architecture/ADR-004-gcp-resource-placement.md`.
 
 ## ADR boundary
 
