@@ -70,6 +70,46 @@
     mode: '0640'
   notify: Restart Alloy
 
+- name: Create db-only Alloy secret directory
+  ansible.builtin.file:
+    path: /etc/alloy/secrets
+    state: directory
+    owner: root
+    group: alloy
+    mode: '0750'
+  when: alloy_node_role == 'db'
+
+- name: Install db-only PostgreSQL monitoring password
+  ansible.builtin.copy:
+    content: "{{ db_monitor_password }}"
+    dest: /etc/alloy/secrets/postgres-monitor-password
+    owner: root
+    group: alloy
+    mode: '0640'
+  when: alloy_node_role == 'db'
+  no_log: true
+  notify: Restart Alloy
+
+- name: Install db-only PostgreSQL Alloy configuration
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../monitoring/alloy/postgres.alloy"
+    dest: /etc/alloy/postgres.alloy
+    owner: root
+    group: alloy
+    mode: '0640'
+  when: alloy_node_role == 'db'
+  notify: Restart Alloy
+
+- name: Remove db-only Alloy files from non-db nodes
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/alloy/postgres.alloy
+    - /etc/alloy/secrets/postgres-monitor-password
+  when: alloy_node_role != 'db'
+  notify: Restart Alloy
+
 - name: Install Alloy systemd unit
   ansible.builtin.template:
     src: alloy.service.j2
