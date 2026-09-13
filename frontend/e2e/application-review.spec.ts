@@ -142,7 +142,7 @@ test('public applicant flow and reviewer workflow run against the real stack', a
 
   await login(page, applicant.username, applicant.password)
   await openApplicantApplication(page)
-  await expect(page.getByText('보완 요청', { exact: true })).toBeVisible()
+  await expect(page.locator('.status-needs-revision')).toHaveText('보완 요청')
   await expect(page.getByText(revisionReason)).toBeVisible()
   await page.getByRole('link', { name: '수정' }).click()
   await page.getByLabel('세부 계획').fill(applicant.revisedPlan)
