@@ -12,3 +12,10 @@ resource "google_compute_disk" "garage" {
   type     = "pd-balanced"
   size     = var.garage_data_disk_size_gb
 }
+
+resource "google_compute_disk" "observability" {
+  name = "arp-obs-01-data"
+  zone = local.nodes["obs-01"].zone
+  type = "pd-standard"
+  size = var.observability_data_disk_size_gb
+}
