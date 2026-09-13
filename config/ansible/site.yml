@@ -7,16 +7,16 @@
   roles: [ops]
 - hosts: observability
   become: true
-  roles: [prometheus, loki, tempo, grafana, alertmanager]
+  roles: [prometheus, loki, tempo, grafana, alertmanager, alloy]
 - hosts: db
   become: true
-  roles: [db]
+  roles: [db, alloy]
 - hosts: storage
   become: true
-  roles: [garage]
+  roles: [garage, alloy]
 - hosts: app
   become: true
-  roles: [release_runtime, app]
+  roles: [release_runtime, app, alloy]
 - hosts: edge
   become: true
-  roles: [release_runtime, edge]
+  roles: [release_runtime, edge, alloy]
