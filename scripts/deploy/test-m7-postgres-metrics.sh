@@ -7,8 +7,12 @@ db_tasks="$root/config/ansible/roles/db/tasks/main.yml"
 alloy_tasks="$root/config/ansible/roles/alloy/tasks/main.yml"
 alloy_unit="$root/config/ansible/roles/alloy/templates/alloy.service.j2"
 postgres_alloy="$root/monitoring/alloy/postgres.alloy"
+postgresql_conf="$root/config/ansible/roles/db/templates/postgresql.conf.j2"
+pg_hba="$root/config/ansible/roles/db/templates/pg_hba.conf.j2"
 
 grep -Fq 'db_monitor_password: REQUIRED_RUNTIME_SECRET' "$schema"
+grep -Fq "listen_addresses = '{{ db_private_ip }},localhost'" "$postgresql_conf"
+grep -Fq 'host all all 127.0.0.1/32 scram-sha-256' "$pg_hba"
 
 grep -Fq 'CREATE ROLE arp_monitor' "$db_tasks"
 grep -Fq 'NOSUPERUSER' "$db_tasks"
