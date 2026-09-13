@@ -28,6 +28,7 @@
     mode: "{{ item.mode }}"
   loop:
     - { path: /etc/prometheus, owner: root, group: root, mode: '0755' }
+    - { path: /etc/prometheus/rules, owner: root, group: prometheus, mode: '0750' }
     - { path: /srv/observability/prometheus, owner: prometheus, group: prometheus, mode: '0750' }
 
 - name: Download pinned Prometheus archive
@@ -62,6 +63,15 @@
   ansible.builtin.copy:
     src: "{{ playbook_dir }}/../../monitoring/prometheus/prometheus.yml"
     dest: /etc/prometheus/prometheus.yml
+    owner: root
+    group: prometheus
+    mode: '0640'
+  notify: Restart Prometheus
+
+- name: Install repository-owned Prometheus alert rules
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../monitoring/prometheus/rules/structural-alerts.yml"
+    dest: /etc/prometheus/rules/structural-alerts.yml
     owner: root
     group: prometheus
     mode: '0640'

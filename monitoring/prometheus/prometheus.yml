@@ -5,6 +5,9 @@ global:
     environment: application-review-platform
     region: asia-northeast3
 
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
 alerting:
   alertmanagers:
     - static_configs:
