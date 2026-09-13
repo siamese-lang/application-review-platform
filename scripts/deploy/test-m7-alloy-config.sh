@@ -26,7 +26,7 @@ grep -Fq 'MemoryMax={{ alloy_memory_limit }}' "$unit"
 grep -Fq 'CPUQuota={{ alloy_cpu_quota }}' "$unit"
 grep -Fq 'Environment="ARP_ALLOY_NODE={{ inventory_hostname }}"' "$unit"
 grep -Fq 'Environment="ARP_ALLOY_ROLE={{ alloy_node_role }}"' "$unit"
-grep -Fq 'ARP_PROMETHEUS_REMOTE_WRITE_URL=http://{{ '\''127.0.0.1'\'' if alloy_node_role == '\''observability'\'' else observability_private_ip }}:9090/api/v1/write' "$unit"
+grep -Fq 'ARP_PROMETHEUS_REMOTE_WRITE_URL=http://{{ observability_private_ip }}:9090/api/v1/write' "$unit"
 
 grep -Fq 'logging {' "$config"
 grep -Fq 'level  = "info"' "$config"
@@ -38,6 +38,8 @@ grep -Fq 'scrape_interval = "15s"' "$config"
 grep -Fq 'node        = sys.env("ARP_ALLOY_NODE")' "$config"
 grep -Fq 'role        = sys.env("ARP_ALLOY_ROLE")' "$config"
 grep -Fq 'url = sys.env("ARP_PROMETHEUS_REMOTE_WRITE_URL")' "$config"
+grep -Fq 'ARP_LOKI_PUSH_URL=http://{{ observability_private_ip }}:3100/loki/api/v1/push' "$unit"
+grep -Fq 'ARP_TEMPO_OTLP_HTTP_ENDPOINT=http://{{ observability_private_ip }}:4318' "$unit"
 
 test "$(grep -Ec 'roles: \[[^]]*alloy[^]]*\]' "$site")" -eq 5
 grep -Fq 'roles: [ops]' "$site"

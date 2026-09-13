@@ -56,3 +56,48 @@ loki.write "central" {
     url = sys.env("ARP_LOKI_PUSH_URL")
   }
 }
+
+discovery.relabel "spring_app" {
+  targets = [
+    {
+      "__address__" = "127.0.0.1:9091",
+      "role"        = sys.env("ARP_ALLOY_ROLE"),
+      "service"     = "application-review-platform",
+    },
+  ]
+
+  rule {
+    source_labels = ["role"]
+    regex         = "app"
+    action        = "keep"
+  }
+}
+
+prometheus.scrape "spring" {
+  targets         = discovery.relabel.spring_app.output
+  metrics_path    = "/actuator/prometheus"
+  scrape_interval = "15s"
+  forward_to      = [prometheus.remote_write.central.receiver]
+}
+
+otelcol.receiver.otlp "spring" {
+  http {
+    endpoint = "127.0.0.1:4318"
+  }
+
+  output {
+    traces = [otelcol.processor.batch.traces.input]
+  }
+}
+
+otelcol.processor.batch "traces" {
+  output {
+    traces = [otelcol.exporter.otlphttp.tempo.input]
+  }
+}
+
+otelcol.exporter.otlphttp "tempo" {
+  client {
+    endpoint = sys.env("ARP_TEMPO_OTLP_HTTP_ENDPOINT")
+  }
+}
