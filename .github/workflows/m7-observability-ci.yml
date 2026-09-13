@@ -14,6 +14,7 @@ on:
       - 'config/ansible/roles/grafana/**'
       - 'config/ansible/roles/alertmanager/**'
       - 'config/ansible/roles/alloy/**'
+      - 'config/ansible/roles/edge/**'
       - 'scripts/deploy/test-m7-*-config.sh'
 
 permissions:
@@ -60,6 +61,7 @@ jobs:
           component_flag grafana '^(monitoring/grafana/|config/ansible/roles/grafana/|scripts/deploy/test-m7-grafana-config\.sh$)'
           component_flag alertmanager '^(monitoring/alertmanager/|config/ansible/roles/alertmanager/|scripts/deploy/test-m7-alertmanager-config\.sh$)'
           component_flag alloy '^(monitoring/alloy/|config/ansible/roles/alloy/|scripts/deploy/test-m7-alloy-config\.sh$)'
+          component_flag edge_logs '^(monitoring/alloy/|config/ansible/roles/edge/|scripts/deploy/test-m7-nginx-logs\.sh$)'
 
       - name: Validate Prometheus
         if: steps.changes.outputs.prometheus == 'true'
@@ -163,6 +165,7 @@ jobs:
             -e ARP_ALLOY_NODE=ci-node \
             -e ARP_ALLOY_ROLE=ci \
             -e ARP_PROMETHEUS_REMOTE_WRITE_URL=http://127.0.0.1:9090/api/v1/write \
+            -e ARP_LOKI_PUSH_URL=http://127.0.0.1:3100/loki/api/v1/push \
             -v "$PWD/monitoring/alloy:/etc/alloy:ro" \
             grafana/alloy:v1.18.1 \
             validate /etc/alloy/config.alloy
