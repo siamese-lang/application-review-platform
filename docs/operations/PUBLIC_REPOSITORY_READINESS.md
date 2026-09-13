@@ -1,6 +1,6 @@
 # Public Repository Readiness
 
-Status: IN PROGRESS  
+Status: READY FOR VISIBILITY SWITCH  
 Date: 2026-09-13
 
 ## Why the repository is being made public
@@ -150,10 +150,9 @@ Do not mark public transition complete until this is verified.
 
 Immediate next work:
 
-1. check out the latest PR #58 head in Cloud Shell;
-2. rerun the repository-owned secret scanner;
-3. if it passes, review historical Actions logs/artifacts;
-4. perform the manual visibility switch;
-5. create/verify the `main` ruleset;
-6. rerun PR #58 CI;
-7. continue M7 only after public-transition verification.
+1. perform the manual repository visibility switch from private to public;
+2. create/verify the `main` ruleset immediately after the switch;
+3. rerun PR #58 exact-head CI;
+4. merge only after all required checks pass;
+5. verify post-merge `main` CI;
+6. continue M7 Phase 2 only after the public transition is closed.
