@@ -168,29 +168,43 @@ Evidence:
 
 ## Immediate next work
 
-Finish **M7 Phase 1 — Repository observability foundation PR #58** only.
+Pause PR #58 merge until the **public repository readiness** gate is complete.
 
-PR #58 owns repository-side OpenTofu/inventory/monitoring structure and static validation
-for the new private `obs-01` boundary. It must not apply live GCP changes.
+Reason:
+
+- the private repository exhausted its included GitHub Actions allowance;
+- public standard GitHub-hosted runners can continue the existing CI without a platform
+  migration;
+- this repository is intended to become a portfolio repository.
+
+Public-transition source of truth:
+
+`docs/operations/PUBLIC_REPOSITORY_READINESS.md`
 
 Required sequence:
 
-1. require final exact-head CI on the current PR #58 head;
-2. merge only when all required jobs are green;
-3. verify post-merge `main` CI;
-4. mark Phase 1 COMPLETE;
-5. begin Phase 2 central observability stack repository implementation.
+1. rerun the repository-owned Gitleaks history/current-tree scan from the latest PR #58 head;
+2. require zero non-allowlisted findings;
+3. review historical Actions logs/artifacts for secret exposure;
+4. manually switch repository visibility to public;
+5. immediately configure/verify `main` branch protection/ruleset;
+6. rerun PR #58 exact-head CI using public-repository hosted runners;
+7. merge PR #58 only when all required jobs are green;
+8. verify post-merge `main` CI;
+9. mark M7 Phase 1 COMPLETE;
+10. begin Phase 2 central observability stack repository implementation.
 
-Key constraints:
+Do not replace the established CI with Jenkins/Cloud Build/self-hosted runners merely to
+work around the private-repository minute cap unless public-readiness fails for a concrete
+security reason.
+
+M7 architecture constraints remain unchanged:
 
 - preserve the existing seven live nodes until reviewed M7 live apply;
 - target the documented eight-node Seoul runtime; do not shrink it for cost reasons;
 - no public Grafana/Actuator/telemetry exposure;
 - no M8 workload or M9 optimization;
-- follow ADR-002 for later cross-region temporary resources;
-- no new portfolio claim merely for installing the observability stack.
-
-The M6 post-merge main CI run `34747634769` completed SUCCESS before M7 implementation.
+- follow ADR-002 for later cross-region temporary resources.
 
 ## Do not revisit unless new evidence requires it
 
