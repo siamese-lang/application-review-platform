@@ -7,6 +7,9 @@ After=network-online.target
 Type=simple
 User=alloy
 Group=alloy
+Environment="ARP_ALLOY_NODE={{ inventory_hostname }}"
+Environment="ARP_ALLOY_ROLE={{ alloy_node_role }}"
+Environment="ARP_PROMETHEUS_REMOTE_WRITE_URL=http://{{ observability_private_ip }}:9090/api/v1/write"
 ExecStart=/usr/local/bin/alloy run \
   --storage.path=/var/lib/alloy \
   --server.http.listen-addr=127.0.0.1:12345 \
