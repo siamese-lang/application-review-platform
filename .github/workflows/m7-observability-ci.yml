@@ -160,6 +160,9 @@ jobs:
           set -euo pipefail
           bash scripts/deploy/test-m7-alloy-config.sh
           docker run --rm \
+            -e ARP_ALLOY_NODE=ci-node \
+            -e ARP_ALLOY_ROLE=ci \
+            -e ARP_PROMETHEUS_REMOTE_WRITE_URL=http://127.0.0.1:9090/api/v1/write \
             -v "$PWD/monitoring/alloy:/etc/alloy:ro" \
             grafana/alloy:v1.18.1 \
             validate /etc/alloy/config.alloy

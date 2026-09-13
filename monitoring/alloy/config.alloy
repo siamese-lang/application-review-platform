@@ -2,3 +2,25 @@ logging {
   level  = "info"
   format = "logfmt"
 }
+
+prometheus.exporter.unix "host" {
+  include_exporter_metrics = true
+}
+
+prometheus.scrape "host" {
+  scrape_interval = "15s"
+  targets         = prometheus.exporter.unix.host.targets
+  forward_to      = [prometheus.remote_write.central.receiver]
+}
+
+prometheus.remote_write "central" {
+  external_labels = {
+    environment = "application-review-platform",
+    node        = sys.env("ARP_ALLOY_NODE"),
+    role        = sys.env("ARP_ALLOY_ROLE"),
+  }
+
+  endpoint {
+    url = sys.env("ARP_PROMETHEUS_REMOTE_WRITE_URL")
+  }
+}
