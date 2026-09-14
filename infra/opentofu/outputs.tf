@@ -16,3 +16,12 @@ output "inventory" {
     }
   }
 }
+
+output "loadgen" {
+  value = var.enable_loadgen ? {
+    name       = google_compute_instance.loadgen[0].name
+    region     = var.loadgen_region
+    zone       = google_compute_instance.loadgen[0].zone
+    private_ip = google_compute_instance.loadgen[0].network_interface[0].network_ip
+  } : null
+}
