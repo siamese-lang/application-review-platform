@@ -40,15 +40,19 @@ Current active plan:
 
 Current verified main:
 
-`d4dcdc0ec0ce7b769907cf42f789aab70b0ac745`
+`28ddd06c31045d75368181a49474825b48639435`
 
-M8 Phase 1 and Phase 2 are complete. Phase 3 is active.
+M8 Phase 1, Phase 2, and Phase 3 are complete. Phase 4 is active.
 
 Post-merge `main` baseline CI:
 
-- run `34870900830`;
+- run `34875109606`;
 - status: completed;
 - conclusion: SUCCESS.
+
+Baseline CI now uses repository-owned affected-path job gating. Full regression remains
+available through `workflow_dispatch`; unrelated milestone jobs should not block a focused
+M8 workload-tooling change.
 
 ## Current live environment
 
@@ -85,7 +89,14 @@ Temporary M8 load generator live checkpoint:
 - repository-owned Ansible configuration completed on `loadgen-01`;
 - pinned k6 metadata, package download checksum, installed version, and final assertion passed;
 - loadgen play recap: `ok=8 changed=2 unreachable=0 failed=0`;
-- dataset M live generation/reset/load has **not yet run**.
+- deterministic dataset M seed `20260914` was loaded and verified live;
+- manifest SHA-256:
+  `9e174ead7c9ae7b77d5adc18c93e336b4cac5e30b5962bf47c31de4f42bea696`;
+- verified counts: 12 programs, 1,048 users, 100,000 applications,
+  399,990 histories, and 499,990 audits;
+- deployed M8 API verification passed through real HTTPS/session/CSRF;
+- pre-workload telemetry health passed with `probe_success=1`, Spring HTTP telemetry
+  present, and `pg_up=1`.
 
 ## M8 fixed boundaries
 
@@ -143,30 +154,26 @@ A negative finding is valid evidence.
 
 ## Immediate next work
 
-Continue **M8 Phase 3 — Live loadgen and dataset M preparation**.
+Continue **M8 Phase 4 — Smoke and normal baseline**.
 
 Completed Phase 3 gates:
 
-1. trusted SSH inventory compatibility merged;
-2. read-only Tokyo preflight passed;
-3. project quota showed `CPUS_ALL_REGIONS limit=12 / usage=9`;
-4. exact OpenTofu plan reviewed as `4 to add, 0 to change, 0 to destroy`;
-5. that saved plan was applied;
-6. `loadgen-01` is RUNNING at `10.50.0.10` with no public access configuration;
-7. repository-owned loadgen configuration completed with pinned k6 verification and `failed=0`.
+1. trusted private access to `loadgen-01`;
+2. pinned k6 `2.2.0` installed and verified;
+3. deterministic dataset M loaded and invariant-verified;
+4. deployed API compatibility verified against bulk M8 data through real HTTPS/session/CSRF;
+5. pre-workload Prometheus/Loki/Tempo readiness and core app/DB telemetry verified.
 
 Immediate next slice:
 
-1. merge the guarded live dataset M loader;
-2. check out its exact reviewed `main` SHA on `ops-01`;
-3. generate deterministic profile M with seed `20260914` before requesting the ephemeral OS Login key;
-4. require explicit `ARP_CONFIRM_M8_DATASET_RESET=yes`;
-5. transfer the generated bundle to a temporary directory on `db-01`;
-6. execute the generated namespace-collision guard, reset/load, and `verify.sql` as local PostgreSQL user;
-7. retain the manifest SHA-256 and verified row counts;
-8. only after M succeeds, verify the deployed API subset and M7 telemetry before W1.
+1. inspect the current k6 harness skeleton and exact API/security contract;
+2. implement the smallest W1 scenario that exercises every frozen workload family;
+3. use dataset S, 1–2 VU, short bounded duration, and real public edge;
+4. retain exact run metadata and sanitized k6 output;
+5. treat W1 as harness correctness only;
+6. proceed to W2 only after W1 passes.
 
-Do not run W1/W2 or performance tuning yet.
+Do not run W2, W3, stress progression, or performance tuning before W1 correctness is proven.
 
 ## Do not revisit unless new evidence requires it
 
@@ -183,5 +190,5 @@ Do not run W1/W2 or performance tuning yet.
 > 먼저 `AGENTS.md`, `docs/AI_PROJECT_STATE.md`, 현재 active plan만 읽고 repository
 > 실제 상태를 source of truth로 사용하라.  
 > 완료된 milestone을 재검토하지 마라.  
-> M8 active plan의 첫 미완료 Phase 3 작업부터 진행하라.  
+> M8 active plan의 첫 미완료 Phase 4 작업부터 진행하라.  
 > M9 최적화나 speculative tuning을 M8로 끌어오지 마라.
