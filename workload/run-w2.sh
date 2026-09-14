@@ -346,23 +346,33 @@ families = [
     ("attachment", 5.0),
 ]
 
+def legacy_metric(name):
+    try:
+        metric = metrics[name]
+    except KeyError as exc:
+        raise SystemExit(f"W2 summary missing {name}: {exc}") from exc
+    if not isinstance(metric, dict):
+        raise SystemExit(f"W2 summary metric {name} is not an object")
+    return metric
+
 counts = {}
 for family, _ in families:
     key = f"m8_{family}_requests"
+    metric = legacy_metric(key)
     try:
-        counts[family] = float(metrics[key]["values"]["count"])
+        counts[family] = float(metric["count"])
     except (KeyError, TypeError, ValueError) as exc:
-        raise SystemExit(f"W2 summary missing {key}: {exc}")
+        raise SystemExit(f"W2 summary missing {key}.count: {exc}") from exc
 
 total = sum(counts.values())
 if total <= 0:
     raise SystemExit("W2 recorded no business requests")
 
 try:
-    error_rate = float(metrics["m8_non_file_errors"]["values"]["rate"])
-    p95 = float(metrics["m8_non_file_duration"]["values"]["p(95)"])
+    error_rate = float(legacy_metric("m8_non_file_errors")["value"])
+    p95 = float(legacy_metric("m8_non_file_duration")["p(95)"])
 except (KeyError, TypeError, ValueError) as exc:
-    raise SystemExit(f"W2 summary missing non-file regression metrics: {exc}")
+    raise SystemExit(f"W2 summary missing non-file regression metrics: {exc}") from exc
 
 success_rate = 1.0 - error_rate
 target_ok = success_rate >= 0.99 and p95 < 500.0
