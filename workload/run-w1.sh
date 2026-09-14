@@ -211,7 +211,7 @@ remote_command="set -euo pipefail; IFS= read -r APPLICANT_PASSWORD; IFS= read -r
 "${ssh_loadgen[@]}" "cat '$remote_dir/summary.json'" > "$run_dir/k6-summary.json"
 finished_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-python3 -   "$run_dir/run-manifest.json"   "$run_id"   "$actual_sha"   "$release_sha"   "$ARP_M8_W1_DATASET_MANIFEST_SHA"   "$K6_VERSION"   "$started_at"   "$finished_at"   "$fixture_sha" <<'PY'
+python3 -   "$run_dir/run-manifest.json"   "$run_id"   "$actual_sha"   "$release_sha"   "$backend_release_sha"   "$frontend_release_sha"   "$ARP_M8_W1_DATASET_MANIFEST_SHA"   "$K6_VERSION"   "$started_at"   "$finished_at"   "$fixture_sha" <<'PY'
 import json
 import sys
 
