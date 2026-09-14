@@ -25,3 +25,22 @@ output "loadgen" {
     private_ip = google_compute_instance.loadgen[0].network_interface[0].network_ip
   } : null
 }
+
+output "ssh_inventory" {
+  value = merge(
+    {
+      for name, node in local.nodes : name => {
+        role       = node.role
+        zone       = node.zone
+        private_ip = google_compute_instance.node[name].network_interface[0].network_ip
+      }
+    },
+    var.enable_loadgen ? {
+      "loadgen-01" = {
+        role       = "loadgen"
+        zone       = google_compute_instance.loadgen[0].zone
+        private_ip = google_compute_instance.loadgen[0].network_interface[0].network_ip
+      }
+    } : {}
+  )
+}
