@@ -78,14 +78,14 @@ def tofu_output_prefix() -> list[str]:
     return ["sudo", "-n", "tofu"]
 
 
-def runtime_inventory(repo_root: Path) -> dict[str, dict[str, str]]:
+def runtime_ssh_inventory(repo_root: Path) -> dict[str, dict[str, str]]:
     result = subprocess.run(
         tofu_output_prefix()
         + [
             f"-chdir={repo_root / 'infra' / 'opentofu'}",
             "output",
             "-json",
-            "inventory",
+            "ssh_inventory",
         ],
         check=True,
         text=True,
@@ -93,7 +93,7 @@ def runtime_inventory(repo_root: Path) -> dict[str, dict[str, str]]:
     )
     inventory = json.loads(result.stdout)
     if not isinstance(inventory, dict) or not inventory:
-        raise RuntimeError("OpenTofu runtime inventory output is empty.")
+        raise RuntimeError("OpenTofu SSH inventory output is empty.")
     return inventory
 
 
@@ -190,7 +190,7 @@ def fetch_host_keys(
                 known_hosts.append(f"{host_aliases} {key_type} {key_value}")
 
     if not known_hosts:
-        raise RuntimeError("No SSH host keys were returned for the M4 inventory.")
+        raise RuntimeError("No SSH host keys were returned for the runtime SSH inventory.")
     return known_hosts
 
 
@@ -241,7 +241,7 @@ def main() -> int:
         )
     token_payload = json.loads(metadata_text("instance/service-accounts/default/token"))
     access_token = token_payload["access_token"]
-    inventory = runtime_inventory(repo_root)
+    inventory = runtime_ssh_inventory(repo_root)
 
     key_resource: str | None = None
     with tempfile.TemporaryDirectory(prefix="arp-oslogin-") as temp_dir:
