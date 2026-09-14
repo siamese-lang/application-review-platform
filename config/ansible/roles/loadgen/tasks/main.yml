@@ -1,0 +1,32 @@
+---
+- name: Require pinned k6 metadata
+  ansible.builtin.assert:
+    that:
+      - k6_version is defined
+      - k6_linux_amd64_deb_sha256 is defined
+      - k6_version | length > 0
+      - k6_linux_amd64_deb_sha256 is match('^[0-9a-f]{64}$')
+    fail_msg: Pinned k6 version/checksum must be supplied by the repository workload metadata.
+
+- name: Download pinned k6 package
+  ansible.builtin.get_url:
+    url: "https://github.com/grafana/k6/releases/download/v{{ k6_version }}/k6-v{{ k6_version }}-linux-amd64.deb"
+    dest: "/var/cache/k6-v{{ k6_version }}-linux-amd64.deb"
+    checksum: "sha256:{{ k6_linux_amd64_deb_sha256 }}"
+    mode: '0644'
+
+- name: Install pinned k6 package
+  ansible.builtin.apt:
+    deb: "/var/cache/k6-v{{ k6_version }}-linux-amd64.deb"
+    state: present
+
+- name: Read installed k6 version
+  ansible.builtin.command: /usr/bin/k6 version
+  register: k6_version_output
+  changed_when: false
+
+- name: Verify installed k6 version
+  ansible.builtin.assert:
+    that:
+      - "'k6 v' + k6_version in k6_version_output.stdout"
+    fail_msg: "Installed k6 version does not match repository pin: {{ k6_version_output.stdout }}"
