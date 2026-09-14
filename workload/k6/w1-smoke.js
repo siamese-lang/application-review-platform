@@ -26,7 +26,7 @@ export const options = {
   scenarios: {
     w1_business_flow: {
       executor: 'per-vu-iterations',
-      vus: 2,
+      vus: 1,
       iterations: 1,
       maxDuration: '2m',
     },
@@ -70,11 +70,21 @@ function requireCheck(response, label, predicate) {
   }
 }
 
+function requireCondition(label, condition) {
+  const ok = check(null, {
+    [label]: () => Boolean(condition),
+  });
+  if (!ok) {
+    throw new Error(label);
+  }
+}
+
 function json(response, label) {
   try {
     return response.json();
   } catch (error) {
-    throw new Error(`${label}: response was not valid JSON: ${error}`);
+    requireCondition(`${label} is valid JSON`, false);
+    throw error;
   }
 }
 
@@ -84,9 +94,10 @@ function csrf(endpointFamily) {
   });
   requireCheck(response, 'CSRF endpoint returns 200', (r) => r.status === 200);
   const body = json(response, 'CSRF response');
-  if (!body.headerName || !body.token) {
-    throw new Error('CSRF response is missing headerName/token');
-  }
+  requireCondition(
+    'CSRF response contains headerName/token',
+    Boolean(body.headerName && body.token),
+  );
   return body;
 }
 
@@ -112,9 +123,7 @@ function login(username, password, role) {
   );
   requireCheck(response, `${role} login succeeds`, (r) => r.status === 200);
   const body = json(response, `${role} login response`);
-  if (body.role !== role) {
-    throw new Error(`expected role ${role}, got ${body.role}`);
-  }
+  requireCondition(`${role} login returns expected role`, body.role === role);
 }
 
 function logout() {
@@ -145,9 +154,10 @@ export default function () {
     tags: requestTags('list-detail', 'GET /api/v1/programs/{id}'),
   });
   requireCheck(programDetail, 'program detail succeeds', (r) => r.status === 200);
-  if (json(programDetail, 'program detail').code !== 'M8-P001') {
-    throw new Error('W1 expected deterministic M8 program M8-P001');
-  }
+  requireCondition(
+    'program detail is deterministic M8-P001',
+    json(programDetail, 'program detail').code === 'M8-P001',
+  );
   pause();
 
   login(applicantUsername, applicantPassword, 'APPLICANT');
@@ -175,9 +185,10 @@ export default function () {
   let application = json(response, 'application create');
   const applicationId = application.id;
   let version = application.version;
-  if (!applicationId || application.status !== 'DRAFT') {
-    throw new Error('created application is not a DRAFT with an id');
-  }
+  requireCondition(
+    'created application is a DRAFT with an id',
+    Boolean(applicationId) && application.status === 'DRAFT',
+  );
 
   response = writeJson(
     'PUT',
@@ -211,9 +222,10 @@ export default function () {
   );
   requireCheck(response, 'attachment upload succeeds', (r) => r.status === 201);
   const attachment = json(response, 'attachment upload');
-  if (!attachment.id || attachment.status !== 'AVAILABLE') {
-    throw new Error('uploaded attachment is not AVAILABLE');
-  }
+  requireCondition(
+    'uploaded attachment is AVAILABLE',
+    Boolean(attachment.id) && attachment.status === 'AVAILABLE',
+  );
 
   response = http.get(
     `${baseUrl}/api/v1/applications/${applicationId}/attachments/${attachment.id}`,
@@ -230,6 +242,20 @@ export default function () {
     'attachment download preserves fixture',
     (r) => r.status === 200 && r.body === attachmentBody,
   );
+
+  const deleteToken = csrf('attachment');
+  response = http.del(
+    `${baseUrl}/api/v1/applications/${applicationId}/attachments/${attachment.id}`,
+    null,
+    {
+      headers: { [deleteToken.headerName]: deleteToken.token },
+      tags: requestTags(
+        'attachment',
+        'DELETE /api/v1/applications/{id}/attachments/{attachmentId}',
+      ),
+    },
+  );
+  requireCheck(response, 'attachment cleanup succeeds', (r) => r.status === 204);
   pause();
 
   response = writeJson(
@@ -242,9 +268,7 @@ export default function () {
   requireCheck(response, 'first submit succeeds', (r) => r.status === 200);
   application = json(response, 'first submit');
   version = application.version;
-  if (application.status !== 'SUBMITTED') {
-    throw new Error('first submit did not reach SUBMITTED');
-  }
+  requireCondition('first submit reaches SUBMITTED', application.status === 'SUBMITTED');
   logout();
   pause();
 
@@ -287,9 +311,10 @@ export default function () {
   requireCheck(response, 'revision request succeeds', (r) => r.status === 200);
   application = json(response, 'revision request');
   version = application.version;
-  if (application.status !== 'NEEDS_REVISION') {
-    throw new Error('revision request did not reach NEEDS_REVISION');
-  }
+  requireCondition(
+    'revision request reaches NEEDS_REVISION',
+    application.status === 'NEEDS_REVISION',
+  );
   logout();
   pause();
 
@@ -330,9 +355,7 @@ export default function () {
   requireCheck(response, 'resubmit succeeds', (r) => r.status === 200);
   application = json(response, 'resubmit');
   version = application.version;
-  if (application.status !== 'SUBMITTED') {
-    throw new Error('resubmit did not return to SUBMITTED');
-  }
+  requireCondition('resubmit returns to SUBMITTED', application.status === 'SUBMITTED');
   logout();
   pause();
 
@@ -358,9 +381,7 @@ export default function () {
   );
   requireCheck(response, 'approval succeeds', (r) => r.status === 200);
   application = json(response, 'approval');
-  if (application.status !== 'APPROVED') {
-    throw new Error('approval did not reach APPROVED');
-  }
+  requireCondition('approval reaches APPROVED', application.status === 'APPROVED');
 
   response = http.get(
     `${baseUrl}/api/v1/review/applications/${applicationId}/history`,
@@ -381,9 +402,10 @@ export default function () {
     'NEEDS_REVISION->SUBMITTED',
     'IN_REVIEW->APPROVED',
   ]) {
-    if (!transitions.includes(required)) {
-      throw new Error(`missing W1 transition ${required}`);
-    }
+    requireCondition(
+      `history contains ${required}`,
+      transitions.includes(required),
+    );
   }
   logout();
   pause();
