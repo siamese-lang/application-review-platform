@@ -5,3 +5,11 @@ project_id = "application-review-platform"
 # If SSD_TOTAL_GB is exhausted, move only the affected boot disk to pd-standard instead of changing healthy disks.
 # node_boot_disk_type_overrides = { "storage-03" = "pd-standard" }
 # Owner/admin IAM principals belong only in infra/opentofu/bootstrap/*.tfvars.
+
+# M8 temporary workload generation is opt-in. Leave disabled outside reviewed workload runs.
+# enable_loadgen        = true
+# loadgen_region        = "asia-northeast1"
+# loadgen_zone          = "asia-northeast1-a"
+# loadgen_subnet_cidr   = "10.50.0.0/24"
+# loadgen_private_ip    = "10.50.0.10"
+# loadgen_machine_type  = "e2-standard-2"

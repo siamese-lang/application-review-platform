@@ -10,6 +10,15 @@ permissions:
   contents: read
 
 jobs:
+  m8-workload-foundation-static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate M8 Phase 1 workload foundation
+        run: |
+          python3 scripts/workload/test-m8-workload-foundation.py
+          node --check workload/k6/foundation-smoke.js
+
   m7-observability-infrastructure-static:
     runs-on: ubuntu-latest
     steps:

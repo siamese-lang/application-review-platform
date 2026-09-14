@@ -34,3 +34,33 @@ resource "google_compute_address" "edge" {
   name   = "arp-edge-01-ipv4"
   region = var.region
 }
+
+resource "google_compute_subnetwork" "loadgen" {
+  count                    = var.enable_loadgen ? 1 : 0
+  name                     = "arp-m8-loadgen-${var.loadgen_region}"
+  region                   = var.loadgen_region
+  network                  = google_compute_network.m4.id
+  ip_cidr_range            = var.loadgen_subnet_cidr
+  private_ip_google_access = true
+}
+
+resource "google_compute_router" "loadgen" {
+  count   = var.enable_loadgen ? 1 : 0
+  name    = "arp-m8-loadgen-router"
+  region  = var.loadgen_region
+  network = google_compute_network.m4.id
+}
+
+resource "google_compute_router_nat" "loadgen" {
+  count                              = var.enable_loadgen ? 1 : 0
+  name                               = "arp-m8-loadgen-nat"
+  router                             = google_compute_router.loadgen[0].name
+  region                             = var.loadgen_region
+  nat_ip_allocate_option             = "AUTO_ONLY"
+  source_subnetwork_ip_ranges_to_nat = "LIST_OF_SUBNETWORKS"
+
+  subnetwork {
+    name                    = google_compute_subnetwork.loadgen[0].id
+    source_ip_ranges_to_nat = ["ALL_IP_RANGES"]
+  }
+}

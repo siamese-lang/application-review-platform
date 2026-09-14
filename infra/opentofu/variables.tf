@@ -93,3 +93,34 @@ variable "node_boot_disk_type_overrides" {
     error_message = "node_boot_disk_type_overrides may contain only known runtime nodes and pd-balanced/pd-standard values."
   }
 }
+
+variable "enable_loadgen" {
+  description = "Create the temporary M8 cross-region load generator only for an explicitly reviewed workload run."
+  type        = bool
+  default     = false
+}
+variable "loadgen_region" {
+  description = "Default region for the temporary M8 load generator per ADR-004."
+  type        = string
+  default     = "asia-northeast1"
+}
+variable "loadgen_zone" {
+  description = "Zone for the temporary M8 load generator."
+  type        = string
+  default     = "asia-northeast1-a"
+}
+variable "loadgen_subnet_cidr" {
+  description = "Dedicated cross-region subnet for the temporary M8 load generator."
+  type        = string
+  default     = "10.50.0.0/24"
+}
+variable "loadgen_private_ip" {
+  description = "Stable private address used only while the temporary M8 load generator exists."
+  type        = string
+  default     = "10.50.0.10"
+}
+variable "loadgen_machine_type" {
+  description = "Initial load-generator size; live quota/capacity is checked before M8 apply."
+  type        = string
+  default     = "e2-standard-2"
+}
