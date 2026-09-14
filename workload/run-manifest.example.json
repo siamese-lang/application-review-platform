@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "run_id": "EXAMPLE_NOT_EXECUTED",
+  "source_sha": "0000000000000000000000000000000000000000",
+  "release_sha": "0000000000000000000000000000000000000000",
+  "dataset": {
+    "name": "S",
+    "seed": 20260914,
+    "manifest_version": "example"
+  },
+  "loadgen": {
+    "region": "asia-northeast1",
+    "zone": "asia-northeast1-a",
+    "machine_type": "e2-standard-2",
+    "k6_version": "2.2.0"
+  },
+  "workload": {
+    "scenario": "foundation-smoke",
+    "version": "example",
+    "vus": 1,
+    "duration": "15s",
+    "think_time_seconds": 1,
+    "attachment_fixture": null
+  },
+  "runtime": {
+    "project_id": "application-review-platform",
+    "primary_region": "asia-northeast3",
+    "persistent_nodes": [
+      "edge-01",
+      "app-01",
+      "db-01",
+      "storage-01",
+      "storage-02",
+      "storage-03",
+      "ops-01",
+      "obs-01"
+    ]
+  },
+  "started_at": "1970-01-01T00:00:00Z",
+  "finished_at": "1970-01-01T00:00:00Z"
+}
