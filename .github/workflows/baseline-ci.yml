@@ -10,6 +10,18 @@ permissions:
   contents: read
 
 jobs:
+  m8-dataset-tooling-static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate M8 Phase 2 deterministic dataset tooling
+        run: |
+          python3 scripts/workload/test-m8-dataset-tooling.py
+          python3 -m py_compile \
+            scripts/workload/synthetic_dataset.py \
+            scripts/workload/generate-synthetic-dataset.py \
+            scripts/workload/test-m8-dataset-tooling.py
+
   m8-workload-foundation-static:
     runs-on: ubuntu-latest
     steps:
