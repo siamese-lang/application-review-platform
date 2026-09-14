@@ -44,8 +44,8 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
         } finally {
             Span span = tracer.currentSpan();
-            String traceId = span == null ? "-" : span.context().traceId();
-            String spanId = span == null ? "-" : span.context().spanId();
+            String traceId = correlationId(span == null ? null : span.context().traceId());
+            String spanId = correlationId(span == null ? null : span.context().spanId());
             long durationMs = (System.nanoTime() - startedAt) / 1_000_000;
 
             log.info(
@@ -59,6 +59,10 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
                     spanId);
             MDC.remove("requestId");
         }
+    }
+
+    private static String correlationId(String value) {
+        return value == null || value.isBlank() ? "-" : value;
     }
 
     private static String resolveRequestId(HttpServletRequest request) {
