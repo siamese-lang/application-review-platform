@@ -4,6 +4,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import importlib.util
+import sys
 import tempfile
 from collections import defaultdict
 from pathlib import Path
@@ -15,6 +16,7 @@ spec = importlib.util.spec_from_file_location("m8_synthetic_dataset", MODULE_PAT
 if spec is None or spec.loader is None:
     raise SystemExit("failed to load synthetic_dataset module")
 module = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = module
 spec.loader.exec_module(module)
 
 DatasetSpec = module.DatasetSpec
