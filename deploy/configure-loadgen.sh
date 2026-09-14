@@ -5,8 +5,14 @@ umask 077
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$root"
 
-test "$(git rev-parse HEAD)" = "ce7c84832b4bbe55c8db45a3cb6219fb8183a611" || {
-  echo "ERROR: configure-loadgen.sh must run from reviewed main ce7c84832b4bbe55c8db45a3cb6219fb8183a611" >&2
+: "${ARP_EXPECTED_SOURCE_SHA:?Set ARP_EXPECTED_SOURCE_SHA to the reviewed 40-character main SHA}"
+[[ $ARP_EXPECTED_SOURCE_SHA =~ ^[0-9a-f]{40}$ ]] || {
+  echo "ERROR: ARP_EXPECTED_SOURCE_SHA must be a 40-character lowercase Git SHA." >&2
+  exit 1
+}
+actual_sha=$(git rev-parse HEAD)
+[[ $actual_sha == "$ARP_EXPECTED_SOURCE_SHA" ]] || {
+  echo "ERROR: expected reviewed source $ARP_EXPECTED_SOURCE_SHA but checkout is $actual_sha" >&2
   exit 1
 }
 
