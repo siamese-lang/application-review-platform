@@ -368,7 +368,16 @@ useful. Record the stop reason.
 
 ### Phase 1 — Repository workload foundation
 
-Status: **NEXT**
+Status: **COMPLETE**
+
+Completed boundary:
+
+- PR #95 added the opt-in private Tokyo `loadgen-01` model, pinned k6 foundation,
+  run-manifest contract, and focused static checks;
+- PR #96 corrected one pre-existing ambiguous browser-E2E locator discovered by the
+  post-merge run;
+- final post-merge `main` baseline CI run `34862295776` at
+  `b9bfff92ded572eefcdf4281d0a506a021392f72` passed.
 
 Create repository-side foundations only.
 
@@ -397,7 +406,7 @@ Done condition:
 
 ### Phase 2 — Deterministic synthetic dataset tooling
 
-Status: PLANNED
+Status: **ACTIVE**
 
 Implement S/M generation and reset/verification tooling.
 
