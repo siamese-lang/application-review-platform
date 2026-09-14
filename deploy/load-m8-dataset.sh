@@ -79,7 +79,7 @@ print(
 PY
 
   export ARP_M8_DATASET_BUNDLE="$bundle_dir"
-  "$root/deploy/with-oslogin-ssh.py" --ttl-seconds 3600 --     "$root/deploy/load-m8-dataset.sh"
+  "$root/deploy/with-oslogin-ssh.py" --ttl-seconds 3600 --     bash "$root/deploy/load-m8-dataset.sh"
   exit $?
 fi
 
