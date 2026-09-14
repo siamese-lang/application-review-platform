@@ -25,6 +25,7 @@ outputs_tf = read("infra/opentofu/outputs.tf")
 tfvars_example = read("infra/opentofu/terraform.tfvars.example")
 ci = read(".github/workflows/baseline-ci.yml")
 oslogin_helper = read("deploy/with-oslogin-ssh.py")
+loadgen_preflight = read("deploy/m8-loadgen-preflight.sh")
 
 expected_nodes = [
     'edge-01    = { role = "edge", zone = "${var.region}-a", ip = "10.40.0.10" }',
@@ -182,6 +183,24 @@ for token in [
 
 if '"inventory"' in oslogin_helper.split("def runtime_ssh_inventory", 1)[1].split("def register_ephemeral_key", 1)[0]:
     raise SystemExit("OS Login helper must use ssh_inventory, not persistent deployment inventory")
+
+for token in [
+    "readonly LOADGEN_REGION=asia-northeast1",
+    "readonly LOADGEN_ZONE=asia-northeast1-a",
+    "readonly LOADGEN_MACHINE_TYPE=e2-standard-2",
+    "readonly LOADGEN_NAME=loadgen-01",
+    "gcloud compute machine-types describe",
+    "gcloud compute regions describe",
+    "gcloud compute instances list",
+    "Persistent Seoul runtime: all 8 expected nodes present.",
+    "Temporary loadgen-01: absent",
+    "PASS: M8 Phase 3 read-only loadgen preflight completed.",
+]:
+    require(loadgen_preflight, token, "M8 live preflight contract")
+
+for forbidden in [" create ", " delete ", " update ", " set-machine-type ", " add-access-config "]:
+    if forbidden in loadgen_preflight:
+        raise SystemExit(f"M8 loadgen preflight must remain read-only: {forbidden.strip()}")
 
 for token in [
     "m8-workload-foundation-static:",
