@@ -29,6 +29,7 @@ for token in [
     "manifest_sha256=",
     "with-oslogin-ssh.py",
     "--ttl-seconds 3600",
+    'bash "$root/deploy/load-m8-dataset.sh"',
     'json.load(sys.stdin)["db-01"]["private_ip"]',
     "StrictHostKeyChecking=yes",
     "sudo -u postgres mktemp -d /tmp/arp-m8-dataset-M.",
