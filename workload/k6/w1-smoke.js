@@ -7,7 +7,7 @@ const applicantPassword = __ENV.APPLICANT_PASSWORD || '';
 const reviewerUsername = __ENV.REVIEWER_USERNAME || 'm6-reviewer';
 const reviewerPassword = __ENV.REVIEWER_PASSWORD || '';
 const runId = __ENV.RUN_ID || '';
-const attachmentPath = __ENV.ATTACHMENT_PATH || 'fixtures/w1-attachment.txt';
+const attachmentPath = __ENV.ATTACHMENT_PATH || '../fixtures/w1-attachment.txt';
 const thinkTime = Number(__ENV.THINK_TIME_SECONDS || '0.2');
 const attachmentBody = open(attachmentPath);
 

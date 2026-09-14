@@ -155,6 +155,7 @@ for token in [
     "/api/v1/applications",
     "/api/v1/review/applications",
     "http.file(",
+    "../fixtures/w1-attachment.txt",
     "attachment cleanup succeeds",
     "request-revision",
     "/approve",
