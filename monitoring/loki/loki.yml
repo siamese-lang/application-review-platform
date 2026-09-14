@@ -3,12 +3,7 @@ auth_enabled: false
 server:
   http_listen_address: 10.40.0.60
   http_listen_port: 3100
-  grpc_listen_address: 127.0.0.1
   grpc_listen_port: 9095
-
-frontend:
-  instance_interface_names:
-    - lo
 
 common:
   path_prefix: /var/lib/loki
