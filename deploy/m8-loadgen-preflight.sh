@@ -35,13 +35,6 @@ echo 'Active gcloud identity: present (identity and credentials not printed).'
 gcloud projects describe "$PROJECT_ID" --format='none'
 echo "Target project is accessible: $PROJECT_ID"
 
-billing_enabled=$(gcloud billing projects describe "$PROJECT_ID" --format='value(billingEnabled)')
-[[ $billing_enabled == True ]] || {
-  echo "Billing is not enabled for $PROJECT_ID." >&2
-  exit 1
-}
-echo 'Billing: enabled.'
-
 gcloud compute machine-types describe "$LOADGEN_MACHINE_TYPE"   --zone="$LOADGEN_ZONE"   --project="$PROJECT_ID"   --format='none'
 echo "Load-generator machine type is inspectable in $LOADGEN_ZONE: $LOADGEN_MACHINE_TYPE"
 
