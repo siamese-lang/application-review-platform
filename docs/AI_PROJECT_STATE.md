@@ -40,13 +40,13 @@ Current active plan:
 
 Current verified main:
 
-`b9bfff92ded572eefcdf4281d0a506a021392f72`
+`a1e7fec2ccefa81f08dbc2d71407e5125689a3df`
 
-M8 Phase 1 repository foundation is complete.
+M8 Phase 1 and Phase 2 are complete.
 
 Post-merge `main` baseline CI:
 
-- run `34862295776`;
+- run `34864808869`;
 - status: completed;
 - conclusion: SUCCESS.
 
@@ -129,22 +129,21 @@ A negative finding is valid evidence.
 
 ## Immediate next work
 
-Proceed to **M8 Phase 2 — Deterministic synthetic dataset tooling** only.
+Proceed to **M8 Phase 3 — Live loadgen and dataset M preparation**.
 
-Current implementation slice:
+Before any live apply:
 
-1. generate S/M/L database-scale fixture bundles from a fixed seed;
-2. preserve the current Flyway schema and allowed application state-transition paths;
-3. keep legacy `title/content` synchronized with M5 structured application fields;
-4. provide guarded M8-namespace reset/load and verification SQL;
-5. verify byte-identical regeneration and referential/state/history/version invariants in CI;
-6. verify the generator field pattern through the real Spring application API integration boundary;
-7. do not load dataset M into the live runtime yet;
-8. do not create `loadgen-01` yet;
-9. do not run W1/W2 or performance tuning.
+1. merge the bounded SSH-inventory compatibility change for optional `loadgen-01`;
+2. lock the resulting exact `main` SHA;
+3. run a read-only Tokyo quota/capacity preflight;
+4. create an OpenTofu plan with `enable_loadgen=true` and retained `storage-03` overrides;
+5. confirm the plan changes only the temporary Tokyo loadgen subnet/router/NAT/VM plus expected outputs;
+6. only then apply that exact reviewed plan;
+7. configure `loadgen-01` and verify pinned k6;
+8. generate/load/verify dataset M;
+9. verify the deployed API subset and M7 telemetry before W1.
 
-After Phase 2 exact-head and post-merge CI pass, proceed to Phase 3 live quota/plan review and
-dataset/loadgen preparation.
+Do not run W1/W2 or any performance optimization during this preparation phase.
 
 ## Do not revisit unless new evidence requires it
 
@@ -161,5 +160,5 @@ dataset/loadgen preparation.
 > 먼저 `AGENTS.md`, `docs/AI_PROJECT_STATE.md`, 현재 active plan만 읽고 repository
 > 실제 상태를 source of truth로 사용하라.  
 > 완료된 milestone을 재검토하지 마라.  
-> M8 active plan의 첫 미완료 Phase 2 작업부터 진행하라.  
+> M8 active plan의 첫 미완료 Phase 3 작업부터 진행하라.  
 > M9 최적화나 speculative tuning을 M8로 끌어오지 마라.

@@ -406,7 +406,15 @@ Done condition:
 
 ### Phase 2 — Deterministic synthetic dataset tooling
 
-Status: **ACTIVE**
+Status: **COMPLETE**
+
+Completed boundary:
+
+- PR #97 added fixed-seed S/M/L dataset generation, guarded M8 namespace reset/load,
+  generated verification SQL, invariant checks, and the real Spring API verification subset;
+- CI loaded dataset S into the migrated PostgreSQL test schema and passed generated verification;
+- final post-merge `main` baseline CI run `34864808869` at
+  `a1e7fec2ccefa81f08dbc2d71407e5125689a3df` passed.
 
 Implement S/M generation and reset/verification tooling.
 
@@ -419,7 +427,7 @@ Done condition:
 
 ### Phase 3 — Live loadgen and dataset M preparation
 
-Status: PLANNED
+Status: **ACTIVE**
 
 Sequence:
 

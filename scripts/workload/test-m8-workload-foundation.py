@@ -24,6 +24,7 @@ compute_tf = read("infra/opentofu/compute.tf")
 outputs_tf = read("infra/opentofu/outputs.tf")
 tfvars_example = read("infra/opentofu/terraform.tfvars.example")
 ci = read(".github/workflows/baseline-ci.yml")
+oslogin_helper = read("deploy/with-oslogin-ssh.py")
 
 expected_nodes = [
     'edge-01    = { role = "edge", zone = "${var.region}-a", ip = "10.40.0.10" }',
@@ -91,6 +92,9 @@ require(
 )
 require(outputs_tf, 'output "loadgen"', "loadgen output")
 require(outputs_tf, "var.enable_loadgen ?", "conditional loadgen output")
+require(outputs_tf, 'output "ssh_inventory"', "SSH inventory output")
+require(outputs_tf, '"loadgen-01" = {', "conditional SSH loadgen inventory")
+require(outputs_tf, 'role       = "loadgen"', "SSH loadgen role")
 
 for token in [
     '# enable_loadgen        = true',
@@ -169,6 +173,15 @@ for path in (ROOT / "workload").rglob("*"):
         text = path.read_text(encoding="utf-8")
         if secret_assignment.search(text):
             raise SystemExit(f"literal secret-like assignment found in {path.relative_to(ROOT)}")
+
+for token in [
+    '"ssh_inventory"',
+    "runtime_ssh_inventory(repo_root)",
+]:
+    require(oslogin_helper, token, "OS Login SSH inventory contract")
+
+if '"inventory"' in oslogin_helper.split("def runtime_ssh_inventory", 1)[1].split("def register_ephemeral_key", 1)[0]:
+    raise SystemExit("OS Login helper must use ssh_inventory, not persistent deployment inventory")
 
 for token in [
     "m8-workload-foundation-static:",
