@@ -4,17 +4,17 @@ BEGIN;
 
 DO $$
 DECLARE
-  applicant_id bigint;
+  expected_applicant_id bigint;
   draft_count bigint;
   history_count bigint;
   create_audit_count bigint;
 BEGIN
-  SELECT id INTO applicant_id
+  SELECT id INTO expected_applicant_id
   FROM users
   WHERE username = 'm6-applicant'
     AND role = 'APPLICANT';
 
-  IF applicant_id IS NULL THEN
+  IF expected_applicant_id IS NULL THEN
     RAISE EXCEPTION 'm6-applicant APPLICANT user is required for W2 overlay';
   END IF;
 
@@ -85,20 +85,20 @@ WHERE e.application_id = drafts.id
 
 DO $$
 DECLARE
-  applicant_id bigint;
+  expected_applicant_id bigint;
   owned_drafts bigint;
   wrong_create_actor bigint;
 BEGIN
-  SELECT id INTO applicant_id
+  SELECT id INTO expected_applicant_id
   FROM users
   WHERE username = 'm6-applicant'
     AND role = 'APPLICANT';
 
   SELECT count(*) INTO owned_drafts
-  FROM applications
-  WHERE id BETWEEN 8200000001 AND 8299999999
-    AND status = 'DRAFT'
-    AND applicant_id = applicant_id;
+  FROM applications a
+  WHERE a.id BETWEEN 8200000001 AND 8299999999
+    AND a.status = 'DRAFT'
+    AND a.applicant_id = expected_applicant_id;
 
   IF owned_drafts <> 8334 THEN
     RAISE EXCEPTION 'W2 interactive DRAFT ownership mismatch: %', owned_drafts;
@@ -110,7 +110,7 @@ BEGIN
   WHERE a.id BETWEEN 8200000001 AND 8299999999
     AND a.status = 'DRAFT'
     AND e.event_type = 'APPLICATION_CREATED'
-    AND e.actor_id <> applicant_id;
+    AND e.actor_id <> expected_applicant_id;
 
   IF wrong_create_actor <> 0 THEN
     RAISE EXCEPTION 'W2 DRAFT create-audit actor mismatch: %', wrong_create_actor;
