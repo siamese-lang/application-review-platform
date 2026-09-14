@@ -136,7 +136,7 @@ w1 = read("workload/k6/w1-smoke.js")
 w1_runner = read("workload/run-w1.sh")
 for token in [
     "executor: 'per-vu-iterations'",
-    "vus: 2",
+    "vus: 1",
     "iterations: 1",
     "maxDuration: '2m'",
     "checks: ['rate==1']",
@@ -155,6 +155,7 @@ for token in [
     "/api/v1/applications",
     "/api/v1/review/applications",
     "http.file(",
+    "attachment cleanup succeeds",
     "request-revision",
     "/approve",
 ]:
@@ -183,7 +184,7 @@ for token in [
     "run-manifest.json",
     '"name": "S"',
     '"scenario": "w1-business-smoke"',
-    '"vus": 2',
+    '"vus": 1',
     "PASS: M8 W1 exercised list/detail",
 ]:
     require(w1_runner, token, "W1 runner contract")
