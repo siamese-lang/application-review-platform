@@ -46,6 +46,7 @@ const nonFileErrors = new Rate('m8_non_file_errors');
 const nonFileDuration = new Trend('m8_non_file_duration', true);
 
 export const options = {
+  noCookiesReset: true,
   scenarios: {
     list_detail: {
       executor: 'constant-vus',
