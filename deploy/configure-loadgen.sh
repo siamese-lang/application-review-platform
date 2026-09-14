@@ -22,7 +22,7 @@ source "$root/workload/tool-versions.env"
 : "${K6_LINUX_AMD64_DEB_SHA256:?Missing k6 checksum in workload/tool-versions.env}"
 
 loadgen_json=$(tofu -chdir="$root/infra/opentofu" output -json loadgen)
-inventory_file=$(mktemp)
+inventory_file=$(mktemp --suffix=.yml)
 trap 'rm -f "$inventory_file"' EXIT
 
 python3 - "$loadgen_json" >"$inventory_file" <<'PY'
