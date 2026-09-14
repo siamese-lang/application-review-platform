@@ -18,7 +18,7 @@ grep -Fq 'cpus: "{{ loki_cpu_limit }}"' "$tasks"
 grep -Fq '/srv/observability/loki:/var/lib/loki' "$tasks"
 
 grep -Fq 'http_listen_address: 10.40.0.60' "$config"
-grep -Fq 'grpc_listen_address: 127.0.0.1' "$config"
+grep -Fq 'grpc_listen_address: 10.40.0.60' "$config"
 grep -Fq 'store: tsdb' "$config"
 grep -Fq 'object_store: filesystem' "$config"
 grep -Fq 'schema: v13' "$config"
