@@ -305,6 +305,9 @@ for forbidden in [
     if forbidden in w2_runner:
         raise SystemExit(f"W2 runner must not contain: {forbidden}")
 
+if re.search(r'\$\{ssh_db\[@\]\}.*\s-c\s', w2_runner):
+    raise SystemExit("W2 remote psql must send SQL over stdin instead of ssh -c arguments")
+
 subprocess.run(
     ["node", "--check", str(ROOT / "workload/k6/w2-baseline.js")],
     check=True,

@@ -152,13 +152,15 @@ cat "$overlay" |
 
 echo "STEP: verify and reset pg_stat_statements"
 extension_count=$(
-  "${ssh_db[@]}" sudo -u postgres psql -d arp     --tuples-only --no-align     -c "SELECT count(*) FROM pg_extension WHERE extname='pg_stat_statements';"
+  printf '%s\n' "SELECT count(*) FROM pg_extension WHERE extname='pg_stat_statements';" |
+    "${ssh_db[@]}" sudo -u postgres psql -d arp --tuples-only --no-align
 )
 [[ $extension_count == 1 ]] || {
   echo "ERROR: pg_stat_statements extension is not active in arp." >&2
   exit 1
 }
-"${ssh_db[@]}" sudo -u postgres psql -d arp   -v ON_ERROR_STOP=1   -c "SELECT pg_stat_statements_reset();" >/dev/null
+printf '%s\n' "SELECT pg_stat_statements_reset();" |
+  "${ssh_db[@]}" sudo -u postgres psql -d arp -v ON_ERROR_STOP=1 >/dev/null
 
 backend_state=$(
   "${ssh_common[@]}" "$ARP_OSLOGIN_USER@$app_ip"     sudo cat /opt/arp/release-state/backend.json
@@ -231,23 +233,26 @@ echo "STEP: run W2 mixed normal baseline"
 finished_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
 echo "STEP: retain pg_stat_statements top query snapshot"
-"${ssh_db[@]}" sudo -u postgres psql -d arp --csv -v ON_ERROR_STOP=1   -c "SELECT
-        s.queryid,
-        s.calls,
-        round(s.total_exec_time::numeric, 3) AS total_exec_time_ms,
-        round(s.mean_exec_time::numeric, 3) AS mean_exec_time_ms,
-        s.rows,
-        s.shared_blks_hit,
-        s.shared_blks_read,
-        s.temp_blks_read,
-        s.temp_blks_written,
-        regexp_replace(s.query, E'[\\n\\r\\t ]+', ' ', 'g') AS normalized_query
-      FROM pg_stat_statements s
-      JOIN pg_roles r ON r.oid = s.userid
-      WHERE r.rolname = 'arp_app'
-        AND s.dbid = (SELECT oid FROM pg_database WHERE datname = 'arp')
-      ORDER BY s.total_exec_time DESC
-      LIMIT 20;" > "$run_dir/pg-stat-statements-top20.csv"
+cat <<'SQL' |
+SELECT
+  s.queryid,
+  s.calls,
+  round(s.total_exec_time::numeric, 3) AS total_exec_time_ms,
+  round(s.mean_exec_time::numeric, 3) AS mean_exec_time_ms,
+  s.rows,
+  s.shared_blks_hit,
+  s.shared_blks_read,
+  s.temp_blks_read,
+  s.temp_blks_written,
+  regexp_replace(s.query, E'[\\n\\r\\t ]+', ' ', 'g') AS normalized_query
+FROM pg_stat_statements s
+JOIN pg_roles r ON r.oid = s.userid
+WHERE r.rolname = 'arp_app'
+  AND s.dbid = (SELECT oid FROM pg_database WHERE datname = 'arp')
+ORDER BY s.total_exec_time DESC
+LIMIT 20;
+SQL
+  "${ssh_db[@]}" sudo -u postgres psql -d arp --csv -v ON_ERROR_STOP=1 > "$run_dir/pg-stat-statements-top20.csv"
 
 python3 -   "$run_dir/run-manifest.json"   "$run_id"   "$actual_sha"   "$release_sha"   "$backend_release_sha"   "$frontend_release_sha"   "$ARP_M8_W2_DATASET_MANIFEST_SHA"   "$overlay_sha"   "$K6_VERSION"   "$started_at"   "$finished_at"   "$fixture_sha" <<'PY'
 import json
