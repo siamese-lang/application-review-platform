@@ -182,7 +182,9 @@ def classify(paths: set[str], *, force_full: bool = False) -> dict[str, bool]:
     }
 
     if full:
-        return {key: True for key in OUTPUTS}
+        full_flags = {key: True for key in OUTPUTS}
+        full_flags["release_publish"] = release_material
+        return full_flags
     return flags
 
 
@@ -220,7 +222,8 @@ def self_test() -> None:
     assert not infra["release_publish"]
 
     full = classify({".github/workflows/baseline-ci.yml"})
-    assert all(full.values())
+    assert all(value for key, value in full.items() if key != "release_publish")
+    assert not full["release_publish"]
 
     print("baseline CI changed-path classifier: PASS")
 
