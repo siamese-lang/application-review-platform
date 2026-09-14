@@ -29,6 +29,8 @@ jobs:
       - name: Validate M8 Phase 1 workload foundation
         run: |
           python3 scripts/workload/test-m8-workload-foundation.py
+          python3 scripts/workload/test-m8-loadgen-config.py
+          bash -n deploy/m8-loadgen-preflight.sh deploy/configure-loadgen.sh
           node --check workload/k6/foundation-smoke.js
 
   m7-observability-infrastructure-static:
@@ -626,6 +628,7 @@ jobs:
         run: |
           ansible-playbook --inventory inventory/example.yml site.yml --syntax-check
           ansible-playbook --inventory 'localhost,' bootstrap-ops.yml --syntax-check
+          ansible-playbook --inventory 'loadgen,' loadgen.yml --syntax-check
           ansible-playbook --inventory inventory/example.yml release.yml --syntax-check \
             --extra-vars 'arp_release_sha=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa arp_release_bundle_dir=/tmp/bundle'
           ansible-playbook --inventory inventory/example.yml rollback.yml --syntax-check \
