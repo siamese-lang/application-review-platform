@@ -136,7 +136,7 @@ test('public applicant flow and reviewer workflow run against the real stack', a
   const revisionReason = 'Please clarify the implementation schedule.'
   await page.getByLabel('처리 사유').fill(revisionReason)
   await page.getByRole('button', { name: '보완 요청 보내기' }).click()
-  await expect(page.getByRole('heading', { name: '심사 업무' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '심사 업무', exact: true })).toBeVisible()
   await expect(page.getByText('보완을 요청했습니다.')).toBeVisible()
   await logout(page)
 
