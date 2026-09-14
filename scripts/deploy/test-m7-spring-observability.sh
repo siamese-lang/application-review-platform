@@ -12,6 +12,7 @@ alloy_unit="$root/config/ansible/roles/alloy/templates/alloy.service.j2"
 https_site="$root/config/ansible/roles/edge/templates/arp.conf.j2"
 http_site="$root/config/ansible/roles/edge/templates/arp-http.conf.j2"
 edge_role="$root/config/ansible/roles/edge"
+request_log="$root/app/src/main/java/com/siameselang/arp/observability/RequestLoggingFilter.java"
 
 grep -Fq '<artifactId>spring-boot-starter-actuator</artifactId>' "$pom"
 grep -Fq '<artifactId>micrometer-registry-prometheus</artifactId>' "$pom"
@@ -60,6 +61,15 @@ grep -Fq 'dest: /etc/alloy/app-logs.alloy' "$alloy_tasks"
 grep -Fq "when: alloy_node_role == 'app'" "$alloy_tasks"
 grep -Fq "{% elif alloy_node_role in ['app', 'storage'] %}" "$alloy_unit"
 grep -Fq 'SupplementaryGroups=adm systemd-journal' "$alloy_unit"
+
+grep -Fq 'MDC.put("requestId", requestId)' "$request_log"
+grep -Fq 'request.getRequestURI()' "$request_log"
+grep -Fq 'tracer.currentSpan()' "$request_log"
+grep -Fq 'http_request method={} path={} status={} durationMs={} requestId={} traceId={} spanId={}' "$request_log"
+if grep -Eq 'getQueryString\(|getParameter\(|getReader\(|getInputStream\(' "$request_log"; then
+  echo 'Application request logs must not read query strings, request parameters, or request bodies.' >&2
+  exit 1
+fi
 
 if grep -Eq 'traceId.*target_label|spanId.*target_label|requestId.*target_label' "$app_logs"; then
   echo 'Correlation identifiers must stay in log content, not Loki labels.' >&2
