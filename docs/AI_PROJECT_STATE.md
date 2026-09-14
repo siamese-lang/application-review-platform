@@ -38,15 +38,15 @@ Current active plan:
 
 `docs/plans/active/M8-workload.md`
 
-Planning base:
+Current verified main:
 
-`320fdbe5d8c8d90c50d5c6aeac61f8994fcd3c8e`
+`b9bfff92ded572eefcdf4281d0a506a021392f72`
 
-M7 closeout PR #93 merged at that SHA.
+M8 Phase 1 repository foundation is complete.
 
 Post-merge `main` baseline CI:
 
-- run `34857098170`;
+- run `34862295776`;
 - status: completed;
 - conclusion: SUCCESS.
 
@@ -129,20 +129,22 @@ A negative finding is valid evidence.
 
 ## Immediate next work
 
-Proceed to **M8 Phase 1 — Repository workload foundation** only.
+Proceed to **M8 Phase 2 — Deterministic synthetic dataset tooling** only.
 
-First incomplete implementation slice:
+Current implementation slice:
 
-1. add the minimum repository model for temporary cross-region `loadgen-01`;
-2. preserve all eight persistent Seoul nodes exactly;
-3. add repository-owned k6 workload/run-manifest skeleton;
-4. add focused static validation for placement, isolation, and no-secret boundaries;
-5. do not apply live GCP changes;
-6. do not generate dataset M yet;
-7. do not run a performance test.
+1. generate S/M/L database-scale fixture bundles from a fixed seed;
+2. preserve the current Flyway schema and allowed application state-transition paths;
+3. keep legacy `title/content` synchronized with M5 structured application fields;
+4. provide guarded M8-namespace reset/load and verification SQL;
+5. verify byte-identical regeneration and referential/state/history/version invariants in CI;
+6. verify the generator field pattern through the real Spring application API integration boundary;
+7. do not load dataset M into the live runtime yet;
+8. do not create `loadgen-01` yet;
+9. do not run W1/W2 or performance tuning.
 
-This is a substantive multi-file slice. After the M8 plan PR is merged and CI is green,
-Codex may own that implementation slice under the committed plan.
+After Phase 2 exact-head and post-merge CI pass, proceed to Phase 3 live quota/plan review and
+dataset/loadgen preparation.
 
 ## Do not revisit unless new evidence requires it
 
@@ -159,5 +161,5 @@ Codex may own that implementation slice under the committed plan.
 > 먼저 `AGENTS.md`, `docs/AI_PROJECT_STATE.md`, 현재 active plan만 읽고 repository
 > 실제 상태를 source of truth로 사용하라.  
 > 완료된 milestone을 재검토하지 마라.  
-> M8 active plan의 첫 미완료 Phase 1 작업부터 진행하라.  
+> M8 active plan의 첫 미완료 Phase 2 작업부터 진행하라.  
 > M9 최적화나 speculative tuning을 M8로 끌어오지 마라.

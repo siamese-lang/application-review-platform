@@ -48,3 +48,37 @@ runs. `run-manifest.example.json` uses sentinel values and is not measurement ev
 
 A retained run must record the exact source/release identity, dataset seed/version,
 load-generator placement, workload profile, runtime identity, and timestamps.
+
+## Deterministic dataset bundles
+
+Phase 2 adds repository-owned bulk fixture generation for database scale.
+
+Profiles are frozen in `datasets/profiles.json`:
+
+- S: 10,000 applications;
+- M: 100,000 applications;
+- L: 500,000 applications.
+
+Generate a bundle without touching a database:
+
+```bash
+python3 scripts/workload/generate-synthetic-dataset.py \
+  --profile S \
+  --seed 20260914 \
+  --output build/workload/S
+```
+
+Each bundle contains programs, non-login synthetic users, applications, status histories,
+audit events, a guarded `load.sql`, a `verify.sql`, and a manifest with row counts and
+SHA-256 values.
+
+The generated namespace uses IDs from 8,000,000,000 through 8,999,999,999. The loader
+refuses to proceed without an explicit psql confirmation variable and checks for namespace
+collisions before deleting only M8-owned rows.
+
+Bulk-generated users intentionally cannot authenticate. Real session/CSRF workload users
+remain runtime-managed synthetic accounts. This prevents committed dataset artifacts from
+containing reusable credentials.
+
+Phase 2 does not seed attachment objects. The 5% attachment workload uses bounded runtime
+fixtures later, so database scale generation does not pretend that Garage object data exists.

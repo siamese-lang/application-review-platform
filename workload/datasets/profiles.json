@@ -1,0 +1,20 @@
+{
+  "S": {
+    "applications": 10000,
+    "applicants": 100,
+    "reviewers": 12,
+    "programs": 12
+  },
+  "M": {
+    "applications": 100000,
+    "applicants": 1000,
+    "reviewers": 48,
+    "programs": 12
+  },
+  "L": {
+    "applications": 500000,
+    "applicants": 5000,
+    "reviewers": 96,
+    "programs": 12
+  }
+}
