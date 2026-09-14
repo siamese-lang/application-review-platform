@@ -3,8 +3,16 @@ set -euo pipefail
 umask 077
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-readonly PROFILE=M
+readonly PROFILE="${ARP_M8_DATASET_PROFILE:-M}"
 readonly SEED=20260914
+
+case "$PROFILE" in
+  S|M) ;;
+  *)
+    echo "ERROR: ARP_M8_DATASET_PROFILE must be S or M for live M8 workload preparation." >&2
+    exit 1
+    ;;
+esac
 
 : "${ARP_EXPECTED_SOURCE_SHA:?Set ARP_EXPECTED_SOURCE_SHA to the reviewed 40-character main SHA}"
 [[ $ARP_EXPECTED_SOURCE_SHA =~ ^[0-9a-f]{40}$ ]] || {
@@ -31,29 +39,42 @@ for command in python3 tar tofu ssh sudo; do
 done
 
 if [[ -z ${ARP_OSLOGIN_USER:-} || -z ${ARP_OSLOGIN_SSH_KEY:-} || -z ${ARP_OSLOGIN_KNOWN_HOSTS:-} ]]; then
-  bundle_dir=$(mktemp -d /tmp/arp-m8-dataset-M.XXXXXX)
+  bundle_dir=$(mktemp -d /tmp/arp-m8-dataset-${PROFILE}.XXXXXX)
   trap 'rm -rf "$bundle_dir"' EXIT
 
   python3 "$root/scripts/workload/generate-synthetic-dataset.py"     --profile "$PROFILE"     --seed "$SEED"     --output "$bundle_dir"
 
-  python3 - "$bundle_dir/dataset-manifest.json" <<'PY'
+  python3 - "$bundle_dir/dataset-manifest.json" "$PROFILE" <<'PY'
 import hashlib
 import json
 import sys
 from pathlib import Path
 
 manifest_path = Path(sys.argv[1])
+profile = sys.argv[2]
 manifest_bytes = manifest_path.read_bytes()
 manifest = json.loads(manifest_bytes)
-expected = {
-    "profile": "M",
-    "seed": 20260914,
-    "applications": 100000,
-    "application_status_history": 399990,
-    "audit_events": 499990,
-    "users": 1048,
-    "programs": 12,
+expected_by_profile = {
+    "S": {
+        "profile": "S",
+        "seed": 20260914,
+        "applications": 10000,
+        "application_status_history": 39990,
+        "audit_events": 49990,
+        "users": 112,
+        "programs": 12,
+    },
+    "M": {
+        "profile": "M",
+        "seed": 20260914,
+        "applications": 100000,
+        "application_status_history": 399990,
+        "audit_events": 499990,
+        "users": 1048,
+        "programs": 12,
+    },
 }
+expected = expected_by_profile[profile]
 actual = {
     "profile": manifest.get("profile"),
     "seed": manifest.get("seed"),
@@ -64,16 +85,19 @@ actual = {
     "programs": manifest.get("counts", {}).get("programs"),
 }
 if actual != expected:
-    raise SystemExit(f"Unexpected generated M manifest: {actual!r}")
+    raise SystemExit(f"Unexpected generated {profile} manifest: {actual!r}")
 if manifest.get("bulk_users_login_enabled") is not False:
     raise SystemExit("M8 bulk users must remain non-login fixtures")
 if manifest.get("attachments_seeded") is not False:
-    raise SystemExit("M8 M dataset must not claim attachment objects were seeded")
+    raise SystemExit("M8 bulk datasets must not claim attachment objects were seeded")
 manifest_sha256 = hashlib.sha256(manifest_bytes).hexdigest()
 print(
     "M8_DATASET_MANIFEST_OK "
-    "profile=M seed=20260914 applications=100000 histories=399990 "
-    "audits=499990 users=1048 programs=12 "
+    f"profile={profile} seed=20260914 "
+    f"applications={expected['applications']} "
+    f"histories={expected['application_status_history']} "
+    f"audits={expected['audit_events']} "
+    f"users={expected['users']} programs={expected['programs']} "
     f"manifest_sha256={manifest_sha256}"
 )
 PY
@@ -117,8 +141,8 @@ ssh_cmd=(
   "$ARP_OSLOGIN_USER@$db_ip"
 )
 
-remote_dir=$("${ssh_cmd[@]}" sudo -u postgres mktemp -d /tmp/arp-m8-dataset-M.XXXXXX)
-[[ $remote_dir == /tmp/arp-m8-dataset-M.* ]] || {
+remote_dir=$("${ssh_cmd[@]}" sudo -u postgres mktemp -d /tmp/arp-m8-dataset-${PROFILE}.XXXXXX)
+[[ $remote_dir == /tmp/arp-m8-dataset-${PROFILE}.* ]] || {
   echo "ERROR: unexpected remote dataset directory: $remote_dir" >&2
   exit 1
 }
@@ -149,4 +173,4 @@ SELECT 'programs=' || count(*) FROM programs WHERE id BETWEEN 8000000001 AND 809
 SQL
 REMOTE
 
-echo 'PASS: M8 dataset M generated, guarded-load applied, and generated invariants verified.'
+echo "PASS: M8 dataset $PROFILE generated, guarded-load applied, and generated invariants verified."

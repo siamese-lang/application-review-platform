@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -130,6 +131,82 @@ for token in [
 for forbidden in ["application_id", "request_id", "user_id", "username"]:
     if forbidden in smoke.lower():
         raise SystemExit(f"high-cardinality identifier must not appear in k6 tags: {forbidden}")
+
+w1 = read("workload/k6/w1-smoke.js")
+w1_runner = read("workload/run-w1.sh")
+for token in [
+    "executor: 'per-vu-iterations'",
+    "vus: 1",
+    "iterations: 1",
+    "maxDuration: '2m'",
+    "checks: ['rate==1']",
+    "http_req_failed: ['rate==0']",
+    "systemTags:",
+    "endpoint_family",
+    "'list-detail'",
+    "'create-save'",
+    "'submit-resubmit'",
+    "'reviewer-queue-detail'",
+    "'review-action'",
+    "'attachment'",
+    "/api/v1/auth/csrf",
+    "/api/v1/auth/login",
+    "/api/v1/programs/8000000001",
+    "/api/v1/applications",
+    "/api/v1/review/applications",
+    "http.file(",
+    "attachment cleanup succeeds",
+    "request-revision",
+    "/approve",
+]:
+    require(w1, token, "W1 k6 correctness contract")
+
+system_tags = w1.split("systemTags:", 1)[1].split("],", 1)[0]
+if "'url'" in system_tags or '"url"' in system_tags:
+    raise SystemExit("W1 must exclude the dynamic URL system tag to avoid id cardinality")
+
+for token in [
+    "ARP_EXPECTED_SOURCE_SHA",
+    "SYNTHETIC_APPLICANT_PASSWORD",
+    "SYNTHETIC_REVIEWER_PASSWORD",
+    "ARP_M8_DATASET_PROFILE=S",
+    "ARP_CONFIRM_M8_DATASET_RESET",
+    "with-oslogin-ssh.py",
+    "--ttl-seconds 1800",
+    "output -json loadgen",
+    "output -raw edge_public_ip",
+    "/opt/arp/release-state/backend.json",
+    "/opt/arp/release-state/frontend.json",
+    "StrictHostKeyChecking=yes",
+    "IFS= read -r APPLICANT_PASSWORD",
+    "IFS= read -r REVIEWER_PASSWORD",
+    "--summary-export summary.json",
+    "run-manifest.json",
+    '"name": "S"',
+    '"scenario": "w1-business-smoke"',
+    '"vus": 1',
+    "PASS: M8 W1 exercised list/detail",
+]:
+    require(w1_runner, token, "W1 runner contract")
+
+for forbidden in [
+    "StrictHostKeyChecking=no",
+    "tofu apply",
+    "gcloud compute instances create",
+    "-e APPLICANT_PASSWORD=",
+    "-e REVIEWER_PASSWORD=",
+]:
+    if forbidden in w1_runner:
+        raise SystemExit(f"W1 runner must not contain: {forbidden}")
+
+subprocess.run(
+    ["node", "--check", str(ROOT / "workload/k6/w1-smoke.js")],
+    check=True,
+)
+subprocess.run(
+    ["bash", "-n", str(ROOT / "workload/run-w1.sh")],
+    check=True,
+)
 
 manifest = json.loads(read("workload/run-manifest.example.json"))
 schema = json.loads(read("workload/run-manifest.schema.json"))

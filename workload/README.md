@@ -82,3 +82,41 @@ containing reusable credentials.
 
 Phase 2 does not seed attachment objects. The 5% attachment workload uses bounded runtime
 fixtures later, so database scale generation does not pretend that Garage object data exists.
+
+
+## W1 workload harness smoke
+
+`k6/w1-smoke.js` is the Phase 4 correctness smoke. It is deliberately not a performance
+baseline.
+
+The repository-owned entrypoint is:
+
+```bash
+bash workload/run-w1.sh
+```
+
+The operator environment must already provide:
+
+- `ARP_EXPECTED_SOURCE_SHA` for the exact reviewed checkout;
+- `ARP_CONFIRM_M8_DATASET_RESET=yes`;
+- `SYNTHETIC_APPLICANT_PASSWORD` for `m6-applicant`;
+- `SYNTHETIC_REVIEWER_PASSWORD` for `m6-reviewer`.
+
+The runner:
+
+- replaces only the M8 synthetic workload dataset with deterministic profile S / seed
+  `20260914`;
+- verifies the resulting dataset manifest before requesting the W1 SSH key;
+- reads the live backend/frontend release identity from the retained release-state files;
+- transfers only the W1 script and bounded attachment fixture to `loadgen-01`;
+- passes synthetic passwords over SSH stdin and does not persist them in workload artifacts;
+- runs one VU for one full business-flow iteration with a two-minute maximum;
+- exercises list/detail, create/save, submit/resubmit, reviewer queue/detail, review actions,
+  and attachment upload/download;
+- excludes the dynamic URL system tag so application IDs do not become k6 metric labels;
+- writes a run manifest, sanitized k6 console output, and k6 summary under
+  `build/workload/runs/<run-id>/`.
+
+W1 uses thresholds only to prove harness correctness: all checks must pass and HTTP request
+failures must remain zero. Do not interpret W1 latency as performance evidence. W2 owns the
+representative M-dataset baseline.
