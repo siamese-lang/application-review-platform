@@ -427,21 +427,29 @@ Done condition:
 
 ### Phase 3 — Live loadgen and dataset M preparation
 
-Status: **ACTIVE**
+Status: **COMPLETE**
 
 Live checkpoint:
 
-- reviewed main `ce7c84832b4bbe55c8db45a3cb6219fb8183a611`;
-- post-merge baseline CI run `34867556825`: SUCCESS;
-- Tokyo read-only preflight passed;
-- project-wide E2 vCPU quota: limit 12, usage 9 before loadgen;
-- exact reviewed OpenTofu delta: `4 to add, 0 to change, 0 to destroy`;
-- applied delta created only the temporary Tokyo subnet/router/NAT/`loadgen-01`;
-- `loadgen-01`: RUNNING, `e2-standard-2`, `10.50.0.10`, no public access configuration;
-- repository-owned loadgen configuration completed successfully;
-- pinned k6 metadata/download checksum/installed-version assertions passed;
-- loadgen play recap: `ok=8 changed=2 unreachable=0 failed=0`;
-- dataset M live load remains pending.
+- temporary Tokyo `loadgen-01` is RUNNING as `e2-standard-2` at `10.50.0.10`
+  with no public access configuration;
+- repository-owned loadgen configuration completed with pinned k6 `2.2.0` verification;
+- deterministic dataset M seed `20260914` loaded successfully;
+- retained dataset manifest SHA-256:
+  `9e174ead7c9ae7b77d5adc18c93e336b4cac5e30b5962bf47c31de4f42bea696`;
+- verified M8 namespace counts:
+  - programs: 12;
+  - users: 1,048;
+  - applications: 100,000;
+  - application status history: 399,990;
+  - audit events: 499,990;
+- deployed API verification passed against bulk program `8000000001` using real HTTPS,
+  session, and CSRF behavior; a structured M8-pattern DRAFT was created and read back;
+- pre-workload telemetry health passed:
+  - application private probe `probe_success=1`;
+  - Spring HTTP request telemetry present;
+  - PostgreSQL exporter `pg_up=1`;
+- no performance tuning or conclusion was made in Phase 3.
 
 Sequence:
 
@@ -459,9 +467,18 @@ No performance conclusion yet.
 
 ### Phase 4 — Smoke and normal baseline
 
-Status: PLANNED
+Status: **ACTIVE**
 
 Run W1, then W2.
+
+Immediate next boundary:
+
+- implement/verify W1 harness correctness on dataset S;
+- 1–2 VU, short bounded duration;
+- real public edge and real session/CSRF;
+- exercise each frozen workload family at least once;
+- retain a run manifest and sanitized result;
+- do not interpret W1 as performance evidence.
 
 Retain:
 
