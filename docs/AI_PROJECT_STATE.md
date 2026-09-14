@@ -40,13 +40,13 @@ Current active plan:
 
 Current verified main:
 
-`28ddd06c31045d75368181a49474825b48639435`
+`faf46c4c8256c9921a7aa6da37902b2d3dc53dbf`
 
 M8 Phase 1, Phase 2, and Phase 3 are complete. Phase 4 is active.
 
-Post-merge `main` baseline CI:
+Latest verified post-merge `main` baseline CI before this W2 implementation branch:
 
-- run `34875109606`;
+- run `34879613628`;
 - status: completed;
 - conclusion: SUCCESS.
 
@@ -154,26 +154,32 @@ A negative finding is valid evidence.
 
 ## Immediate next work
 
-Continue **M8 Phase 4 — Smoke and normal baseline**.
+Continue **M8 Phase 4 — W2 mixed normal baseline**.
 
-Completed Phase 3 gates:
+W1 is complete and must not be repeated absent new evidence.
 
-1. trusted private access to `loadgen-01`;
-2. pinned k6 `2.2.0` installed and verified;
-3. deterministic dataset M loaded and invariant-verified;
-4. deployed API compatibility verified against bulk M8 data through real HTTPS/session/CSRF;
-5. pre-workload Prometheus/Loki/Tempo readiness and core app/DB telemetry verified.
+Verified W1:
+
+- run ID `m8-w1-20260914T181710Z-faf46c4c`;
+- dataset S / seed `20260914`;
+- source `faf46c4c8256c9921a7aa6da37902b2d3dc53dbf`;
+- backend release `cea4ca09d05efd89bcb9227c866d841968c08547`;
+- frontend release `549511b0a8af9582125e89aaa2bde7fc4bffcd6d`;
+- all frozen workload families passed through the real HTTPS/session/CSRF boundary;
+- W1 timing is not performance evidence.
 
 Immediate next slice:
 
-1. inspect the current k6 harness skeleton and exact API/security contract;
-2. implement the smallest W1 scenario that exercises every frozen workload family;
-3. use dataset S, 1–2 VU, short bounded duration, and real public edge;
-4. retain exact run metadata and sanitized k6 output;
-5. treat W1 as harness correctness only;
-6. proceed to W2 only after W1 passes.
+1. review/merge the focused W2 implementation PR;
+2. restore deterministic M dataset / seed `20260914`;
+3. apply the repository-owned interactive DRAFT overlay;
+4. reset `pg_stat_statements`;
+5. run the fixed 30-VU / 15-minute mixed baseline from Tokyo;
+6. retain k6/run-manifest/query-statistics evidence;
+7. correlate the result with M7 telemetry;
+8. decide from evidence whether W3/W4 is useful.
 
-Do not run W2, W3, stress progression, or performance tuning before W1 correctness is proven.
+Do not optimize, resize business nodes, add indexes/cache/queue, or begin M9 during W2.
 
 ## Do not revisit unless new evidence requires it
 
