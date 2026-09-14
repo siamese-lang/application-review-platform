@@ -161,7 +161,7 @@ test('public applicant flow and reviewer workflow run against the real stack', a
   await page.getByRole('button', { name: '심사 시작' }).click()
   await expect(page.getByText('심사 중', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: '승인' }).click()
-  await expect(page.getByRole('heading', { name: '심사 업무' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '심사 업무', exact: true })).toBeVisible()
   await expect(page.getByText('신청을 승인했습니다.')).toBeVisible()
   await logout(page)
 
