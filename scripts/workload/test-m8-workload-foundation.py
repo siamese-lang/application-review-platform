@@ -179,6 +179,7 @@ for token in [
     "/opt/arp/release-state/backend.json",
     "/opt/arp/release-state/frontend.json",
     "component_releases",
+    '"$backend_release_sha"   "$frontend_release_sha"',
     "W1_BACKEND_RELEASE_SHA",
     "W1_FRONTEND_RELEASE_SHA",
     "StrictHostKeyChecking=yes",
