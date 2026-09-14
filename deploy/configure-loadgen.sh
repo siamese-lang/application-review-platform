@@ -50,4 +50,5 @@ print(f"          garage_zone: {loadgen['zone']}")
 PY
 
 cd "$root/config/ansible"
+ansible-galaxy collection install -r requirements.yml
 "$root/deploy/with-oslogin-ssh.py" --   ansible-playbook   --inventory "$inventory_file"   loadgen.yml   --extra-vars "k6_version=$K6_VERSION"   --extra-vars "k6_linux_amd64_deb_sha256=$K6_LINUX_AMD64_DEB_SHA256"
