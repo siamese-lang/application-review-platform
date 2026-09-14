@@ -5,12 +5,67 @@ on:
     branches: [main]
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      m1_application: ${{ steps.classify.outputs.m1_application }}
+      m4_infrastructure_static: ${{ steps.classify.outputs.m4_infrastructure_static }}
+      m5_frontend: ${{ steps.classify.outputs.m5_frontend }}
+      m5_browser_e2e: ${{ steps.classify.outputs.m5_browser_e2e }}
+      m5_nginx_routing: ${{ steps.classify.outputs.m5_nginx_routing }}
+      m6_phase4a_repository_preflight: ${{ steps.classify.outputs.m6_phase4a_repository_preflight }}
+      m6_delivery_workflow_static: ${{ steps.classify.outputs.m6_delivery_workflow_static }}
+      m6_release_bundle: ${{ steps.classify.outputs.m6_release_bundle }}
+      m6_release_install: ${{ steps.classify.outputs.m6_release_install }}
+      m7_observability_infrastructure_static: ${{ steps.classify.outputs.m7_observability_infrastructure_static }}
+      m8_workload_foundation_static: ${{ steps.classify.outputs.m8_workload_foundation_static }}
+      m8_dataset_tooling_static: ${{ steps.classify.outputs.m8_dataset_tooling_static }}
+      release_publish: ${{ steps.classify.outputs.release_publish }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Self-test changed-path classifier
+        run: python3 scripts/ci/classify-baseline-ci.py --self-test
+      - name: Classify affected CI jobs
+        id: classify
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_HEAD: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          case "$EVENT_NAME" in
+            workflow_dispatch)
+              printf '' | python3 scripts/ci/classify-baseline-ci.py --force-full
+              ;;
+            pull_request)
+              git diff --name-only "$PR_BASE" "$PR_HEAD" | python3 scripts/ci/classify-baseline-ci.py
+              ;;
+            push)
+              if [[ ! "$PUSH_BEFORE" =~ ^[0-9a-f]{40}$ || "$PUSH_BEFORE" == "0000000000000000000000000000000000000000" ]]; then
+                printf '' | python3 scripts/ci/classify-baseline-ci.py --force-full
+              else
+                git diff --name-only "$PUSH_BEFORE" "$PUSH_HEAD" | python3 scripts/ci/classify-baseline-ci.py
+              fi
+              ;;
+            *)
+              echo "Unsupported event: $EVENT_NAME" >&2
+              exit 1
+              ;;
+          esac
   m8-dataset-tooling-static:
+    needs: changes
+    if: needs.changes.outputs.m8_dataset_tooling_static == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,6 +81,8 @@ jobs:
             scripts/workload/test-m8-live-dataset-load.py
 
   m8-workload-foundation-static:
+    needs: changes
+    if: needs.changes.outputs.m8_workload_foundation_static == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,6 +94,8 @@ jobs:
           node --check workload/k6/foundation-smoke.js
 
   m7-observability-infrastructure-static:
+    needs: changes
+    if: needs.changes.outputs.m7_observability_infrastructure_static == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -44,6 +103,8 @@ jobs:
         run: bash scripts/deploy/test-m7-observability-infrastructure.sh
 
   m6-phase4a-repository-preflight:
+    needs: changes
+    if: needs.changes.outputs.m6_phase4a_repository_preflight == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -53,6 +114,8 @@ jobs:
           bash -n deploy/m6-runtime-preflight.sh deploy/tofu-bootstrap-plan.sh deploy/tofu-init-plan.sh deploy/bootstrap-synthetic-users.sh deploy/prepare-secrets.sh
 
   m6-delivery-workflow-static:
+    needs: changes
+    if: needs.changes.outputs.m6_delivery_workflow_static == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -64,6 +127,8 @@ jobs:
           bash -n scripts/deploy/stage-release-on-ops.sh scripts/deploy/test-stage-release-on-ops.sh
 
   m5-frontend:
+    needs: changes
+    if: needs.changes.outputs.m5_frontend == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -85,7 +150,12 @@ jobs:
         run: npm run build
 
   m5-browser-e2e:
-    needs: [m1-application, m5-frontend]
+    if: >-
+      always() &&
+      needs.changes.outputs.m5_browser_e2e == 'true' &&
+      needs.m1-application.result == 'success' &&
+      needs.m5-frontend.result == 'success'
+    needs: [changes, m1-application, m5-frontend]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     services:
@@ -205,7 +275,12 @@ jobs:
           fi
 
   m5-nginx-routing:
-    needs: [m1-application, m5-frontend]
+    if: >-
+      always() &&
+      needs.changes.outputs.m5_nginx_routing == 'true' &&
+      needs.m1-application.result == 'success' &&
+      needs.m5-frontend.result == 'success'
+    needs: [changes, m1-application, m5-frontend]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:
@@ -293,7 +368,12 @@ jobs:
 
 
   m6-release-bundle:
-    needs: [m1-application, m5-frontend]
+    if: >-
+      always() &&
+      needs.changes.outputs.m6_release_bundle == 'true' &&
+      needs.m1-application.result == 'success' &&
+      needs.m5-frontend.result == 'success'
+    needs: [changes, m1-application, m5-frontend]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -346,6 +426,8 @@ jobs:
           retention-days: 7
 
   m6-release-install:
+    needs: changes
+    if: needs.changes.outputs.m6_release_install == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -367,32 +449,32 @@ jobs:
 
   m6-release-scope:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: changes
     runs-on: ubuntu-latest
     outputs:
       publish: ${{ steps.scope.outputs.publish }}
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-      - name: Determine whether the main revision changes deployable/runtime material
+      - name: Use affected-path release scope
         id: scope
         shell: bash
-        run: |
-          set -euo pipefail
-          before="${{ github.event.before }}"
-          if [[ ! "$before" =~ ^[0-9a-f]{40}$ || "$before" == "0000000000000000000000000000000000000000" ]]; then
-            echo "publish=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          if git diff --quiet "$before" "$GITHUB_SHA" -- . ':(exclude)docs/**' ':(exclude)README.md'; then
-            echo "publish=false" >> "$GITHUB_OUTPUT"
-            echo "Only docs/README changed; no new runtime release will be published."
-          else
-            echo "publish=true" >> "$GITHUB_OUTPUT"
-          fi
+        run: echo "publish=${{ needs.changes.outputs.release_publish }}" >> "$GITHUB_OUTPUT"
 
   m6-release-publish:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.m6-release-scope.outputs.publish == 'true'
+    if: >-
+      always() &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      needs.m6-release-scope.result == 'success' &&
+      needs.m6-release-scope.outputs.publish == 'true' &&
+      needs.repository-baseline.result == 'success' &&
+      needs.m1-application.result == 'success' &&
+      needs.m5-frontend.result == 'success' &&
+      needs.m5-browser-e2e.result == 'success' &&
+      needs.m5-nginx-routing.result == 'success' &&
+      needs.m6-release-bundle.result == 'success' &&
+      needs.m6-release-install.result == 'success' &&
+      (needs.m4-infrastructure-static.result == 'success' || needs.m4-infrastructure-static.result == 'skipped') &&
+      (needs.m7-observability-infrastructure-static.result == 'success' || needs.m7-observability-infrastructure-static.result == 'skipped')
     needs:
       - m6-release-scope
       - repository-baseline
@@ -495,6 +577,8 @@ jobs:
       - name: Verify M0 repository baseline
         run: bash scripts/verify-repo-baseline.sh
   m1-application:
+    needs: changes
+    if: needs.changes.outputs.m1_application == 'true'
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -597,6 +681,8 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
   m4-infrastructure-static:
+    needs: changes
+    if: needs.changes.outputs.m4_infrastructure_static == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
