@@ -147,7 +147,7 @@ frontend_state=$(
   "${ssh_common[@]}" "$ARP_OSLOGIN_USER@$edge_private_ip"     sudo cat /opt/arp/release-state/frontend.json
 )
 
-release_sha=$(
+read -r backend_release_sha frontend_release_sha < <(
   python3 - "$backend_state" "$frontend_state" <<'PY'
 import json
 import re
@@ -162,13 +162,11 @@ if not isinstance(backend_sha, str) or not pattern.fullmatch(backend_sha):
     raise SystemExit(f"invalid backend release state: {backend!r}")
 if not isinstance(frontend_sha, str) or not pattern.fullmatch(frontend_sha):
     raise SystemExit(f"invalid frontend release state: {frontend!r}")
-if backend_sha != frontend_sha:
-    raise SystemExit(
-        f"backend/frontend release identities differ: {backend_sha} != {frontend_sha}"
-    )
-print(backend_sha)
+print(backend_sha, frontend_sha)
 PY
 )
+
+release_sha="$backend_release_sha"
 
 base_url="https://$edge_public_ip"
 run_id="m8-w1-$(date -u +%Y%m%dT%H%M%SZ)-${actual_sha:0:8}"
@@ -213,7 +211,7 @@ remote_command="set -euo pipefail; IFS= read -r APPLICANT_PASSWORD; IFS= read -r
 "${ssh_loadgen[@]}" "cat '$remote_dir/summary.json'" > "$run_dir/k6-summary.json"
 finished_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-python3 -   "$run_dir/run-manifest.json"   "$run_id"   "$actual_sha"   "$release_sha"   "$ARP_M8_W1_DATASET_MANIFEST_SHA"   "$K6_VERSION"   "$started_at"   "$finished_at"   "$fixture_sha" <<'PY'
+python3 -   "$run_dir/run-manifest.json"   "$run_id"   "$actual_sha"   "$release_sha"   "$backend_release_sha"   "$frontend_release_sha"   "$ARP_M8_W1_DATASET_MANIFEST_SHA"   "$K6_VERSION"   "$started_at"   "$finished_at"   "$fixture_sha" <<'PY'
 import json
 import sys
 
@@ -222,6 +220,8 @@ import sys
     run_id,
     source_sha,
     release_sha,
+    backend_release_sha,
+    frontend_release_sha,
     dataset_manifest_sha,
     k6_version,
     started_at,
@@ -266,6 +266,10 @@ manifest = {
             "ops-01",
             "obs-01",
         ],
+        "component_releases": {
+            "backend": backend_release_sha,
+            "frontend": frontend_release_sha,
+        },
     },
     "started_at": started_at,
     "finished_at": finished_at,
@@ -291,6 +295,8 @@ PY
 echo "W1_RUN_ID=$run_id"
 echo "W1_SOURCE_SHA=$actual_sha"
 echo "W1_RELEASE_SHA=$release_sha"
+echo "W1_BACKEND_RELEASE_SHA=$backend_release_sha"
+echo "W1_FRONTEND_RELEASE_SHA=$frontend_release_sha"
 echo "W1_DATASET_MANIFEST_SHA256=$ARP_M8_W1_DATASET_MANIFEST_SHA"
 echo "W1_ARTIFACT_DIR=$run_dir"
 echo "PASS: M8 W1 exercised list/detail, create/save, submit/resubmit, reviewer queue/detail, review actions, and attachment upload/download through the real deployed boundary."

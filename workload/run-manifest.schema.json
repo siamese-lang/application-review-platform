@@ -17,61 +17,157 @@
     "finished_at"
   ],
   "properties": {
-    "schema_version": { "const": 1 },
-    "run_id": { "type": "string", "minLength": 1 },
-    "source_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
-    "release_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "schema_version": {
+      "const": 1
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "release_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
     "dataset": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "seed", "manifest_version"],
+      "required": [
+        "name",
+        "seed",
+        "manifest_version"
+      ],
       "properties": {
-        "name": { "enum": ["S", "M", "L"] },
-        "seed": { "type": "integer" },
-        "manifest_version": { "type": "string", "minLength": 1 }
+        "name": {
+          "enum": [
+            "S",
+            "M",
+            "L"
+          ]
+        },
+        "seed": {
+          "type": "integer"
+        },
+        "manifest_version": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
     "loadgen": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["region", "zone", "machine_type", "k6_version"],
+      "required": [
+        "region",
+        "zone",
+        "machine_type",
+        "k6_version"
+      ],
       "properties": {
-        "region": { "type": "string" },
-        "zone": { "type": "string" },
-        "machine_type": { "type": "string" },
-        "k6_version": { "type": "string" }
+        "region": {
+          "type": "string"
+        },
+        "zone": {
+          "type": "string"
+        },
+        "machine_type": {
+          "type": "string"
+        },
+        "k6_version": {
+          "type": "string"
+        }
       }
     },
     "workload": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["scenario", "version", "vus", "duration", "think_time_seconds"],
+      "required": [
+        "scenario",
+        "version",
+        "vus",
+        "duration",
+        "think_time_seconds"
+      ],
       "properties": {
-        "scenario": { "type": "string" },
-        "version": { "type": "string" },
-        "vus": { "type": "integer", "minimum": 1 },
-        "duration": { "type": "string" },
-        "think_time_seconds": { "type": "number", "minimum": 0 },
-        "attachment_fixture": { "type": ["string", "null"] }
+        "scenario": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "vus": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "duration": {
+          "type": "string"
+        },
+        "think_time_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "attachment_fixture": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
       }
     },
     "runtime": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["project_id", "primary_region", "persistent_nodes"],
+      "required": [
+        "project_id",
+        "primary_region",
+        "persistent_nodes"
+      ],
       "properties": {
-        "project_id": { "type": "string" },
-        "primary_region": { "type": "string" },
+        "project_id": {
+          "type": "string"
+        },
+        "primary_region": {
+          "type": "string"
+        },
         "persistent_nodes": {
           "type": "array",
           "minItems": 8,
           "maxItems": 8,
           "uniqueItems": true,
-          "items": { "type": "string" }
+          "items": {
+            "type": "string"
+          }
+        },
+        "component_releases": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "backend",
+            "frontend"
+          ],
+          "properties": {
+            "backend": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            },
+            "frontend": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            }
+          }
         }
       }
     },
-    "started_at": { "type": "string", "format": "date-time" },
-    "finished_at": { "type": "string", "format": "date-time" }
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "finished_at": {
+      "type": "string",
+      "format": "date-time"
+    }
   }
 }
