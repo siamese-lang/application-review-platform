@@ -26,6 +26,7 @@ for token in [
     "audits=499990",
     "users=1048",
     "programs=12",
+    "manifest_sha256=",
     "with-oslogin-ssh.py",
     "--ttl-seconds 3600",
     'json.load(sys.stdin)["db-01"]["private_ip"]',
