@@ -218,6 +218,7 @@ w2_runner = read("workload/run-w2.sh")
 w2_overlay = read("workload/sql/w2-interactive-overlay.sql")
 
 for token in [
+    "noCookiesReset: true",
     "executor: 'constant-vus'",
     "duration: '15m'",
     "exec: 'listDetail'",
@@ -273,6 +274,9 @@ for token in [
     '"vus": 30',
     '"duration": "15m"',
     '"pacing_model":',
+    'metric["count"]',
+    'legacy_metric("m8_non_file_errors")["value"]',
+    'legacy_metric("m8_non_file_duration")["p(95)"]',
     "W2_NON_FILE_SUCCESS_RATE",
     "W2_NON_FILE_P95_MS",
     "W2_REGRESSION_TARGET",
