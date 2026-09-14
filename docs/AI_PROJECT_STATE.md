@@ -40,13 +40,13 @@ Current active plan:
 
 Current verified main:
 
-`ce7c84832b4bbe55c8db45a3cb6219fb8183a611`
+`d4dcdc0ec0ce7b769907cf42f789aab70b0ac745`
 
 M8 Phase 1 and Phase 2 are complete. Phase 3 is active.
 
 Post-merge `main` baseline CI:
 
-- run `34867556825`;
+- run `34870900830`;
 - status: completed;
 - conclusion: SUCCESS.
 
@@ -82,7 +82,10 @@ Temporary M8 load generator live checkpoint:
 - reviewed OpenTofu delta applied: `4 added, 0 changed, 0 destroyed`;
 - persistent deployment `inventory` remains the same eight Seoul nodes;
 - `ssh_inventory` additionally contains `loadgen-01`;
-- load generator configuration/k6 installation is **not yet complete**.
+- repository-owned Ansible configuration completed on `loadgen-01`;
+- pinned k6 metadata, package download checksum, installed version, and final assertion passed;
+- loadgen play recap: `ok=8 changed=2 unreachable=0 failed=0`;
+- dataset M live generation/reset/load has **not yet run**.
 
 ## M8 fixed boundaries
 
@@ -149,16 +152,19 @@ Completed Phase 3 gates:
 3. project quota showed `CPUS_ALL_REGIONS limit=12 / usage=9`;
 4. exact OpenTofu plan reviewed as `4 to add, 0 to change, 0 to destroy`;
 5. that saved plan was applied;
-6. `loadgen-01` is RUNNING at `10.50.0.10` with no public access configuration.
+6. `loadgen-01` is RUNNING at `10.50.0.10` with no public access configuration;
+7. repository-owned loadgen configuration completed with pinned k6 verification and `failed=0`.
 
 Immediate next slice:
 
-1. merge repository-owned loadgen configuration automation;
-2. check out that exact reviewed `main` SHA on `ops-01`;
-3. configure `loadgen-01` through the existing OS Login/host-key boundary;
-4. verify installed k6 matches the pinned `workload/tool-versions.env` version/checksum contract;
-5. only after loadgen configuration succeeds, generate/load/verify dataset M;
-6. then verify the deployed API subset and M7 telemetry before W1.
+1. merge the guarded live dataset M loader;
+2. check out its exact reviewed `main` SHA on `ops-01`;
+3. generate deterministic profile M with seed `20260914` before requesting the ephemeral OS Login key;
+4. require explicit `ARP_CONFIRM_M8_DATASET_RESET=yes`;
+5. transfer the generated bundle to a temporary directory on `db-01`;
+6. execute the generated namespace-collision guard, reset/load, and `verify.sql` as local PostgreSQL user;
+7. retain the manifest SHA-256 and verified row counts;
+8. only after M succeeds, verify the deployed API subset and M7 telemetry before W1.
 
 Do not run W1/W2 or performance tuning yet.
 

@@ -438,7 +438,10 @@ Live checkpoint:
 - exact reviewed OpenTofu delta: `4 to add, 0 to change, 0 to destroy`;
 - applied delta created only the temporary Tokyo subnet/router/NAT/`loadgen-01`;
 - `loadgen-01`: RUNNING, `e2-standard-2`, `10.50.0.10`, no public access configuration;
-- loadgen software configuration remains pending.
+- repository-owned loadgen configuration completed successfully;
+- pinned k6 metadata/download checksum/installed-version assertions passed;
+- loadgen play recap: `ok=8 changed=2 unreachable=0 failed=0`;
+- dataset M live load remains pending.
 
 Sequence:
 
