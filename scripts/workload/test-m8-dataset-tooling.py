@@ -190,6 +190,7 @@ with tempfile.TemporaryDirectory() as temp:
         "M8 user ID namespace collision",
         "M8 application ID namespace collision",
         "DELETE FROM attachments",
+        "program_id BETWEEN 8000000000 AND 8099999999",
         "\\copy applications",
     ]:
         if token not in load_sql:
