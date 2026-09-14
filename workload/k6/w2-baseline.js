@@ -170,8 +170,8 @@ function ensureRole(role) {
   authenticatedRole = role;
 }
 
-function recordBusiness(family, response, expectedStatuses) {
-  const ok = expectedStatuses.includes(response.status);
+function recordBusiness(family, response, expectedStatuses, extraOk = true) {
+  const ok = expectedStatuses.includes(response.status) && extraOk;
   familyMetrics[family].requests.add(1);
   familyMetrics[family].errors.add(!ok);
   familyMetrics[family].duration.add(response.timings.duration);
@@ -433,7 +433,12 @@ export function attachment() {
     );
     const bodyMatches =
       downloaded.status === 200 && downloaded.body === attachmentBody;
-    recordBusiness('attachment', downloaded, [200]);
+    recordBusiness(
+      'attachment',
+      downloaded,
+      [200],
+      downloaded.body === attachmentBody,
+    );
     check(downloaded, {
       'attachment payload matches bounded fixture': () => bodyMatches,
     });
