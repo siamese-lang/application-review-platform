@@ -107,7 +107,12 @@ The runner:
 - replaces only the M8 synthetic workload dataset with deterministic profile S / seed
   `20260914`;
 - verifies the resulting dataset manifest before requesting the W1 SSH key;
-- reads the live backend/frontend release identity from the retained release-state files;
+- reads the live backend/frontend release identities from the retained release-state files;
+- records the backend SHA as the API workload `release_sha` and preserves both component
+  SHAs under `runtime.component_releases`;
+- does not require backend/frontend component SHAs to be equal, because the retained runtime
+  may contain an independently updated backend while the API workload still needs the exact
+  component identities recorded;
 - transfers only the W1 script and bounded attachment fixture to `loadgen-01`;
 - passes synthetic passwords over SSH stdin and does not persist them in workload artifacts;
 - runs one VU for one full business-flow iteration with a two-minute maximum;
