@@ -201,7 +201,7 @@ remote_k6_version=$("${ssh_loadgen[@]}" k6 version)
 
 started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-remote_command="set -euo pipefail; IFS= read -r APPLICANT_PASSWORD; IFS= read -r REVIEWER_PASSWORD; export APPLICANT_PASSWORD REVIEWER_PASSWORD; cd '$remote_dir'; BASE_URL='$base_url' RUN_ID='$run_id' APPLICANT_USERNAME='m6-applicant' REVIEWER_USERNAME='m6-reviewer' ATTACHMENT_PATH='fixtures/w1-attachment.txt' THINK_TIME_SECONDS='0.2' k6 run --summary-export summary.json k6/w1-smoke.js"
+remote_command="set -euo pipefail; IFS= read -r APPLICANT_PASSWORD; IFS= read -r REVIEWER_PASSWORD; export APPLICANT_PASSWORD REVIEWER_PASSWORD; cd '$remote_dir'; BASE_URL='$base_url' RUN_ID='$run_id' APPLICANT_USERNAME='m6-applicant' REVIEWER_USERNAME='m6-reviewer' ATTACHMENT_PATH='../fixtures/w1-attachment.txt' THINK_TIME_SECONDS='0.2' k6 run --summary-export summary.json k6/w1-smoke.js"
 
 {
   printf '%s\n' "$SYNTHETIC_APPLICANT_PASSWORD"
