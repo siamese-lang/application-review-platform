@@ -40,13 +40,13 @@ Current active plan:
 
 Current verified main:
 
-`a1e7fec2ccefa81f08dbc2d71407e5125689a3df`
+`ce7c84832b4bbe55c8db45a3cb6219fb8183a611`
 
-M8 Phase 1 and Phase 2 are complete.
+M8 Phase 1 and Phase 2 are complete. Phase 3 is active.
 
 Post-merge `main` baseline CI:
 
-- run `34864808869`;
+- run `34867556825`;
 - status: completed;
 - conclusion: SUCCESS.
 
@@ -72,6 +72,17 @@ Retained `storage-03` overrides:
 
 - machine: `e2-small`;
 - boot disk: `pd-standard`.
+
+Temporary M8 load generator live checkpoint:
+
+- `loadgen-01` exists in `asia-northeast1-a` (Tokyo);
+- machine: `e2-standard-2`;
+- private IP: `10.50.0.10`;
+- public access configuration: absent;
+- reviewed OpenTofu delta applied: `4 added, 0 changed, 0 destroyed`;
+- persistent deployment `inventory` remains the same eight Seoul nodes;
+- `ssh_inventory` additionally contains `loadgen-01`;
+- load generator configuration/k6 installation is **not yet complete**.
 
 ## M8 fixed boundaries
 
@@ -129,21 +140,27 @@ A negative finding is valid evidence.
 
 ## Immediate next work
 
-Proceed to **M8 Phase 3 — Live loadgen and dataset M preparation**.
+Continue **M8 Phase 3 — Live loadgen and dataset M preparation**.
 
-Before any live apply:
+Completed Phase 3 gates:
 
-1. merge the bounded SSH-inventory compatibility change for optional `loadgen-01`;
-2. lock the resulting exact `main` SHA;
-3. run a read-only Tokyo quota/capacity preflight;
-4. create an OpenTofu plan with `enable_loadgen=true` and retained `storage-03` overrides;
-5. confirm the plan changes only the temporary Tokyo loadgen subnet/router/NAT/VM plus expected outputs;
-6. only then apply that exact reviewed plan;
-7. configure `loadgen-01` and verify pinned k6;
-8. generate/load/verify dataset M;
-9. verify the deployed API subset and M7 telemetry before W1.
+1. trusted SSH inventory compatibility merged;
+2. read-only Tokyo preflight passed;
+3. project quota showed `CPUS_ALL_REGIONS limit=12 / usage=9`;
+4. exact OpenTofu plan reviewed as `4 to add, 0 to change, 0 to destroy`;
+5. that saved plan was applied;
+6. `loadgen-01` is RUNNING at `10.50.0.10` with no public access configuration.
 
-Do not run W1/W2 or any performance optimization during this preparation phase.
+Immediate next slice:
+
+1. merge repository-owned loadgen configuration automation;
+2. check out that exact reviewed `main` SHA on `ops-01`;
+3. configure `loadgen-01` through the existing OS Login/host-key boundary;
+4. verify installed k6 matches the pinned `workload/tool-versions.env` version/checksum contract;
+5. only after loadgen configuration succeeds, generate/load/verify dataset M;
+6. then verify the deployed API subset and M7 telemetry before W1.
+
+Do not run W1/W2 or performance tuning yet.
 
 ## Do not revisit unless new evidence requires it
 
