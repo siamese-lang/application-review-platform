@@ -1,6 +1,6 @@
 # M7 Observability — Execution Plan
 
-Status: ACTIVE
+Status: COMPLETE
 
 ## Goal
 
@@ -675,7 +675,7 @@ Live signal arrival, dashboard population, alert firing/clearing, and isolation 
 
 ### Phase 4 — Live `obs-01` provisioning and telemetry activation
 
-Status: **NEXT**
+Status: **COMPLETE**
 
 Use the existing controlled M6 operations path.
 
@@ -698,6 +698,8 @@ Sequence:
 No manual working-tree JAR deployment.
 
 ### Phase 5 — Observability verification and evidence closeout
+
+Status: **COMPLETE**
 
 Verify all three signal families and the isolation invariant.
 
@@ -744,6 +746,32 @@ This is a boundary invariant test, not the M10 reliability campaign.
 - decide whether to retain the eight-node runtime for immediate M8 or destroy/stage-stop
   resources for cost control;
 - record the decision explicitly.
+
+## Completion checkpoint
+
+M7 closed on 2026-09-14 after live verification of the complete evidence boundary.
+
+Closeout results:
+
+- metrics: passed for required hosts/sources, Spring, PostgreSQL, Garage, self-health, and
+  the private application probe;
+- logs: Nginx/application/PostgreSQL/Garage queryability passed; application
+  request/trace/span correlation and sampled privacy checks passed;
+- traces: a bounded application request was correlated into Tempo with service, request
+  context, and success status;
+- dashboards: all four repository-provisioned dashboards loaded and returned live
+  Prometheus/Loki/Tempo data through Grafana;
+- alerting: `ARPApplicationHealthUnavailable` progressed pending → firing, reached
+  Alertmanager, and cleared after recovery;
+- failure isolation: the full HTTPS/API/Garage business smoke passed while the central
+  observability stack was stopped; Prometheus and Loki telemetry resumed after restoration;
+- infrastructure: final runtime OpenTofu plan reported no changes;
+- lifecycle: retain the eight-node runtime for immediate M8 workload/baseline work;
+- evidence maturity: observability advances from E0 to E2 and remains enabling
+  infrastructure rather than an E5 primary story.
+
+Sanitized live evidence is retained in
+`docs/operations/M7_OBSERVABILITY_EVIDENCE.md`.
 
 ## Verification baseline for every M7 PR
 

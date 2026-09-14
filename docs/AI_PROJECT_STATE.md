@@ -1,9 +1,9 @@
 # AI Project State — Fast Resume Checkpoint
 
 Status: ACTIVE  
-Last updated: 2026-09-13 UTC
+Last updated: 2026-09-14 UTC
 
-This file is the short execution checkpoint for ChatGPT/Codex sessions. It is **not** an
+This file is the short execution checkpoint for ChatGPT/Codex sessions. It is not an
 architecture document, ADR, milestone plan, or evidence record.
 
 ## Resume protocol
@@ -15,42 +15,15 @@ At the start of a project-work session:
 3. Read the current active milestone plan under `docs/plans/active/`, when one exists.
 4. Inspect only the exact repository files, PR, workflow run, or live command output
    relevant to the current task.
-5. Expand to `docs/WORKFLOW.md`, frozen M0 documents, ADRs, or broader repository search
-   only when the current task requires it.
+5. Expand context only when the current task requires it.
 
-Do not reconstruct completed milestones from chat history when the repository already
-records them.
-
-## Execution rule
-
-Use **one turn = one logical, verifiable work result**.
-
-For a failure:
-
-1. lock the exact command/run/SHA;
-2. identify the first meaningful causal failure;
-3. make the smallest supported correction;
-4. verify the same boundary again;
-5. do not broaden scope unless the failure requires it.
-
-## Tool split
-
-- **GitHub/repository:** durable source of truth, code, plans, PRs, CI, committed evidence.
-- **ChatGPT:** current-step coordination, root-cause analysis, small targeted fixes,
-  PR/CI review, merge/post-merge verification.
-- **Codex:** substantive multi-file implementation only when a bounded implementation
-  slice exists.
-- **Cloud Shell / ops-01:** live GCP/runtime execution.
+Use current GitHub/repository state over chat history.
 
 ## Current project checkpoint
 
 Repository: `siamese-lang/application-review-platform`
 
-M6 implementation/release base:
-
-`9d5fda9871e479e05dc4641fccf7dea3145d2ad6`
-
-Milestone state:
+Milestones:
 
 - M1 Business MVP — complete
 - M2 Data Integrity — complete
@@ -58,46 +31,27 @@ Milestone state:
 - M4 Cloud Deployment — complete
 - M5 Web/API & Product Surface — complete
 - M6 Operations & Delivery — complete
-- M7 Observability — ACTIVE
-- M7 Phase 1 repository observability foundation — complete
-- M7 Phase 2 central observability stack and Alloy baseline — complete
-- M7 Phase 3 source instrumentation and secure telemetry pipelines — complete
-- M7 Phase 4 live obs-01 provisioning and telemetry activation — NEXT
+- M7 Observability — complete
+- M8 Workload — next
 
-M6 completed plan:
+M7 completed plan:
 
-`docs/plans/completed/M6-operations-delivery.md`
+`docs/plans/completed/M7-observability.md`
 
-M6 Phase 6 usability plan:
+M7 closeout evidence:
 
-`docs/plans/completed/M6-phase6-korean-ui-usability.md`
+`docs/operations/M7_OBSERVABILITY_EVIDENCE.md`
+
+Portfolio maturity:
+
+- M6 immutable release/rollback — E5 primary candidate;
+- M7 observability — E2 enabling infrastructure.
 
 ## Current live environment
 
-Current live state is still the **seven-node M6 runtime**. M7 `obs-01` has not been
-applied yet.
+The verified runtime is intentionally retained for immediate M8 work.
 
-- frozen seven-role GCP runtime is running;
-- WIF/IAP/OS Login release handoff is live;
-- TLS public edge, PostgreSQL, Garage, Nginx, SOPS/age, and release activation are healthy;
-- runtime OpenTofu plan: no changes, detailed exit code 0;
-- owner-bootstrap OpenTofu plan: no changes;
-- lifecycle decision: retain the seven-role runtime for immediate M7 work and re-evaluate
-  retain/destroy at M7 closeout.
-
-## M7 target runtime and Free Trial resource strategy
-
-Source of truth:
-
-- `docs/architecture/ADR-004-gcp-resource-placement.md`
-- `docs/architecture/ARCHITECTURE.md`
-- `docs/FREEZE_RECORD.md`
-- `docs/workload/WORKLOAD.md`
-- `docs/plans/active/M7-observability.md`
-
-Do not reinterpret this from chat history.
-
-After M7 live activation, the persistent Seoul runtime is intentionally **eight VMs**:
+Persistent Seoul runtime:
 
 - `edge-01`
 - `app-01`
@@ -108,191 +62,96 @@ After M7 live activation, the persistent Seoul runtime is intentionally **eight 
 - `ops-01`
 - `obs-01`
 
-`obs-01` target:
+`obs-01`:
 
-- region/zone: `asia-northeast3-a`;
-- private IP: `10.40.0.60`;
-- machine type: `e2-standard-2`;
-- boot: 20 GiB `pd-standard`;
-- observability data: 40 GiB `pd-standard`;
-- no public IP.
+- private IP `10.40.0.60`;
+- no public IP;
+- Prometheus, Loki, Tempo, Grafana, Alertmanager;
+- node-local telemetry forwarded through Alloy.
 
-Why:
+Final M7 runtime OpenTofu plan: **no changes**.
 
-- M6 evidence recorded Seoul quota of 8 instances, 32 E2 CPUs, and 250 GiB SSD total;
-- M7 deliberately consumes the eighth instance;
-- `pd-standard` on `obs-01` avoids exceeding the recorded SSD quota;
-- the user explicitly allows the $300/90-day Free Trial credit to be spent when it
-  preserves useful architecture/measurement boundaries.
+Retained capacity workaround:
 
-Future temporary resources must not cause the persistent Seoul topology to be collapsed:
+- `storage-03` machine type: `e2-small`;
+- `storage-03` boot disk: `pd-standard`.
 
-- `loadgen-01`: cross-region by default, preferably `asia-northeast1` (Tokyo);
-- `backup-01`: cross-region by default when introduced;
-- temporary DR verification VMs: cross-region by default;
-- `app-02`: only if measured scale-out evidence requires it; placement is decided by
-  that experiment, not automatically moved cross-region.
+Lifecycle decision: **retain the eight-node runtime for immediate M8 workload/baseline
+work**. Re-evaluate cost/lifecycle at M8 closeout.
 
-For cross-region k6, compare runs from the same loadgen region and separate end-to-end
-client/network latency from Nginx upstream, Spring/trace, and PostgreSQL server evidence.
-Do not run k6 on `obs-01` or a measured business VM merely to bypass quota.
+## Final M7 verification boundary
 
-Final deployed M6 release:
+Final verification source revision:
 
-- SHA: `9d5fda9871e479e05dc4641fccf7dea3145d2ad6`
-- OCI digest: `sha256:13c3d117eef036c6987f00faf44e01b86845528c62bab1a3ea0914a234a103d4`
-- post-merge publication run: `34737855198`
-- exact-release handoff run: `34746439784`
-- backend/frontend release state: current = `9d5fda9871e479e05dc4641fccf7dea3145d2ad6`,
-  previous = `60a7efe40dd7f3d6f0c0f10396246c4da4148cc4`
-- final HTTPS/API/Garage smoke: passed
+`cea4ca09d05efd89bcb9227c866d841968c08547`
 
-Retained Phase 5 rollback evidence:
+Verified live:
 
-- Release A SHA: `53f5796235114481c62d9d178e395738f486ea3e`
-- Release B SHA: `a26193598d0fbcb5a2f6d468739b36b7aef3f0aa`
-- real schema-compatible B → A rollback: passed
-- observed rollback elapsed time: `38,346 ms`
-- database migration rollback: **not performed**
-- post-rollback business/attachment smoke: passed
-- Evidence Card maturity: **E5**
+- required host/source metrics and application health probe;
+- Spring request/JVM metrics;
+- PostgreSQL metrics;
+- distinct Garage metrics for all three storage nodes;
+- Nginx/application/PostgreSQL/Garage logs in Loki;
+- application request ID + trace/span log correlation;
+- a real application trace in Tempo;
+- Grafana Prometheus/Loki/Tempo datasource health and four provisioned dashboards with
+  live telemetry;
+- Prometheus alert → Alertmanager delivery → recovery clear;
+- full HTTPS/API/Garage business smoke while the central observability stack was down;
+- Prometheus/Loki telemetry resumption after restoration;
+- final runtime OpenTofu no-drift.
 
-Evidence:
+Do not rerun M7 verification unless new evidence requires it.
 
-- `docs/operations/M6_PHASE4_RUNTIME_EVIDENCE.md`
-- `docs/operations/M6_PHASE5_RELEASE_ROLLBACK_EVIDENCE.md`
-- `docs/operations/M6_PHASE6_CLOSEOUT_EVIDENCE.md`
-- `docs/portfolio/M6_IMMUTABLE_RELEASE_ROLLBACK_EVIDENCE.md`
-- `docs/portfolio/PORTFOLIO_EVIDENCE_MAP.md`
+## M7 live corrections retained in main
 
-## Current active plan
+Live activation/verification produced bounded fixes, including:
 
-`docs/plans/active/M7-observability.md`
+- Grafana secret-schema completion;
+- executable Alloy installation;
+- private application health probe;
+- duplicate OTLP metrics export removal;
+- PostgreSQL log-read permission correction;
+- Loki private query-path/ring addressing correction;
+- bounded per-request application correlation logging.
 
-## Public repository and M7 Phase 1 closeout
+Current main at M7 verification:
 
-The repository is now **public**.
-
-Public-transition verification:
-
-- public-readiness secret/history audit: passed;
-- no credential rotation or history rewrite required;
-- repository ruleset `protect-main`: active;
-- force-push/deletion blocked on the default branch;
-- pull request required;
-- strict required CI checks configured;
-- PR #58 M7 Phase 1 merge:
-  `dfeb5cab85698812294878bcf3a154d5d628967b`;
-- PR #58 exact-head CI `34752303087`: SUCCESS;
-- PR #59 browser-E2E locator correction merge:
-  `3f7de55356e097793debf3f97e3480667d5bb6a5`;
-- PR #59 exact-head CI `34752944074`: SUCCESS;
-- final post-merge `main` CI `34753065713`: SUCCESS.
-
-The public transition solved the private-repository GitHub Actions minute exhaustion
-without replacing the established CI platform.
-
-## M7 Phase 2 closeout
-
-Phase 2 is complete on repository state ending at main
-`fc10d4a78994d4fe8df403ff5dfe39c2f02dc9f5`.
-
-Completed repository-side boundaries:
-
-- pinned Prometheus, Loki, Tempo, Grafana, Alertmanager, and reusable Alloy configuration;
-- Grafana datasource provisioning and the bounded four-dashboard set;
-- conservative structural Prometheus alert rules;
-- bounded retention plus CPU/memory limits for the central stack;
-- upstream-supported config validation and repository contract checks;
-- no plaintext application/DB/Garage runtime credentials;
-- no live GCP apply and no public observability listener introduced.
-
-The live environment is still the seven-node M6 runtime. `obs-01` is not live yet.
-
-## M7 CI consolidation
-
-The Phase 2 component CI has been consolidated into
-`.github/workflows/m7-observability-ci.yml`.
-
-Behavior after consolidation:
-
-- `baseline-ci` remains separate and unchanged;
-- the M7 workflow runs only for observability-related pull-request paths;
-- changed-file detection runs only the affected Prometheus/Loki/Tempo/Grafana/Alertmanager/
-  Alloy validation steps, while shared observability config changes validate all components;
-- the existing component repository-contract scripts and pinned upstream validators are
-  preserved;
-- redundant Loki/Tempo/Grafana/Alertmanager/Alloy workflow files are removed;
-- the M7 workflow no longer reruns on the post-merge `main` push.
-
-The `protect-main` required status contexts do not depend on the removed component workflow
-jobs; the required M7 infrastructure check remains provided by the existing baseline CI.
-
-## M7 Phase 3 closeout
-
-Phase 3 repository instrumentation is complete on main
-`c783c54edbd6022d11debc423957577901efc654`.
-
-Completed boundaries:
-
-- Alloy host metrics on required edge/app/db/storage/observability roles;
-- Nginx access/error logs to Loki with bounded fields and no query/body/auth logging;
-- Spring Actuator/Prometheus metrics plus OTLP tracing through loopback-local collection;
-- application journal logs with trace/span/request correlation and stable low-cardinality labels;
-- dedicated least-privileged PostgreSQL monitoring credentials and Alloy PostgreSQL metrics;
-- Ansible-managed `pg_stat_statements` preload plus Flyway-owned extension migration;
-- Garage loopback metrics with SOPS/age token protection and journald log collection;
-- no public Actuator/Garage admin/collector endpoint;
-- no Docker socket access for Garage log collection;
-- no live GCP apply in Phase 3.
-
-Final Phase 3 PR #78 exact-head
-`60aefdfbfb781349c74075ee2190712d118ab4bd` passed both `baseline-ci` and
-`m7-observability-ci`, then merged as
-`c783c54edbd6022d11debc423957577901efc654`.
-
-The live environment is still the seven-node M6 runtime. `obs-01` has not been provisioned,
-and repository-side telemetry configuration has not yet been activated live.
+`cea4ca09d05efd89bcb9227c866d841968c08547`
 
 ## Immediate next work
 
-Proceed to **M7 Phase 4 — Live `obs-01` provisioning and telemetry activation**.
+Do **not** start M9 optimization or M10 fault experiments.
 
-The first incomplete operation is intentionally read/review-first:
+The next milestone is **M8 Workload**. No active M8 plan exists yet.
 
-1. lock the exact reviewed `main` SHA;
-2. from the controlled M6 operations path, run a live OpenTofu **plan only** using the retained
-   state and the existing `storage-03` capacity overrides;
-3. verify that the plan adds only the intended M7 observability resources/firewall delta and
-   does not replace or destroy any of the existing seven runtime nodes;
-4. do not apply until that exact plan boundary has been reviewed.
+First incomplete repository task after the M7 closeout PR is merged:
 
-Key constraints remain:
+1. read `docs/workload/WORKLOAD.md`, `docs/PROJECT_EXECUTION.md`, and the completed M7
+   evidence;
+2. create a bounded M8 active plan for representative workload generation and baseline
+   measurement;
+3. preserve the M7 observability runtime as the measurement substrate;
+4. use a cross-region `loadgen-01` by default per ADR-004 rather than consuming
+   `obs-01` or a business VM;
+5. define repeatable scenarios/seeds and measurement outputs before implementation;
+6. do not choose a performance fix in advance.
 
-- preserve the existing seven-node live runtime until the reviewed Phase 4 apply;
-- no public Grafana/Actuator/telemetry exposure;
-- no plaintext runtime secrets or body/authorization logging;
-- preserve all M1–M6 behavior and immutable release mechanics;
-- no manual working-tree JAR deployment;
-- no M8 workload or M9 optimization;
-- follow ADR-004 for cross-region temporary resources;
-- use pinned versions, never floating `latest`.
+M8 must create representative conditions and baselines. It does not own optimization.
 
 ## Do not revisit unless new evidence requires it
 
-- application workflow design;
-- React/Spring/Nginx boundary;
-- PostgreSQL/Garage choice;
-- M6 release/rollback design and completed drill;
-- M6 Korean UI remediation;
-- final M6 no-drift verification.
+- M1–M7 completed milestone design;
+- React/Spring/Nginx product boundary;
+- PostgreSQL/Garage product choice;
+- M6 release/rollback design and drill;
+- M7 Loki root-cause history;
+- completed M7 metrics/logs/traces/dashboard/alert/isolation verification.
 
 ## Short resume prompt
 
-A new chat normally needs only:
-
 > @GitHub `siamese-lang/application-review-platform` 작업을 계속한다.  
-> 먼저 `AGENTS.md`, `docs/AI_PROJECT_STATE.md`, 현재 active plan이 있으면 그것만 읽고 repository 실제 상태를 source of truth로 사용하라.  
-> 완료된 milestone이나 관련 없는 구조를 재검토하지 마라.  
-> 현재 state의 Immediate next work에서 첫 미완료 작업 하나만 처리하라.  
-> 오류가 있으면 exact SHA/run/명령의 최초 causal failure만 확인하고 최소 수정 후 같은 경계를 재검증하라.
+> 먼저 `AGENTS.md`, `docs/AI_PROJECT_STATE.md`, 현재 active plan이 있으면 그것만 읽고
+> repository 실제 상태를 source of truth로 사용하라.  
+> 완료된 milestone은 재검토하지 마라.  
+> 현재 state의 Immediate next work에서 첫 미완료 작업 하나만 처리하라.
