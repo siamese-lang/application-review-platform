@@ -72,7 +72,7 @@ fi
   exit 1
 }
 
-for command in python3 tar tofu ssh sha256sum date; do
+for command in python3 tar tofu ssh sudo sha256sum date; do
   command -v "$command" >/dev/null || {
     echo "Missing prerequisite: $command" >&2
     exit 1
@@ -248,7 +248,7 @@ manifest = {
     "workload": {
         "scenario": "w1-business-smoke",
         "version": "1",
-        "vus": 2,
+        "vus": 1,
         "duration": "per-vu-iterations:1,maxDuration:2m",
         "think_time_seconds": 0.2,
         "attachment_fixture": f"w1-attachment.txt sha256:{fixture_sha}",
