@@ -125,3 +125,51 @@ The runner:
 W1 uses thresholds only to prove harness correctness: all checks must pass and HTTP request
 failures must remain zero. Do not interpret W1 latency as performance evidence. W2 owns the
 representative M-dataset baseline.
+
+
+## W2 mixed normal baseline
+
+`k6/w2-baseline.js` is the primary M8 normal-load measurement harness.
+
+The repository-owned entrypoint is:
+
+```bash
+bash workload/run-w2.sh
+```
+
+The operator environment uses the same exact-source and controlled synthetic credential
+boundary as W1.
+
+Before measurement the runner:
+
+- restores deterministic dataset M / seed `20260914`;
+- applies `sql/w2-interactive-overlay.sql`, which reassigns only generated history-free
+  DRAFT applications to the controlled `m6-applicant` identity and aligns their create
+  audit actor;
+- verifies `pg_stat_statements` is active and resets its cumulative counters;
+- records the exact dataset manifest and overlay SHA-256 values.
+
+W2 runs 30 VUs for 15 minutes with six concurrent constant-VU scenarios. Scenario pacing
+targets the frozen business-request mix:
+
+- list/detail: 12 req/s (40%);
+- create/save: 4.5 req/s (15%);
+- submit: 3 req/s (10%);
+- reviewer queue/detail: 6 req/s (20%);
+- review actions: 3 req/s (10%);
+- attachment upload/download: 1.5 req/s (5%).
+
+Authentication, CSRF acquisition, and attachment cleanup are tagged as support traffic and
+are excluded from the business-mix counters. They still traverse the real deployed boundary
+and therefore remain part of system load.
+
+The runner retains:
+
+- k6 console output and JSON summary;
+- exact run manifest, including backend/frontend component releases;
+- observed business-request mix;
+- non-file success rate and p95 compared with the project-internal regression target;
+- top 20 `arp_app` query families from `pg_stat_statements`.
+
+A regression-target miss is retained as measurement evidence; the runner does not tune the
+system or rerun automatically to obtain a better number.
