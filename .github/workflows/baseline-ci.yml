@@ -527,6 +527,33 @@ jobs:
           mkdir -p ci-diagnostics
           set -o pipefail
           ./mvnw verify 2>&1 | tee ci-diagnostics/maven-verify.log
+      - name: Verify M8 S dataset against migrated PostgreSQL schema
+        env:
+          PGPASSWORD: postgres
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf build/workload/ci-s
+          python3 scripts/workload/generate-synthetic-dataset.py \
+            --profile S \
+            --seed 20260914 \
+            --output build/workload/ci-s
+          (
+            cd build/workload/ci-s
+            psql \
+              --host 127.0.0.1 \
+              --username postgres \
+              --dbname application_review_test \
+              --set ON_ERROR_STOP=on \
+              --set m8_confirm_synthetic_reset=true \
+              --file load.sql
+            psql \
+              --host 127.0.0.1 \
+              --username postgres \
+              --dbname application_review_test \
+              --set ON_ERROR_STOP=on \
+              --file verify.sql
+          )
       - name: Summarize CI failure
         if: failure()
         shell: bash
