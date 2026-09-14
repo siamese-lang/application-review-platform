@@ -17,10 +17,13 @@ jobs:
       - name: Validate M8 Phase 2 deterministic dataset tooling
         run: |
           python3 scripts/workload/test-m8-dataset-tooling.py
+          python3 scripts/workload/test-m8-live-dataset-load.py
+          bash -n deploy/load-m8-dataset.sh
           python3 -m py_compile \
             scripts/workload/synthetic_dataset.py \
             scripts/workload/generate-synthetic-dataset.py \
-            scripts/workload/test-m8-dataset-tooling.py
+            scripts/workload/test-m8-dataset-tooling.py \
+            scripts/workload/test-m8-live-dataset-load.py
 
   m8-workload-foundation-static:
     runs-on: ubuntu-latest
