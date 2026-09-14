@@ -469,16 +469,34 @@ No performance conclusion yet.
 
 Status: **ACTIVE**
 
-Run W1, then W2.
+W1 is **COMPLETE**. W2 is the immediate next live boundary.
+
+W1 live checkpoint:
+
+- run ID: `m8-w1-20260914T181710Z-faf46c4c`;
+- source SHA: `faf46c4c8256c9921a7aa6da37902b2d3dc53dbf`;
+- dataset S / seed `20260914`;
+- dataset manifest SHA-256:
+  `b6d964b5bb482ed3ec241e2292b8e98b9d3fc19d7a3e8a2394266288f96a5191`;
+- backend/API release:
+  `cea4ca09d05efd89bcb9227c866d841968c08547`;
+- frontend release:
+  `549511b0a8af9582125e89aaa2bde7fc4bffcd6d`;
+- 1 VU / 1 iteration completed successfully through the real HTTPS/session/CSRF boundary;
+- all frozen workload families were exercised;
+- W1 remains correctness evidence only, not a performance result.
 
 Immediate next boundary:
 
-- implement/verify W1 harness correctness on dataset S;
-- 1–2 VU, short bounded duration;
-- real public edge and real session/CSRF;
-- exercise each frozen workload family at least once;
-- retain a run manifest and sanitized result;
-- do not interpret W1 as performance evidence.
+- review/merge the repository-owned W2 harness;
+- restore deterministic dataset M;
+- apply the deterministic interactive DRAFT ownership overlay;
+- reset `pg_stat_statements`;
+- run 30 VU for 15 minutes from the retained Tokyo load generator;
+- retain the actual business mix, non-file success/p95 result, k6 summary, run manifest,
+  and top-query snapshot;
+- collect correlated server/telemetry evidence before deciding whether W3/W4 is justified;
+- do not optimize during W2.
 
 Retain:
 
