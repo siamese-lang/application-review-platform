@@ -1,0 +1,4 @@
+---
+- hosts: loadgen
+  become: true
+  roles: [common, loadgen]
