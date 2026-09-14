@@ -58,3 +58,33 @@ resource "google_compute_instance_iam_member" "github_deploy_ops_viewer" {
   role          = "roles/compute.viewer"
   member        = "serviceAccount:arp-m6-github-deploy@${var.project_id}.iam.gserviceaccount.com"
 }
+
+resource "google_compute_instance" "loadgen" {
+  count        = var.enable_loadgen ? 1 : 0
+  name         = "loadgen-01"
+  zone         = var.loadgen_zone
+  machine_type = var.loadgen_machine_type
+  tags         = ["arp-loadgen", "arp-managed"]
+  labels       = { milestone = "m8", role = "loadgen", lifecycle = "temporary" }
+
+  boot_disk {
+    initialize_params {
+      image = var.boot_image
+      size  = var.boot_disk_size_gb
+      type  = "pd-standard"
+    }
+  }
+
+  network_interface {
+    subnetwork = google_compute_subnetwork.loadgen[0].id
+    network_ip = var.loadgen_private_ip
+  }
+
+  metadata = {
+    enable-oslogin          = "TRUE"
+    enable-guest-attributes = "TRUE"
+    block-project-ssh-keys  = "TRUE"
+  }
+
+  allow_stopping_for_update = true
+}
