@@ -429,6 +429,17 @@ Done condition:
 
 Status: **ACTIVE**
 
+Live checkpoint:
+
+- reviewed main `ce7c84832b4bbe55c8db45a3cb6219fb8183a611`;
+- post-merge baseline CI run `34867556825`: SUCCESS;
+- Tokyo read-only preflight passed;
+- project-wide E2 vCPU quota: limit 12, usage 9 before loadgen;
+- exact reviewed OpenTofu delta: `4 to add, 0 to change, 0 to destroy`;
+- applied delta created only the temporary Tokyo subnet/router/NAT/`loadgen-01`;
+- `loadgen-01`: RUNNING, `e2-standard-2`, `10.50.0.10`, no public access configuration;
+- loadgen software configuration remains pending.
+
 Sequence:
 
 1. lock exact reviewed main SHA;
