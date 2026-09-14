@@ -66,6 +66,7 @@ for token in [
     '"private_ip": "10.50.0.10"',
     '"region": "asia-northeast1"',
     '"zone": "asia-northeast1-a"',
+    "inventory_file=$(mktemp --suffix=.yml)",
     "ansible-galaxy collection install -r requirements.yml",
     "with-oslogin-ssh.py",
     "ansible-playbook",
