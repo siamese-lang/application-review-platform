@@ -213,6 +213,110 @@ subprocess.run(
     check=True,
 )
 
+w2 = read("workload/k6/w2-baseline.js")
+w2_runner = read("workload/run-w2.sh")
+w2_overlay = read("workload/sql/w2-interactive-overlay.sql")
+
+for token in [
+    "executor: 'constant-vus'",
+    "duration: '15m'",
+    "exec: 'listDetail'",
+    "vus: 12",
+    "exec: 'createSave'",
+    "vus: 4",
+    "exec: 'submitResubmit'",
+    "vus: 3",
+    "exec: 'reviewerQueueDetail'",
+    "vus: 6",
+    "exec: 'reviewAction'",
+    "exec: 'attachment'",
+    "vus: 2",
+    "m8_non_file_errors",
+    "m8_non_file_duration",
+    "m8_list_detail_requests",
+    "m8_create_save_requests",
+    "m8_submit_resubmit_requests",
+    "m8_reviewer_queue_detail_requests",
+    "m8_review_action_requests",
+    "m8_attachment_requests",
+    "pace(started, 2.0)",
+    "pace(started, 1.777778)",
+    "pace(started, 1.0)",
+    "pace(started, 2.666667)",
+    "slot >= 4000",
+    "slot >= 3500",
+    "4000 + (exec.scenario.iterationInTest % 2500)",
+    "7800 + (exec.vu.idInTest % 100)",
+    "request-revision",
+    "/reject",
+    "/approve",
+]:
+    require(w2, token, "W2 k6 baseline contract")
+
+w2_vus = [int(value) for value in re.findall(r"\bvus:\s*(\d+)", w2)]
+if sorted(w2_vus) != [2, 3, 3, 4, 6, 12] or sum(w2_vus) != 30:
+    raise SystemExit(f"W2 must retain exact 30-VU scenario allocation: {w2_vus!r}")
+if w2.count("duration: '15m'") != 6:
+    raise SystemExit("every W2 scenario must retain the 15-minute baseline duration")
+
+w2_system_tags = w2.split("systemTags:", 1)[1].split("],", 1)[0]
+if "'url'" in w2_system_tags or '"url"' in w2_system_tags:
+    raise SystemExit("W2 must exclude the dynamic URL system tag to avoid id cardinality")
+
+for token in [
+    'ARP_M8_DATASET_PROFILE=M',
+    "ARP_M8_W2_DATASET_READY",
+    "w2-interactive-overlay.sql",
+    "pg_stat_statements_reset()",
+    "pg-stat-statements-top20.csv",
+    "r.rolname = 'arp_app'",
+    '"name": "M"',
+    '"overlay_version": f"sha256:{overlay_sha}"',
+    '"scenario": "w2-mixed-normal-baseline"',
+    '"vus": 30',
+    '"duration": "15m"',
+    '"pacing_model":',
+    "W2_NON_FILE_SUCCESS_RATE",
+    "W2_NON_FILE_P95_MS",
+    "W2_REGRESSION_TARGET",
+    "W2_OVERLAY_SHA256",
+    "PASS: M8 W2 completed and retained",
+]:
+    require(w2_runner, token, "W2 runner contract")
+
+for token in [
+    "m6-applicant",
+    "role = 'APPLICANT'",
+    "draft_count <> 8334",
+    "history_count <> 0",
+    "UPDATE applications a",
+    "SET applicant_id = applicant.id",
+    "UPDATE audit_events e",
+    "SET actor_id = applicant.id",
+    "owned_drafts <> 8334",
+    "wrong_create_actor <> 0",
+]:
+    require(w2_overlay, token, "W2 deterministic interactive overlay")
+
+for forbidden in [
+    "StrictHostKeyChecking=no",
+    "tofu apply",
+    "gcloud compute instances create",
+    "-e APPLICANT_PASSWORD=",
+    "-e REVIEWER_PASSWORD=",
+]:
+    if forbidden in w2_runner:
+        raise SystemExit(f"W2 runner must not contain: {forbidden}")
+
+subprocess.run(
+    ["node", "--check", str(ROOT / "workload/k6/w2-baseline.js")],
+    check=True,
+)
+subprocess.run(
+    ["bash", "-n", str(ROOT / "workload/run-w2.sh")],
+    check=True,
+)
+
 manifest = json.loads(read("workload/run-manifest.example.json"))
 schema = json.loads(read("workload/run-manifest.schema.json"))
 
