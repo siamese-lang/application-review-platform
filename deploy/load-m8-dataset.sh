@@ -37,10 +37,14 @@ if [[ -z ${ARP_OSLOGIN_USER:-} || -z ${ARP_OSLOGIN_SSH_KEY:-} || -z ${ARP_OSLOGI
   python3 "$root/scripts/workload/generate-synthetic-dataset.py"     --profile "$PROFILE"     --seed "$SEED"     --output "$bundle_dir"
 
   python3 - "$bundle_dir/dataset-manifest.json" <<'PY'
+import hashlib
 import json
 import sys
+from pathlib import Path
 
-manifest = json.load(open(sys.argv[1], encoding="utf-8"))
+manifest_path = Path(sys.argv[1])
+manifest_bytes = manifest_path.read_bytes()
+manifest = json.loads(manifest_bytes)
 expected = {
     "profile": "M",
     "seed": 20260914,
@@ -65,10 +69,12 @@ if manifest.get("bulk_users_login_enabled") is not False:
     raise SystemExit("M8 bulk users must remain non-login fixtures")
 if manifest.get("attachments_seeded") is not False:
     raise SystemExit("M8 M dataset must not claim attachment objects were seeded")
+manifest_sha256 = hashlib.sha256(manifest_bytes).hexdigest()
 print(
     "M8_DATASET_MANIFEST_OK "
     "profile=M seed=20260914 applications=100000 histories=399990 "
-    "audits=499990 users=1048 programs=12"
+    "audits=499990 users=1048 programs=12 "
+    f"manifest_sha256={manifest_sha256}"
 )
 PY
 
