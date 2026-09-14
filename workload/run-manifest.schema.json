@@ -54,6 +54,10 @@
         "manifest_version": {
           "type": "string",
           "minLength": 1
+        },
+        "overlay_version": {
+          "type": "string",
+          "minLength": 1
         }
       }
     },
@@ -114,6 +118,10 @@
             "string",
             "null"
           ]
+        },
+        "pacing_model": {
+          "type": "string",
+          "minLength": 1
         }
       }
     },
