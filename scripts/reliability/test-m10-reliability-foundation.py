@@ -1,0 +1,130 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import re
+import subprocess
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def read(path: str) -> str:
+    return (ROOT / path).read_text(encoding="utf-8")
+
+
+def require(text: str, token: str, context: str) -> None:
+    if token not in text:
+        raise SystemExit(f"missing {context}: {token}")
+
+
+driver = read("workload/k6/m10-normal.js")
+runner = read("scripts/reliability/run-m10-control.sh")
+prometheus = read("scripts/reliability/capture-m10-prometheus.py")
+invariants = read("scripts/reliability/m10-db-invariants.sql")
+
+for token in [
+    "executor: 'constant-vus'",
+    "const duration = __ENV.M10_DURATION || '5m';",
+    "duration,",
+    "exec: 'listDetail'",
+    "vus: 12",
+    "exec: 'createSave'",
+    "vus: 4",
+    "exec: 'submitResubmit'",
+    "vus: 3",
+    "exec: 'reviewerQueueDetail'",
+    "vus: 6",
+    "exec: 'reviewAction'",
+    "exec: 'attachment'",
+    "vus: 2",
+    "new Counter(`m10_${family}_requests`)",
+    "new Rate(`m10_${family}_errors`)",
+    "new Trend(`m10_${family}_duration`, true)",
+    "m10_non_file_errors",
+    "milestone: 'm10'",
+    "profile: 'normal-control'",
+    "pace(started, 2.0)",
+    "pace(started, 1.777778)",
+    "pace(started, 1.0)",
+    "pace(started, 2.666667)",
+]:
+    require(driver, token, "M10 normal driver")
+
+vus = [int(value) for value in re.findall(r"\bvus:\s*(\d+)", driver)]
+if sorted(vus) != [2, 3, 3, 4, 6, 12] or sum(vus) != 30:
+    raise SystemExit(f"M10 control must retain W2 30-VU allocation: {vus!r}")
+
+if "duration: '15m'" in driver:
+    raise SystemExit("M10 control must not silently reuse the 15-minute W2 duration")
+if "m8_" in driver:
+    raise SystemExit("M10 driver must use M10 metric names")
+
+for token in [
+    "ARP_EXPECTED_SOURCE_SHA",
+    "ARP_CONFIRM_M10_DATASET_RESET",
+    "ARP_CONFIRM_M8_DATASET_RESET=yes",
+    "ARP_M8_DATASET_PROFILE=M",
+    "with-oslogin-ssh.py",
+    "--ttl-seconds 1800",
+    "output -json loadgen",
+    "w2-interactive-overlay.sql",
+    "k6/m10-normal.js",
+    "M10_DURATION='5m'",
+    "deploy/cloud-smoke.sh",
+    "m10-db-invariants.sql",
+    "capture-m10-prometheus.py",
+    '"scenario": "m10-healthy-normal-control"',
+    '"fault_injected": False',
+    "M10_CONTROL_NON_FILE_SUCCESS_RATE",
+    "M10_CONTROL_NON_FILE_P95_MS",
+    "M10_CONTROL_TARGET",
+    "PASS: M10 healthy control retained workload",
+]:
+    require(runner, token, "M10 control runner")
+
+for forbidden in [
+    "StrictHostKeyChecking=no",
+    "systemctl stop",
+    "systemctl kill",
+    "kill -9",
+    "pkill",
+    "docker stop",
+    "tofu apply",
+    "gcloud compute instances stop",
+    "-e APPLICANT_PASSWORD=",
+    "-e REVIEWER_PASSWORD=",
+]:
+    if forbidden in runner:
+        raise SystemExit(f"M10 healthy-control runner must not inject faults or weaken transport: {forbidden}")
+
+for token in [
+    "application_probe",
+    "postgres_up",
+    "hikari_active",
+    "hikari_pending",
+    "db_cpu_pct",
+    "app_cpu_pct",
+    "garage_up_by_node",
+    "/api/v1/query_range",
+]:
+    require(prometheus, token, "M10 Prometheus capture")
+
+for token in [
+    "non_draft_latest_history_mismatch",
+    "in_review_without_reviewer",
+    "audit_subject_count_violation",
+    "available_attachment_metadata_incomplete",
+    "attachment_pending",
+    "attachment_failed",
+    "attachment_delete_pending",
+]:
+    require(invariants, token, "M10 database invariants")
+
+subprocess.run(["node", "--check", str(ROOT / "workload/k6/m10-normal.js")], check=True)
+subprocess.run(["bash", "-n", str(ROOT / "scripts/reliability/run-m10-control.sh")], check=True)
+subprocess.run(
+    ["python3", "-m", "py_compile", str(ROOT / "scripts/reliability/capture-m10-prometheus.py")],
+    check=True,
+)
+
+print("M10 Phase 1 reliability foundation contract: PASS")
