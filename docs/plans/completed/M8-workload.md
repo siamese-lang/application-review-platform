@@ -1,6 +1,6 @@
 # M8 Workload — Execution Plan
 
-Status: ACTIVE
+Status: COMPLETE
 
 ## Goal
 
@@ -467,126 +467,111 @@ No performance conclusion yet.
 
 ### Phase 4 — Smoke and normal baseline
 
-Status: **ACTIVE**
+Status: **COMPLETE**
 
-W1 is **COMPLETE**. W2 valid baseline execution and telemetry correlation are **COMPLETE**.
-W3 closed-VU diagnostic evidence is also retained, but it is not the final frozen-mix peak
-baseline because saturation materially changed the delivered scenario mix.
+W1 correctness smoke and W2 normal baseline are complete.
 
-W1 live checkpoint:
+W1:
 
-- run ID: `m8-w1-20260914T181710Z-faf46c4c`;
-- source SHA: `faf46c4c8256c9921a7aa6da37902b2d3dc53dbf`;
+- run `m8-w1-20260914T181710Z-faf46c4c`;
 - dataset S / seed `20260914`;
-- dataset manifest SHA-256:
-  `b6d964b5bb482ed3ec241e2292b8e98b9d3fc19d7a3e8a2394266288f96a5191`;
-- backend/API release:
-  `cea4ca09d05efd89bcb9227c866d841968c08547`;
-- frontend release:
-  `549511b0a8af9582125e89aaa2bde7fc4bffcd6d`;
-- 1 VU / 1 iteration completed successfully through the real HTTPS/session/CSRF boundary;
-- all frozen workload families were exercised;
-- W1 remains correctness evidence only, not a performance result.
+- real HTTPS/session/CSRF boundary;
+- all frozen workload families exercised successfully;
+- correctness evidence only.
 
-W2 valid live checkpoint:
+W2:
 
-- run ID: `m8-w2-20260914T203329Z-ac3d7657`;
-- source SHA: `ac3d7657f533f70126d12773c8b27f2c5b40b38e`;
+- run `m8-w2-20260914T203329Z-ac3d7657`;
 - dataset M / seed `20260914`;
-- dataset manifest SHA-256:
-  `9e174ead7c9ae7b77d5adc18c93e336b4cac5e30b5962bf47c31de4f42bea696`;
-- 30 VU / 15 minutes from private Tokyo `loadgen-01`;
-- 26,864 business requests with observed mix 40.02/14.98/9.98/20.00/10.01/5.00;
+- 30 VU / 15 minutes;
+- 26,864 business requests;
+- observed mix 40.02/14.98/9.98/20.00/10.01/5.00;
 - non-file success 100.0000%;
 - non-file p95 222.197 ms;
 - internal regression target PASS;
-- retained `pg_stat_statements` snapshot identifies reviewer queue/detail as the strongest
-  current database candidate:
-  - result query mean 100.136 ms across 2,687 calls;
-  - count query mean 67.933 ms across 2,687 calls;
-- reviewer queue/detail is also the slowest client-side family at p95 329.024 ms.
+- Hikari pending 0;
+- db-01 CPU average about 36.7%, max about 52.8%;
+- reviewer queue result/count SQL means 100.136/67.933 ms.
 
-W2 telemetry correlation checkpoint:
-
-- Spring histogram buckets were unavailable, so Prometheus server-side p95 was not
-  reconstructable; request count/sum series were used for rate-derived mean comparison;
-- `/api/v1/review/applications` averaged about 177 ms server-side across the sampled
-  workload window and aligned with the two dominant reviewer queue SQL statements
-  (100.136 ms + 67.933 ms mean execution time);
-- Hikari pending remained 0 and active connections peaked at 5;
-- PostgreSQL backends stayed at 12-13, deadlocks remained 0, and cache-hit ratio stayed
-  around 96.6%-99.5%;
-- db-01 CPU averaged about 36.7% and peaked about 52.8%; app-01 averaged about 15.1% and
-  peaked about 38.2%;
-- memory pressure was low and the private application probe stayed at 1.
-
-Closed-VU W3 diagnostic checkpoint:
-
-- run `m8-w3-20260915T014105Z-5de92b5a` completed 100 VU / 10 minutes;
-- non-file p95 was 1,991.346 ms and the internal regression target failed;
-- Hikari pending averaged about 36.18 and peaked at 55;
-- db-01 CPU averaged about 89.47% and peaked at about 99.98%;
-- edge saturation signals remained absent and the private application probe stayed healthy;
-- delivered business mix diverged materially because closed-VU scenario throughput fell at
-  different rates under saturation.
-
-Immediate next boundary:
-
-- change only W3 load generation to independent constant-arrival-rate scenarios;
-- offer 100 business requests/s at the frozen 40/15/10/20/10/5 mix;
-- retain the 100-VU ceiling and 10-minute duration;
-- treat dropped iterations and support failures as capacity evidence;
-- make no application, database, or infrastructure performance change;
-- use the retained open-model W3 result to decide whether W4 adds value.
-
-Retain:
-
-- exact run manifests;
-- sanitized k6 results;
-- relevant Grafana/Prometheus evidence;
-- selected trace/log references;
-- `pg_stat_statements` baseline snapshots;
-- observed candidate query/resource paths.
-
-Do not modify system performance configuration between baseline runs.
+W2 established a healthy normal-load baseline and identified reviewer queue SQL as the first
+measured database candidate without showing general saturation.
 
 ### Phase 5 — Peak and targeted scenario evidence
 
-Status: PLANNED
+Status: **COMPLETE**
 
-If W2 is healthy/repeatable:
+W3 bounded peak was executed in three steps:
 
-- run W3 bounded peak;
-- run only useful W4 targeted scenarios;
-- continue stress progression only when evidence requires it.
+1. the first 100-VU attempt aborted after a support-path timeout triggered a global harness
+   abort; retained as harness diagnostic evidence only;
+2. a hardened 100 closed-VU / 10-minute run completed and exposed sustained DB/pool
+   saturation, but the delivered business mix diverged under saturation;
+3. the final retained W3 changed only load generation to independent
+   `constant-arrival-rate` scenarios with the frozen offered mix.
 
-Every retained result must distinguish:
+Final W3:
 
-- client/network latency;
-- Nginx upstream/server timing;
-- application/runtime behavior;
-- PostgreSQL behavior;
-- Garage behavior.
+- run `m8-w3-20260915T021822Z-d6c30508`;
+- dataset M / seed `20260914`;
+- 10 minutes;
+- offered 100 business requests/s at 40/15/10/20/10/5;
+- hard 100-VU ceiling;
+- 17,336 completed iterations;
+- 15,668 dropped iterations, about 47.5% of scheduled iterations;
+- 29,814 completed business requests, about 49.7 requests/s;
+- non-file business success among executed requests 100.0000%;
+- non-file p95 2,067.479 ms;
+- internal regression target FAIL;
+- support-path error rate about 6.07%.
+
+Correlated W3 telemetry:
+
+- Hikari active average about 8.61, max 10;
+- Hikari pending average about 39.52, max 54;
+- db-01 CPU average about 90.94%, max about 99.98%;
+- PostgreSQL deadlocks 0;
+- edge-01 CPU average about 3.49%, max about 6.07%;
+- private application probe remained 1;
+- edge listen overflow/drop remained 0.
+
+W3 query means:
+
+- applicant list 215.726 ms;
+- reviewer queue result 417.049 ms;
+- reviewer queue count 305.405 ms.
+
+W4 and 150/200-VU stress were not executed. Dataset M plus W3 already produced a repeatable,
+material saturation signal and concrete SQL candidates. Additional load would add less
+diagnostic value than M9 query-plan analysis and same-condition remeasurement.
 
 ### Phase 6 — M8 evidence closeout
 
-Status: PLANNED
+Status: **COMPLETE**
 
-Close M8 without implementing performance fixes.
+Closeout outputs:
 
-Required output:
+- sanitized evidence retained in `docs/operations/M8_WORKLOAD_EVIDENCE.md`;
+- exact W1/W2/W3 dataset, source, release, manifest, workload, and runtime identities retained;
+- invalid/diagnostic W3 attempts retained separately rather than hidden;
+- PostgreSQL query bottleneck candidate promoted to E3 with
+  `docs/portfolio/M8_POSTGRESQL_QUERY_BOTTLENECK_EVIDENCE.md`;
+- strongest M9 candidates ranked as reviewer queue result/count first and applicant-list SQL
+  second;
+- negative findings retained: no edge saturation, no deadlocks, no memory pressure, private
+  application probe remained healthy;
+- no index/query/cache/pool/runtime optimization was implemented in M8;
+- final runtime OpenTofu plan reported no changes with the retained `storage-03` overrides
+  and `enable_loadgen=true`;
+- temporary Tokyo `loadgen-01` remains retained through M9 for comparable remeasurement;
+  M9 closeout owns its destruction/lifecycle decision.
 
-- sanitized M8 evidence document;
-- exact dataset/workload/run identities;
-- normal baseline result;
-- peak/targeted results actually executed;
-- candidate bottlenecks/hypotheses ranked by observed evidence;
-- explicit negative findings;
-- Evidence Map updates only where evidence maturity changed;
-- temporary `loadgen-01` lifecycle decision;
-- final infrastructure drift/lifecycle check;
-- active M8 plan moved to completed;
-- next M9 boundary identifies measured candidates, not predetermined solutions.
+M9 must begin from measured SQL and plan evidence:
+
+1. extract the exact reviewer queue and applicant-list SQL;
+2. run `EXPLAIN (ANALYZE, BUFFERS)` under controlled conditions;
+3. compare the smallest evidence-supported alternatives;
+4. implement only justified changes;
+5. rerun equivalent W2/W3 conditions before claiming improvement.
 
 ## Files/components expected
 

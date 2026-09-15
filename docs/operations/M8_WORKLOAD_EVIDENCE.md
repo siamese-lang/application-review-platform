@@ -1,6 +1,6 @@
 # M8 Workload — Live Evidence
 
-Status: ACTIVE / W1 VERIFIED / W2 BASELINE VERIFIED  
+Status: COMPLETE / W1 VERIFIED / W2 BASELINE VERIFIED / W3 PEAK VERIFIED  
 Last updated: 2026-09-15 UTC
 
 This record contains sanitized M8 workload evidence. It intentionally omits passwords,
@@ -165,3 +165,133 @@ W2 conclusion:
 - W3 bounded peak is justified to determine whether materially different behavior appears
   at 100 VU before M8 is closed or a targeted W4 is selected;
 - no index/query/runtime change is made in M8.
+
+## W3 — bounded peak / offered-load baseline
+
+Status: VERIFIED LIVE PEAK EVIDENCE.
+
+Two earlier W3 attempts are retained separately as harness/diagnostic history:
+
+- `docs/operations/M8_W3_ABORTED_DIAGNOSTIC.md`: first 100-VU attempt aborted after
+  support-path dial timeouts triggered a global harness abort;
+- `docs/operations/M8_W3_CLOSED_VU_SATURATION.md`: 100 closed VUs completed for 10 minutes
+  and exposed sustained DB/pool saturation, but the delivered business mix diverged because
+  slower scenarios completed fewer iterations.
+
+The final retained W3 run changed only the load-generation model to independent
+`constant-arrival-rate` scenarios. Application, database, infrastructure, dataset, and
+security behavior were unchanged.
+
+Retained run identity:
+
+- run ID: `m8-w3-20260915T021822Z-d6c30508`;
+- workload source SHA: `d6c30508eed79fbc6dfc67de07ce0099817f3a60`;
+- backend/API release SHA: `cea4ca09d05efd89bcb9227c866d841968c08547`;
+- frontend release SHA: `549511b0a8af9582125e89aaa2bde7fc4bffcd6d`;
+- dataset: M, seed `20260914`;
+- dataset manifest SHA-256:
+  `9e174ead7c9ae7b77d5adc18c93e336b4cac5e30b5962bf47c31de4f42bea696`;
+- deterministic overlay SHA-256:
+  `f93dfb6a030fa552de3dd4c7b9c022368079680bf2b16b13c05883e8b678aae1`;
+- load generator: private Tokyo `loadgen-01`, k6 `2.2.0`;
+- duration: 10 minutes;
+- offered business load: 100 requests/s at frozen 40/15/10/20/10/5 mix;
+- hard scenario VU ceiling: 100 total.
+
+Capacity outcome:
+
+- completed iterations: 17,336;
+- dropped iterations: 15,668;
+- scheduled plus dropped iterations: 33,004, consistent with the intended arrival schedule;
+- dropped-iteration share: about 47.5%;
+- completed business requests: 29,814, about 49.7 requests/s;
+- non-file business success rate among executed requests: 100.0000%;
+- non-file p95: 2,067.479 ms;
+- internal regression target: FAIL;
+- support requests: 11,859;
+- support-path error rate: about 6.07%;
+- HTTP request failure rate: about 1.73%.
+
+The completed-request mix was 45.06/12.49/11.46/19.63/8.12/3.24. Unlike the closed-VU
+diagnostic, this is not interpreted as the offered workload changing: each scenario retained
+its configured arrival rate and fixed VU ceiling, and overload surfaced as
+`dropped_iterations`.
+
+Client-side family latency:
+
+- list/detail: average 929.240 ms, p95 1,999.511 ms, p99 2,537.484 ms;
+- create/save: average 753.641 ms, p95 1,762.127 ms, p99 2,248.994 ms;
+- submit/resubmit: average 842.671 ms, p95 1,902.165 ms, p99 2,327.386 ms;
+- reviewer queue/detail: average 1,122.995 ms, p95 2,413.960 ms, p99 3,047.314 ms;
+- review actions: average 776.802 ms, p95 1,777.605 ms, p99 2,477.681 ms;
+- attachment: average 734.632 ms, p95 1,945.873 ms, p99 2,416.727 ms.
+
+The reset `pg_stat_statements` snapshot identifies three dominant read statements:
+
+- applicant list: 6,717 calls, 1,449,031.906 ms total, 215.726 ms mean;
+- reviewer queue result: 2,926 calls, 1,220,284.117 ms total, 417.049 ms mean;
+- reviewer queue count: 2,926 calls, 893,613.734 ms total, 305.405 ms mean.
+
+Compared with W2, their mean execution times increased from 30.784/100.136/67.933 ms to
+215.726/417.049/305.405 ms, approximately 7.0x/4.2x/4.5x.
+
+### W3 server-side telemetry correlation
+
+During the final W3 window:
+
+- application request rate averaged about 59.7/s and peaked about 134.0/s;
+- Hikari active connections averaged about 8.61 and peaked at the configured pool size 10;
+- Hikari pending connections averaged about 39.52 and peaked at 54;
+- PostgreSQL backends averaged about 13.96 and peaked at 19;
+- PostgreSQL deadlocks remained 0;
+- db-01 CPU averaged about 90.94% and peaked about 99.98%;
+- app-01 CPU averaged about 18.83% and peaked about 41.81%;
+- edge-01 CPU averaged about 3.49% and peaked about 6.07%;
+- memory pressure remained low on app/db/edge/storage;
+- the private application probe remained `1`;
+- edge listen overflow/drop remained `0`.
+
+This reproduces the closed-VU diagnostic pattern under the corrected offered-load model:
+database CPU and application datasource-pool waiting are sustained, while edge capacity,
+memory, deadlocks, and application availability do not show the same saturation signal.
+
+The evidence supports a database-work/query-cost performance investigation in M9. It does
+not yet prove a specific missing index, query rewrite, pool-size change, cache, or other
+solution.
+
+## W4 / stress disposition
+
+No W4 targeted scenario and no 150/200-VU stress progression were executed.
+
+Reason:
+
+- dataset M plus the bounded W3 already produced a material and repeatable saturation signal;
+- reviewer queue SQL and applicant-list SQL are already measurable candidates for M9;
+- edge/storage availability did not emerge as the limiting factor;
+- a further mixed or targeted workload would add less diagnostic value than M9 query-plan
+  analysis with `EXPLAIN (ANALYZE, BUFFERS)` followed by same-condition remeasurement.
+
+Stopping here avoids manufacturing additional scenarios after the milestone question has
+already been answered.
+
+## M8 closeout
+
+Final runtime OpenTofu plan, using the retained `storage-03` overrides and
+`enable_loadgen=true`, reported:
+
+`No changes. Your infrastructure matches the configuration.`
+
+Temporary `loadgen-01` remains intentionally retained through M9 because M9 requires the
+same isolated Tokyo load-generator boundary for comparable before/after measurements. Its
+destruction/lifecycle decision moves to M9 closeout.
+
+M8 conclusion:
+
+- normal 30-VU load is healthy and meets the internal regression target;
+- the bounded offered-load peak does not sustain 100 business requests/s within the
+  100-VU ceiling and drops about 47.5% of scheduled iterations;
+- DB CPU saturation and Hikari waiting correlate with materially increased read-query cost;
+- reviewer queue result/count remain the strongest route-specific M9 candidate, with
+  applicant list also becoming material under saturation;
+- no performance change was made in M8.
+
