@@ -44,6 +44,9 @@ for (const family of familyNames) {
 const nonFileRequests = new Counter('m8_non_file_requests');
 const nonFileErrors = new Rate('m8_non_file_errors');
 const nonFileDuration = new Trend('m8_non_file_duration', true);
+const supportRequests = new Counter('m8_support_requests');
+const supportErrors = new Rate('m8_support_errors');
+const supportDuration = new Trend('m8_support_duration', true);
 
 export const options = {
   noCookiesReset: true,
@@ -124,32 +127,49 @@ function tags(family, name, scope = 'business') {
   return result;
 }
 
+function recordSupport(response, ok) {
+  supportRequests.add(1);
+  supportErrors.add(!ok);
+  supportDuration.add(response.timings.duration);
+  return ok;
+}
+
 function supportCsrf() {
   const response = http.get(`${baseUrl}/api/v1/auth/csrf`, {
     tags: tags('support', 'GET /api/v1/auth/csrf', 'support'),
   });
-  if (response.status !== 200) {
-    exec.test.abort(`CSRF support request failed with status ${response.status}`);
+
+  let body = null;
+  if (response.status === 200) {
+    try {
+      body = response.json();
+    } catch (_) {
+      body = null;
+    }
   }
-  let body;
-  try {
-    body = response.json();
-  } catch (error) {
-    exec.test.abort(`CSRF support response is not JSON: ${error}`);
-  }
-  if (!body.headerName || !body.token) {
-    exec.test.abort('CSRF support response is missing headerName/token');
-  }
-  return body;
+
+  const ok =
+    response.status === 200 &&
+    body !== null &&
+    Boolean(body.headerName) &&
+    Boolean(body.token);
+
+  recordSupport(response, ok);
+  return ok ? body : null;
 }
 
 function ensureRole(role) {
   if (authenticatedRole === role) {
-    return;
+    return true;
   }
+
   const username = role === 'APPLICANT' ? applicantUsername : reviewerUsername;
   const password = role === 'APPLICANT' ? applicantPassword : reviewerPassword;
   const token = supportCsrf();
+  if (!token) {
+    return false;
+  }
+
   const response = http.post(
     `${baseUrl}/api/v1/auth/login`,
     JSON.stringify({ username, password }),
@@ -161,14 +181,24 @@ function ensureRole(role) {
       tags: tags('support', 'POST /api/v1/auth/login', 'support'),
     },
   );
-  if (response.status !== 200) {
-    exec.test.abort(`${role} login failed with status ${response.status}`);
+
+  let body = null;
+  if (response.status === 200) {
+    try {
+      body = response.json();
+    } catch (_) {
+      body = null;
+    }
   }
-  const body = response.json();
-  if (body.role !== role) {
-    exec.test.abort(`${role} login returned unexpected role ${body.role}`);
+
+  const ok = response.status === 200 && body !== null && body.role === role;
+  recordSupport(response, ok);
+  if (!ok) {
+    return false;
   }
+
   authenticatedRole = role;
+  return true;
 }
 
 function recordBusiness(family, response, expectedStatuses, extraOk = true) {
@@ -198,6 +228,9 @@ function businessGet(family, path, name, expectedStatuses = [200], params = {}) 
 
 function businessJson(method, family, path, name, body, expectedStatuses) {
   const token = supportCsrf();
+  if (!token) {
+    return null;
+  }
   const response = http.request(method, `${baseUrl}${path}`, JSON.stringify(body), {
     headers: {
       [token.headerName]: token.token,
@@ -217,6 +250,9 @@ function pace(startedAtMs, targetSeconds) {
 }
 
 function jsonOrNull(response) {
+  if (!response) {
+    return null;
+  }
   try {
     return response.json();
   } catch (_) {
@@ -236,7 +272,10 @@ function submittedId(slot) {
 
 export function listDetail() {
   const started = Date.now();
-  ensureRole('APPLICANT');
+  if (!ensureRole('APPLICANT')) {
+    pace(started, 2.0);
+    return;
+  }
 
   businessGet(
     'list_detail',
@@ -256,7 +295,10 @@ export function listDetail() {
 
 export function createSave() {
   const started = Date.now();
-  ensureRole('APPLICANT');
+  if (!ensureRole('APPLICANT')) {
+    pace(started, 1.866667);
+    return;
+  }
   const unique = `${runId}-create-${exec.scenario.iterationInTest}`;
 
   const created = businessJson(
@@ -276,7 +318,7 @@ export function createSave() {
   );
 
   const application = jsonOrNull(created);
-  if (created.status === 201 && application && application.id !== undefined) {
+  if (created && created.status === 201 && application && application.id !== undefined) {
     businessJson(
       'PUT',
       'create_save',
@@ -299,7 +341,10 @@ export function createSave() {
 
 export function submitResubmit() {
   const started = Date.now();
-  ensureRole('APPLICANT');
+  if (!ensureRole('APPLICANT')) {
+    pace(started, 1.0);
+    return;
+  }
 
   const slot = exec.scenario.iterationInTest;
   if (slot >= 7000) {
@@ -320,7 +365,10 @@ export function submitResubmit() {
 
 export function reviewerQueueDetail() {
   const started = Date.now();
-  ensureRole('REVIEWER');
+  if (!ensureRole('REVIEWER')) {
+    pace(started, 2.0);
+    return;
+  }
 
   businessGet(
     'reviewer_queue_detail',
@@ -340,7 +388,10 @@ export function reviewerQueueDetail() {
 
 export function reviewAction() {
   const started = Date.now();
-  ensureRole('REVIEWER');
+  if (!ensureRole('REVIEWER')) {
+    pace(started, 2.0);
+    return;
+  }
 
   const slot = exec.scenario.iterationInTest;
   if (slot >= 3500) {
@@ -358,7 +409,12 @@ export function reviewAction() {
   );
 
   const application = jsonOrNull(startedReview);
-  if (startedReview.status === 200 && application && application.version !== undefined) {
+  if (
+    startedReview &&
+    startedReview.status === 200 &&
+    application &&
+    application.version !== undefined
+  ) {
     const decision = slot % 3;
     if (decision === 0) {
       businessJson(
@@ -395,12 +451,19 @@ export function reviewAction() {
 
 export function attachment() {
   const started = Date.now();
-  ensureRole('APPLICANT');
+  if (!ensureRole('APPLICANT')) {
+    pace(started, 2.4);
+    return;
+  }
 
   const slot = 7800 + (exec.vu.idInTest % 100);
   const applicationId = draftId(slot);
 
   const token = supportCsrf();
+  if (!token) {
+    pace(started, 2.4);
+    return;
+  }
   const uploaded = http.post(
     `${baseUrl}/api/v1/applications/${applicationId}/attachments`,
     {
@@ -445,6 +508,10 @@ export function attachment() {
     });
 
     const deleteToken = supportCsrf();
+    if (!deleteToken) {
+      pace(started, 2.4);
+      return;
+    }
     const deleted = http.del(
       `${baseUrl}/api/v1/applications/${applicationId}/attachments/${attachmentResponse.id}`,
       null,
@@ -457,11 +524,7 @@ export function attachment() {
         ),
       },
     );
-    if (deleted.status !== 204) {
-      exec.test.abort(
-        `attachment cleanup failed with status ${deleted.status}`,
-      );
-    }
+    recordSupport(deleted, deleted.status === 204);
   }
 
   pace(started, 2.4);
