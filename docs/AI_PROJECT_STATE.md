@@ -160,44 +160,39 @@ M9 closeout owns the final loadgen lifecycle/destruction decision.
 
 ## M9 immediate next work
 
-Continue **M9 Phase 1 — exact SQL and read-only plan baseline**.
+Phase 1 query-plan diagnosis is **COMPLETE**.
 
-Planning base:
+Retained evidence:
 
-`f8d996852d901ba44c1add8945d6831e54601eda`
+`docs/operations/M9_PERFORMANCE_EVIDENCE.md`
 
-First target:
+Observed reviewer queue baseline:
 
-- reviewer queue result query ID from M8: `5482672959566718733`;
-- reviewer queue count query ID from M8: `1459435087802319229`;
-- endpoint: `GET /api/v1/review/applications?status=SUBMITTED&size=20`;
-- repository path:
-  `ReviewerApplicationController.queue` →
-  `ApplicationService.reviewQueue` →
-  `ApplicationRepository.findReviewQueuePageByStatus`.
+- reviewer ID `2`, status `SUBMITTED`, page size 20;
+- 10,542 target rows, all currently unassigned;
+- only application PK and applicant_id indexes exist;
+- result and count both use `Parallel Seq Scan` on `applications`;
+- result query performs joins plus top-N sort before returning 20 rows;
+- result quiet-window execution: 75.271 ms, W3 mean: 417.049 ms;
+- count quiet-window execution: 47.994 ms, W3 mean: 305.405 ms;
+- planner estimate: 48 scan rows per process vs about 3,514 actual;
+- no extended statistics exist;
+- status/reviewer distribution is strongly correlated;
+- generated status-filtered SQL repeats status predicates.
 
-Immediate sequence:
+Continue **M9 Phase 2 — choose one bounded intervention**.
 
-1. lock exact current `main` SHA and verify runtime/dataset M identity;
-2. extract the exact reviewer result/count SQL and representative synthetic parameters;
-3. run read-only `EXPLAIN (ANALYZE, BUFFERS)` for both statements during a quiet
-   diagnostic window;
-4. retain plan/buffer/row evidence;
-5. form the first causal hypothesis only after observing the plans;
-6. select one bounded intervention;
-7. do not change indexes, JPQL, Hikari, VM sizes, PostgreSQL settings, or cache before the
-   plan evidence exists.
+Immediate next slice:
 
-Second candidate only after Candidate 1 remeasurement:
+1. run a read-only logically equivalent SUBMITTED reviewer query with the redundant status
+   structure removed;
+2. compare plan/cardinality/buffers/execution with Phase 1;
+3. use that evidence to decide whether query simplification is a useful first intervention
+   or whether the dominant issue remains the missing queue-specific access path;
+4. do not create an index, migration, extended statistics, pool change, VM resize, or cache
+   before this comparison is complete.
 
-- applicant-list query ID `4815990123001274496`.
-
-M9 before/after comparisons must preserve dataset M, seed `20260914`, Tokyo
-`loadgen-01`, W2 30 VU / 15 minutes, and final W3 offered 100 business req/s with the
-100-VU ceiling / 10-minute profile.
-
-The PostgreSQL bottleneck evidence remains **E3** until an actual change is revalidated
-under comparable conditions.
+The PostgreSQL evidence remains **E3**. No performance change has been revalidated yet.
 
 ## Do not revisit unless new evidence requires it
 

@@ -330,7 +330,7 @@ Do not claim improvement from SQL plan time alone or from a single client p95 al
 
 ### Phase 1 — exact SQL and read-only plan baseline
 
-Status: **ACTIVE**
+Status: **COMPLETE**
 
 Goal: reproduce the measured reviewer queue result/count statements against dataset M and
 retain plan-level evidence before making any performance change.
@@ -347,7 +347,7 @@ Tasks:
 7. compare the plan evidence with the M8 `pg_stat_statements` measurements;
 8. write the first causal hypothesis only after the plans are observed.
 
-The first incomplete work item after this plan is merged is **Phase 1 task 1**.
+The retained Phase 1 result is documented in `docs/operations/M9_PERFORMANCE_EVIDENCE.md`.
 
 Done condition:
 
@@ -358,9 +358,20 @@ Done condition:
 
 ### Phase 2 — choose one bounded intervention
 
-Status: PLANNED
+Status: **ACTIVE**
 
 Use Phase 1 evidence to compare the smallest plausible options.
+
+Immediate Phase 2 comparison order:
+
+1. run a read-only logically equivalent status-specific reviewer query to isolate the effect
+   of removing redundant status predicates without changing schema;
+2. compare its plan/cardinality/execution with the retained Phase 1 plan;
+3. decide whether query simplification alone is material enough to implement;
+4. if table scan/order work remains dominant, evaluate the smallest queue-specific access
+   path/index design using the observed filter/order semantics;
+5. keep statistics/extended-statistics changes separate from access-path changes so their
+   effects remain attributable.
 
 Possible classes include, only if supported by the plan:
 
