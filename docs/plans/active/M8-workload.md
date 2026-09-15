@@ -469,7 +469,7 @@ No performance conclusion yet.
 
 Status: **ACTIVE**
 
-W1 is **COMPLETE**. W2 is the immediate next live boundary.
+W1 is **COMPLETE**. W2 valid baseline execution is **COMPLETE**. Server-side telemetry correlation is the immediate next boundary.
 
 W1 live checkpoint:
 
@@ -486,17 +486,31 @@ W1 live checkpoint:
 - all frozen workload families were exercised;
 - W1 remains correctness evidence only, not a performance result.
 
+W2 valid live checkpoint:
+
+- run ID: `m8-w2-20260914T203329Z-ac3d7657`;
+- source SHA: `ac3d7657f533f70126d12773c8b27f2c5b40b38e`;
+- dataset M / seed `20260914`;
+- dataset manifest SHA-256:
+  `9e174ead7c9ae7b77d5adc18c93e336b4cac5e30b5962bf47c31de4f42bea696`;
+- 30 VU / 15 minutes from private Tokyo `loadgen-01`;
+- 26,864 business requests with observed mix 40.02/14.98/9.98/20.00/10.01/5.00;
+- non-file success 100.0000%;
+- non-file p95 222.197 ms;
+- internal regression target PASS;
+- retained `pg_stat_statements` snapshot identifies reviewer queue/detail as the strongest
+  current database candidate:
+  - result query mean 100.136 ms across 2,687 calls;
+  - count query mean 67.933 ms across 2,687 calls;
+- reviewer queue/detail is also the slowest client-side family at p95 329.024 ms.
+
 Immediate next boundary:
 
-- review/merge the repository-owned W2 harness;
-- restore deterministic dataset M;
-- apply the deterministic interactive DRAFT ownership overlay;
-- reset `pg_stat_statements`;
-- run 30 VU for 15 minutes from the retained Tokyo load generator;
-- retain the actual business mix, non-file success/p95 result, k6 summary, run manifest,
-  and top-query snapshot;
-- collect correlated server/telemetry evidence before deciding whether W3/W4 is justified;
-- do not optimize during W2.
+- correlate the valid W2 run with M7 edge/application/JVM/PostgreSQL/Garage/host telemetry;
+- preserve server-side evidence sufficient to separate cross-region/client latency from
+  application and database cost;
+- decide from correlated evidence whether W3 or a targeted W4 is justified;
+- do not optimize, add indexes, resize nodes, or begin M9 during this correlation step.
 
 Retain:
 
