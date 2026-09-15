@@ -502,7 +502,6 @@ export function attachment() {
 
     const deleteToken = supportCsrf();
     if (!deleteToken) {
-      pace(started, 2.4);
       return;
     }
     const deleted = http.del(
