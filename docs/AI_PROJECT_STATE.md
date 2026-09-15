@@ -33,13 +33,17 @@ Milestones:
 - M6 Operations & Delivery — complete
 - M7 Observability — complete
 - M8 Workload — **complete**
-- M9 Performance — next, not started
+- M9 Performance — **ACTIVE**
 
 Completed M8 plan:
 
 `docs/plans/completed/M8-workload.md`
 
-There is no active M9 plan yet. Do not begin optimization from a predetermined solution.
+Current active plan:
+
+`docs/plans/active/M9-performance.md`
+
+M9 begins from measured SQL/plan evidence. Do not begin optimization from a predetermined solution.
 
 Latest retained workload source baseline:
 
@@ -154,32 +158,46 @@ M8 final runtime OpenTofu plan, with `enable_loadgen=true` and retained override
 
 M9 closeout owns the final loadgen lifecycle/destruction decision.
 
-## M9 entry boundary
+## M9 immediate next work
 
-M9 begins from measured evidence, not from a chosen fix.
+Continue **M9 Phase 1 — exact SQL and read-only plan baseline**.
 
-Ranked candidates:
+Planning base:
 
-1. reviewer queue result/count SQL — strongest route-specific candidate;
-2. applicant-list SQL — becomes materially expensive under saturation;
-3. Hikari pending and DB CPU — correlated saturation signals, not independent tuning targets.
+`f8d996852d901ba44c1add8945d6831e54601eda`
 
-Required first analysis:
+First target:
 
-1. extract exact SQL for the measured candidate;
-2. run `EXPLAIN (ANALYZE, BUFFERS)`;
-3. identify the actual scan/join/sort/filter cost;
-4. compare the smallest evidence-supported alternatives;
-5. implement one bounded performance change;
-6. repeat equivalent W2/W3 conditions before claiming improvement.
+- reviewer queue result query ID from M8: `5482672959566718733`;
+- reviewer queue count query ID from M8: `1459435087802319229`;
+- endpoint: `GET /api/v1/review/applications?status=SUBMITTED&size=20`;
+- repository path:
+  `ReviewerApplicationController.queue` →
+  `ApplicationService.reviewQueue` →
+  `ApplicationRepository.findReviewQueuePageByStatus`.
 
-Do not start M9 by:
+Immediate sequence:
 
-- increasing Hikari pool size;
-- adding an index without plan evidence;
-- adding Redis/cache;
-- resizing DB/app nodes;
-- rewriting queries speculatively.
+1. lock exact current `main` SHA and verify runtime/dataset M identity;
+2. extract the exact reviewer result/count SQL and representative synthetic parameters;
+3. run read-only `EXPLAIN (ANALYZE, BUFFERS)` for both statements during a quiet
+   diagnostic window;
+4. retain plan/buffer/row evidence;
+5. form the first causal hypothesis only after observing the plans;
+6. select one bounded intervention;
+7. do not change indexes, JPQL, Hikari, VM sizes, PostgreSQL settings, or cache before the
+   plan evidence exists.
+
+Second candidate only after Candidate 1 remeasurement:
+
+- applicant-list query ID `4815990123001274496`.
+
+M9 before/after comparisons must preserve dataset M, seed `20260914`, Tokyo
+`loadgen-01`, W2 30 VU / 15 minutes, and final W3 offered 100 business req/s with the
+100-VU ceiling / 10-minute profile.
+
+The PostgreSQL bottleneck evidence remains **E3** until an actual change is revalidated
+under comparable conditions.
 
 ## Do not revisit unless new evidence requires it
 
@@ -197,6 +215,6 @@ Do not start M9 by:
 > 먼저 `AGENTS.md`, `docs/AI_PROJECT_STATE.md`, 현재 active plan이 있으면 그것만 읽고
 > repository 실제 상태를 source of truth로 사용하라.  
 > M8은 완료되었으므로 재실행하거나 재설계하지 마라.  
-> 다음 작업은 M9 Performance 계획 수립이며, M8에서 측정한 reviewer queue SQL을
-> 1순위 후보로 삼되 solution을 미리 정하지 말고 SQL + EXPLAIN (ANALYZE, BUFFERS)
-> 증거부터 확보하라.
+> `docs/plans/active/M9-performance.md`의 첫 미완료 Phase 1 작업부터 진행하라.  
+> reviewer queue result/count SQL을 1순위 후보로 삼되 solution을 미리 정하지 말고
+> 실제 SQL + `EXPLAIN (ANALYZE, BUFFERS)` 증거부터 확보하라.
