@@ -1,6 +1,6 @@
 # M9 Performance — Live Evidence
 
-Status: ACTIVE / PHASE 4 SAME-CONDITION REMEASUREMENT COMPLETE  
+Status: COMPLETE / E4 CHANGE REVALIDATED  
 Last updated: 2026-09-15 UTC
 
 This document retains sanitized M9 performance diagnosis and before/after evidence.
@@ -566,3 +566,53 @@ Decision:
   manufacturing another database bottleneck.
 
 Phase 5 is complete. M9 proceeds to closeout.
+
+
+## Phase 6 — M9 closeout
+
+Final runtime lifecycle:
+
+1. with `enable_loadgen=true` and the retained `storage-03` overrides, the final M9
+   OpenTofu plan reported:
+   `No changes. Your infrastructure matches the configuration.`;
+2. a separate `enable_loadgen=false` destroy plan was reviewed before apply;
+3. the reviewed plan contained exactly four delete actions and no other changes:
+   - `google_compute_instance.loadgen[0]`;
+   - `google_compute_subnetwork.loadgen[0]`;
+   - `google_compute_router.loadgen[0]`;
+   - `google_compute_router_nat.loadgen[0]`;
+4. the saved plan was applied:
+   `0 added, 0 changed, 4 destroyed`;
+5. a final `enable_loadgen=false` OpenTofu plan reported no changes.
+
+The post-apply attempt to read the optional `loadgen` output returned
+`Output "loadgen" not found`. This was a verification-command assumption, not an apply
+failure: the preceding apply had already destroyed exactly four reviewed resources and the
+subsequent no-drift plan confirmed the final state.
+
+Persistent Seoul runtime remains:
+
+- edge-01;
+- app-01;
+- db-01;
+- storage-01;
+- storage-02;
+- storage-03;
+- ops-01;
+- obs-01.
+
+Retained `storage-03` overrides remain:
+
+- machine: `e2-small`;
+- boot disk: `pd-standard`.
+
+M9 closeout decision:
+
+- the PostgreSQL query-bottleneck evidence is promoted from E3 to E4;
+- no second performance intervention is justified by the retained after-run;
+- the temporary M8/M9 load generator and its Tokyo network resources are removed;
+- residual reviewer-count heap work and transient client/transport failures remain explicit
+  limitations;
+- the live persistent runtime is clean under the final reviewed OpenTofu inputs.
+
+M9 is complete.
