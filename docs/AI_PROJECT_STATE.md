@@ -1,7 +1,7 @@
 # AI Project State — Fast Resume Checkpoint
 
 Status: ACTIVE  
-Last updated: 2026-09-14 UTC
+Last updated: 2026-09-15 UTC
 
 This file is the short execution checkpoint for ChatGPT/Codex sessions. It is not an
 architecture document, ADR, milestone plan, or evidence record.
@@ -40,9 +40,9 @@ Current active plan:
 
 Current verified main:
 
-`faf46c4c8256c9921a7aa6da37902b2d3dc53dbf`
+`ac3d7657f533f70126d12773c8b27f2c5b40b38e`
 
-M8 Phase 1, Phase 2, and Phase 3 are complete. Phase 4 is active.
+M8 Phase 1, Phase 2, and Phase 3 are complete. Phase 4 is active; W1 and the valid W2 client/database baseline are complete, with server-side telemetry correlation next.
 
 Latest verified post-merge `main` baseline CI before this W2 implementation branch:
 
@@ -168,16 +168,26 @@ Verified W1:
 - all frozen workload families passed through the real HTTPS/session/CSRF boundary;
 - W1 timing is not performance evidence.
 
+Verified W2:
+
+- run ID `m8-w2-20260914T203329Z-ac3d7657`;
+- source `ac3d7657f533f70126d12773c8b27f2c5b40b38e`;
+- dataset M / seed `20260914`;
+- 30 VU / 15 minutes;
+- 26,864 business requests;
+- observed mix 40.02/14.98/9.98/20.00/10.01/5.00;
+- non-file success 100.0000%;
+- non-file p95 222.197 ms;
+- internal regression target PASS;
+- reviewer queue/detail client p95 329.024 ms and the corresponding queue result/count SQL
+  dominate the retained `pg_stat_statements` execution-cost snapshot.
+
 Immediate next slice:
 
-1. review/merge the focused W2 implementation PR;
-2. restore deterministic M dataset / seed `20260914`;
-3. apply the repository-owned interactive DRAFT overlay;
-4. reset `pg_stat_statements`;
-5. run the fixed 30-VU / 15-minute mixed baseline from Tokyo;
-6. retain k6/run-manifest/query-statistics evidence;
-7. correlate the result with M7 telemetry;
-8. decide from evidence whether W3/W4 is useful.
+1. correlate the valid W2 run with existing M7 edge/application/JVM/PostgreSQL/Garage/host telemetry;
+2. retain only sanitized server-side evidence needed to interpret the W2 client/database result;
+3. decide from evidence whether W3 or a targeted W4 is useful;
+4. do not optimize, resize, add indexes/cache/queue, or begin M9 yet.
 
 Do not optimize, resize business nodes, add indexes/cache/queue, or begin M9 during W2.
 
