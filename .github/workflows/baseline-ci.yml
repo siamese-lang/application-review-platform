@@ -26,6 +26,7 @@ jobs:
       m7_observability_infrastructure_static: ${{ steps.classify.outputs.m7_observability_infrastructure_static }}
       m8_workload_foundation_static: ${{ steps.classify.outputs.m8_workload_foundation_static }}
       m8_dataset_tooling_static: ${{ steps.classify.outputs.m8_dataset_tooling_static }}
+      m10_reliability_static: ${{ steps.classify.outputs.m10_reliability_static }}
       release_publish: ${{ steps.classify.outputs.release_publish }}
     steps:
       - uses: actions/checkout@v4
@@ -92,6 +93,19 @@ jobs:
           python3 scripts/workload/test-m8-loadgen-config.py
           bash -n deploy/m8-loadgen-preflight.sh deploy/configure-loadgen.sh
           node --check workload/k6/foundation-smoke.js
+
+  m10-reliability-static:
+    needs: changes
+    if: needs.changes.outputs.m10_reliability_static == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate M10 Phase 1 reliability foundation
+        run: |
+          python3 scripts/reliability/test-m10-reliability-foundation.py
+          bash -n scripts/reliability/run-m10-control.sh
+          python3 -m py_compile scripts/reliability/capture-m10-prometheus.py
+          node --check workload/k6/m10-normal.js
 
   m7-observability-infrastructure-static:
     needs: changes
