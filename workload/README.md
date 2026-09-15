@@ -177,30 +177,45 @@ system or rerun automatically to obtain a better number.
 
 ## W3 bounded peak baseline
 
-`k6/w3-peak.js` reuses the verified W2 business/security behavior at a bounded 100-VU
-peak. The repository-owned entrypoint is:
+`k6/w3-peak.js` is the M8 bounded-peak profile after the closed-VU diagnostic showed that
+scenario throughput diverges under saturation.
+
+The repository-owned entrypoint remains:
 
 ```bash
 bash workload/run-w3.sh
 ```
 
-W3 restores the same deterministic dataset M / seed `20260914`, applies the same
-interactive DRAFT ownership overlay, resets `pg_stat_statements`, and retains the same
-evidence classes as W2.
+W3 restores deterministic dataset M / seed `20260914`, applies the same interactive
+DRAFT ownership overlay, resets `pg_stat_statements`, and retains the same evidence classes
+as W2.
 
-The six scenarios total 100 VU and preserve the frozen business-request mix through
-scenario-specific pacing:
+The retained W3 profile uses six independent `constant-arrival-rate` scenarios so the
+**offered** business mix does not collapse when one family becomes slower:
 
-- list/detail: 40 VU, target 40 req/s;
-- create/save: 14 VU, target 15 req/s;
-- submit/resubmit: 10 VU, target 10 req/s;
-- reviewer queue/detail: 20 VU, target 20 req/s;
-- review actions: 10 VU, target 10 req/s;
-- attachment upload/download: 6 VU, target 5 req/s.
+- list/detail: 20 iterations/s = 40 business requests/s;
+- create/save: 15 iterations / 2 s = 15 business requests/s;
+- submit/resubmit: 10 iterations/s = 10 business requests/s;
+- reviewer queue/detail: 10 iterations/s = 20 business requests/s;
+- review actions: 5 iterations/s = 10 business requests/s;
+- attachment upload/download: 5 iterations / 2 s = 5 business requests/s.
 
-The run is bounded to 10 minutes. This keeps the mutable deterministic DRAFT/SUBMITTED
-pools within the profile-M fixture boundary while still testing materially higher
-concurrency than W2.
+The nominal offered business rate is therefore 100 requests/s with the frozen
+40/15/10/20/10/5 mix.
 
-W3 is still measurement, not optimization. A regression-target miss is retained rather
-than automatically rerun or tuned away.
+Scenario VU pools retain the previous 40/14/10/20/10/6 allocation. Both preallocated and
+maximum VUs sum to 100. k6 therefore records `dropped_iterations` when the system cannot
+sustain the offered rate instead of silently changing the workload mix by slowing individual
+closed-VU loops.
+
+The run remains bounded to 10 minutes. The mutable deterministic pools stay within dataset-M
+limits at the configured arrival rates:
+
+- submit: at most 6,000 started iterations against a 7,000-DRAFT pool;
+- review actions: at most 3,000 started iterations against a 3,500-SUBMITTED pool.
+
+Support CSRF/login/cleanup traffic still uses the real deployed boundary. Support failures
+are measured separately and do not globally abort the entire peak run.
+
+W3 is measurement, not optimization. A target miss, support failure, or dropped iteration is
+retained as evidence rather than tuned away or automatically rerun.

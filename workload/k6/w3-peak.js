@@ -52,45 +52,63 @@ export const options = {
   noCookiesReset: true,
   scenarios: {
     list_detail: {
-      executor: 'constant-vus',
+      executor: 'constant-arrival-rate',
       exec: 'listDetail',
-      vus: 40,
+      rate: 20,
+      timeUnit: '1s',
       duration: '10m',
+      preAllocatedVUs: 40,
+      maxVUs: 40,
       gracefulStop: '30s',
     },
     create_save: {
-      executor: 'constant-vus',
+      executor: 'constant-arrival-rate',
       exec: 'createSave',
-      vus: 14,
+      rate: 15,
+      timeUnit: '2s',
       duration: '10m',
+      preAllocatedVUs: 14,
+      maxVUs: 14,
       gracefulStop: '30s',
     },
     submit_resubmit: {
-      executor: 'constant-vus',
+      executor: 'constant-arrival-rate',
       exec: 'submitResubmit',
-      vus: 10,
+      rate: 10,
+      timeUnit: '1s',
       duration: '10m',
+      preAllocatedVUs: 10,
+      maxVUs: 10,
       gracefulStop: '30s',
     },
     reviewer_queue_detail: {
-      executor: 'constant-vus',
+      executor: 'constant-arrival-rate',
       exec: 'reviewerQueueDetail',
-      vus: 20,
+      rate: 10,
+      timeUnit: '1s',
       duration: '10m',
+      preAllocatedVUs: 20,
+      maxVUs: 20,
       gracefulStop: '30s',
     },
     review_action: {
-      executor: 'constant-vus',
+      executor: 'constant-arrival-rate',
       exec: 'reviewAction',
-      vus: 10,
+      rate: 5,
+      timeUnit: '1s',
       duration: '10m',
+      preAllocatedVUs: 10,
+      maxVUs: 10,
       gracefulStop: '30s',
     },
     attachment: {
-      executor: 'constant-vus',
+      executor: 'constant-arrival-rate',
       exec: 'attachment',
-      vus: 6,
+      rate: 5,
+      timeUnit: '2s',
       duration: '10m',
+      preAllocatedVUs: 6,
+      maxVUs: 6,
       gracefulStop: '30s',
     },
   },
@@ -107,7 +125,7 @@ export const options = {
   ],
   tags: {
     milestone: 'm8',
-    profile: 'w3-peak',
+    profile: 'w3-arrival-peak',
   },
   summaryTrendStats: ['min', 'med', 'avg', 'p(90)', 'p(95)', 'p(99)', 'max'],
 };
@@ -242,13 +260,6 @@ function businessJson(method, family, path, name, body, expectedStatuses) {
   return response;
 }
 
-function pace(startedAtMs, targetSeconds) {
-  const elapsed = (Date.now() - startedAtMs) / 1000;
-  if (elapsed < targetSeconds) {
-    sleep(targetSeconds - elapsed);
-  }
-}
-
 function jsonOrNull(response) {
   if (!response) {
     return null;
@@ -271,9 +282,7 @@ function submittedId(slot) {
 }
 
 export function listDetail() {
-  const started = Date.now();
   if (!ensureRole('APPLICANT')) {
-    pace(started, 2.0);
     return;
   }
 
@@ -290,13 +299,10 @@ export function listDetail() {
     'GET /api/v1/applications/{id}',
   );
 
-  pace(started, 2.0);
 }
 
 export function createSave() {
-  const started = Date.now();
   if (!ensureRole('APPLICANT')) {
-    pace(started, 1.866667);
     return;
   }
   const unique = `${runId}-create-${exec.scenario.iterationInTest}`;
@@ -336,13 +342,10 @@ export function createSave() {
     );
   }
 
-  pace(started, 1.866667);
 }
 
 export function submitResubmit() {
-  const started = Date.now();
   if (!ensureRole('APPLICANT')) {
-    pace(started, 1.0);
     return;
   }
 
@@ -360,13 +363,10 @@ export function submitResubmit() {
     [200],
   );
 
-  pace(started, 1.0);
 }
 
 export function reviewerQueueDetail() {
-  const started = Date.now();
   if (!ensureRole('REVIEWER')) {
-    pace(started, 2.0);
     return;
   }
 
@@ -383,13 +383,10 @@ export function reviewerQueueDetail() {
     'GET /api/v1/review/applications/{id}',
   );
 
-  pace(started, 2.0);
 }
 
 export function reviewAction() {
-  const started = Date.now();
   if (!ensureRole('REVIEWER')) {
-    pace(started, 2.0);
     return;
   }
 
@@ -446,13 +443,10 @@ export function reviewAction() {
     }
   }
 
-  pace(started, 2.0);
 }
 
 export function attachment() {
-  const started = Date.now();
   if (!ensureRole('APPLICANT')) {
-    pace(started, 2.4);
     return;
   }
 
@@ -461,7 +455,6 @@ export function attachment() {
 
   const token = supportCsrf();
   if (!token) {
-    pace(started, 2.4);
     return;
   }
   const uploaded = http.post(
@@ -509,7 +502,6 @@ export function attachment() {
 
     const deleteToken = supportCsrf();
     if (!deleteToken) {
-      pace(started, 2.4);
       return;
     }
     const deleted = http.del(
@@ -527,5 +519,4 @@ export function attachment() {
     recordSupport(deleted, deleted.status === 204);
   }
 
-  pace(started, 2.4);
 }

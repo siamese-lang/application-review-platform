@@ -469,7 +469,9 @@ No performance conclusion yet.
 
 Status: **ACTIVE**
 
-W1 is **COMPLETE**. W2 valid baseline execution is **COMPLETE**. Server-side telemetry correlation is the immediate next boundary.
+W1 is **COMPLETE**. W2 valid baseline execution and telemetry correlation are **COMPLETE**.
+W3 closed-VU diagnostic evidence is also retained, but it is not the final frozen-mix peak
+baseline because saturation materially changed the delivered scenario mix.
 
 W1 live checkpoint:
 
@@ -518,14 +520,24 @@ W2 telemetry correlation checkpoint:
   peaked about 38.2%;
 - memory pressure was low and the private application probe stayed at 1.
 
+Closed-VU W3 diagnostic checkpoint:
+
+- run `m8-w3-20260915T014105Z-5de92b5a` completed 100 VU / 10 minutes;
+- non-file p95 was 1,991.346 ms and the internal regression target failed;
+- Hikari pending averaged about 36.18 and peaked at 55;
+- db-01 CPU averaged about 89.47% and peaked at about 99.98%;
+- edge saturation signals remained absent and the private application probe stayed healthy;
+- delivered business mix diverged materially because closed-VU scenario throughput fell at
+  different rates under saturation.
+
 Immediate next boundary:
 
-- implement/review the bounded W3 peak harness;
-- run dataset M at about 100 VU for 10 minutes from the same Tokyo load generator using the
-  same business mix and real security boundary;
-- retain the same client/query/server evidence classes;
-- use W3 evidence to decide whether a targeted W4 adds value;
-- do not optimize, add indexes, resize nodes, or begin M9.
+- change only W3 load generation to independent constant-arrival-rate scenarios;
+- offer 100 business requests/s at the frozen 40/15/10/20/10/5 mix;
+- retain the 100-VU ceiling and 10-minute duration;
+- treat dropped iterations and support failures as capacity evidence;
+- make no application, database, or infrastructure performance change;
+- use the retained open-model W3 result to decide whether W4 adds value.
 
 Retain:
 
