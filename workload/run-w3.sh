@@ -295,10 +295,10 @@ manifest = {
         "version": "1",
         "vus": 100,
         "duration": "10m",
-        "think_time_seconds": 1.0,
+        "think_time_seconds": 0.0,
         "pacing_model": (
-            "closed constant-vus; target business request rates "
-            "40/15/10/20/10/5 rps for "
+            "open constant-arrival-rate; offered business request rates "
+            "40/15/10/20/10/5 rps with a 100-VU cap for "
             "list-detail/create-save/submit/reviewer/review-action/attachment"
         ),
         "attachment_fixture": f"w1-attachment.txt sha256:{fixture_sha}",
