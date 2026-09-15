@@ -182,11 +182,22 @@ Verified W2:
 - reviewer queue/detail client p95 329.024 ms and the corresponding queue result/count SQL
   dominate the retained `pg_stat_statements` execution-cost snapshot.
 
+W2 telemetry correlation is complete:
+
+- reviewer queue remains the strongest measured candidate: client family p95 329.024 ms,
+  Spring rate-derived route mean about 177 ms, and the two dominant queue SQL statements
+  average 100.136 ms and 67.933 ms;
+- no general saturation was observed: Hikari pending 0, deadlocks 0, DB connections 12-13,
+  db-01 CPU average about 36.7% / max about 52.8%, app-01 CPU average about 15.1% / max
+  about 38.2%, and the application probe remained healthy;
+- Spring histogram buckets were not present, so no Prometheus server-side p95 is claimed.
+
 Immediate next slice:
 
-1. correlate the valid W2 run with existing M7 edge/application/JVM/PostgreSQL/Garage/host telemetry;
-2. retain only sanitized server-side evidence needed to interpret the W2 client/database result;
-3. decide from evidence whether W3 or a targeted W4 is useful;
+1. implement and review W3 bounded peak using dataset M, the same frozen business mix, the
+   same Tokyo load generator, and real session/CSRF behavior;
+2. run about 100 VU for 10 minutes and retain the same evidence classes;
+3. decide from W3 whether a targeted W4 is useful;
 4. do not optimize, resize, add indexes/cache/queue, or begin M9 yet.
 
 Do not optimize, resize business nodes, add indexes/cache/queue, or begin M9 during W2.
