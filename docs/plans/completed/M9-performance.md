@@ -1,6 +1,6 @@
 # M9 Performance — Execution Plan
 
-Status: ACTIVE
+Status: COMPLETE
 
 ## Goal
 
@@ -409,7 +409,7 @@ Phase 2 decision:
 
 ### Phase 3 — implement and verify the first intervention
 
-Status: **ACTIVE**
+Status: **COMPLETE**
 
 Implement only the selected intervention.
 
@@ -432,7 +432,26 @@ Done condition:
 
 ### Phase 4 — deploy and same-condition remeasurement
 
-Status: PLANNED
+Status: **COMPLETE**
+
+Retained Phase 4 progress:
+
+- exact release `d90eb558bdb6317d49b0a7ce82148ddeb4b5babf` deployed;
+- Flyway V7 applied successfully in 277 ms;
+- exact result/count SQL plans rechecked after deployment;
+- W2 same-condition run `m8-w2-20260915T165007Z-d90eb558` PASS;
+- W2 non-file p95: 92.346 ms vs 222.197 ms before;
+- reviewer result/count means: 3.491/5.781 ms vs 100.136/67.933 ms before;
+- W3 same-condition run `m8-w3-20260915T171056Z-d90eb558` PASS;
+- W3 completed business requests: 44,097 vs 29,814 before;
+- W3 dropped share: 23.73% vs about 47.5% before;
+- W3 non-file p95: 80.909 ms vs 2,067.479 ms before;
+- W3 reviewer result/count means: 0.645/9.497 ms vs 417.049/305.405 ms before;
+- W3 Hikari pending average: 1.256 vs about 39.52 before;
+- W3 db-01 CPU average: 37.113% vs about 90.94% before;
+- W3 non-file success: 99.2652%, regression target PASS;
+- edge access log showed no 5xx and no request_time >=55s; transient client/transport failures
+  are retained as a measurement caveat rather than attributed to the index.
 
 Deploy the exact reviewed release through the existing M6 delivery path.
 
@@ -474,7 +493,16 @@ rerunning until a favorable number appears.
 
 ### Phase 5 — residual bottleneck decision
 
-Status: PLANNED
+Status: **COMPLETE**
+
+Retained decision:
+
+- no second database intervention is justified;
+- reviewer result/count are no longer material peak bottlenecks;
+- applicant-list mean recovered to 25.321 ms under W3 while DB CPU/pool waiting normalized;
+- remaining dropped iterations and transient client/transport failures do not justify an
+  unrelated index, query rewrite, pool/VM resize, or cache without new evidence;
+- residual reviewer count bitmap/heap work is documented as a limit, not optimized further.
 
 After the first intervention is remeasured:
 
@@ -490,7 +518,18 @@ plan → change → correctness → W2/W3 remeasurement loop.
 
 ### Phase 6 — M9 closeout
 
-Status: PLANNED
+Status: **COMPLETE**
+
+Retained closeout:
+
+- PostgreSQL query-bottleneck evidence promoted to E4;
+- final M9 retained-runtime plan with `enable_loadgen=true`: no drift;
+- reviewed `enable_loadgen=false` plan contained exactly four temporary loadgen deletes;
+- apply result: 0 added, 0 changed, 4 destroyed;
+- final `enable_loadgen=false` plan: no drift;
+- persistent Seoul runtime retained unchanged;
+- temporary Tokyo `loadgen-01`, subnet, router, and NAT removed;
+- no second database optimization was introduced.
 
 Required closeout:
 

@@ -1,9 +1,10 @@
 # Evidence Card — PostgreSQL read-path saturation under representative peak load
 
-Status: BASELINE RETAINED  
+Status: CHANGE REVALIDATED  
 Milestone: M8  
-Evidence maturity: E3  
-Source release SHA: `d6c30508eed79fbc6dfc67de07ce0099817f3a60`
+Evidence maturity: E4  
+Baseline source SHA: `d6c30508eed79fbc6dfc67de07ce0099817f3a60`
+Revalidated release SHA: `d90eb558bdb6317d49b0a7ce82148ddeb4b5babf`
 
 ## Context / assumption
 
@@ -179,3 +180,89 @@ Using a deterministic 100,000-application dataset and repeatable mixed workload,
 a peak-load bottleneck to PostgreSQL read-query cost and datasource-pool waiting, retained
 the baseline evidence, and deferred the actual optimization until query-plan analysis could
 be performed under the same conditions.
+
+
+## M9 change revalidation
+
+M9 extracted the exact reviewer queue result/count SQL, retained
+`EXPLAIN (ANALYZE, BUFFERS)`, compared a predicate-only simplification, and rejected that
+option because the application-table sequential scan and buffer work remained.
+
+The selected bounded change was a single Flyway V7 index:
+
+`applications(status, updated_at, id) INCLUDE (reviewer_id)`
+
+No reviewer JPQL, Hikari pool size, VM size, PostgreSQL setting, cache, or architecture
+component changed with the intervention.
+
+### Plan-level verification
+
+Reviewer result:
+
+- before: parallel sequential scan, application buffers `shared hit=10816`, explicit top-N
+  sort, 75.271 ms quiet-window execution;
+- after: ordered index scan, no explicit sort, application scan `shared hit=19 read=3`,
+  0.750 ms quiet-window execution.
+
+Reviewer count:
+
+- before: parallel sequential scan, `shared hit=10816`, 47.994 ms;
+- after: bitmap index/heap path, `shared hit=5923 read=76`, 19.570 ms.
+
+The count still processes the full matching set, so its residual heap work remains a
+documented limit.
+
+### Same-condition W2
+
+Run: `m8-w2-20260915T165007Z-d90eb558`
+
+- non-file success: 100%;
+- non-file p95: 92.346 ms vs 222.197 ms before;
+- reviewer result mean: 3.491 ms vs 100.136 ms;
+- reviewer count mean: 5.781 ms vs 67.933 ms;
+- applicant-list mean: 29.673 ms vs 30.784 ms;
+- reviewer family p95: 63.375 ms vs 329.024 ms.
+
+### Same-condition W3
+
+Run: `m8-w3-20260915T171056Z-d90eb558`
+
+- completed business requests: 44,097 vs 29,814;
+- approximate completed business request rate: 73.5/s vs 49.7/s;
+- dropped iteration share: 23.73% vs about 47.5%;
+- non-file p95: 80.909 ms vs 2,067.479 ms;
+- reviewer result mean: 0.645 ms vs 417.049 ms;
+- reviewer count mean: 9.497 ms vs 305.405 ms;
+- applicant-list mean: 25.321 ms vs 215.726 ms;
+- Hikari pending average: 1.256 vs about 39.52;
+- db-01 CPU average: 37.113% vs about 90.94%;
+- regression target: PASS vs FAIL.
+
+The applicant-list improvement is treated as a secondary consequence of removing the
+dominant reviewer-queue database pressure, not as evidence that applicant-list SQL itself was
+changed.
+
+The W3 after-run had 99.2652% non-file success rather than 100%. The retained Nginx window
+showed zero 5xx responses and zero requests with `request_time >=55s`; 1,075 of 63,022 k6
+HTTP requests were not present in the edge access log for the same manifest window. Rare
+client timing outliers were present in connection/waiting metrics. The exact transport root
+cause is not claimed; the observation is retained as a measurement caveat rather than
+silently excluded.
+
+## M9 residual decision
+
+No second database optimization was implemented.
+
+After the first intervention, database CPU and datasource-pool waiting were no longer
+saturated, reviewer result/count means were small, and applicant-list mean was 25.321 ms
+under the bounded peak. A second index/query/pool/VM/cache change would therefore have been
+speculative rather than evidence-driven.
+
+## E4 claim
+
+Using a deterministic 100,000-application workload, I traced peak-load database saturation
+to the reviewer queue result/count access path, rejected a predicate-only rewrite after plan
+measurement, added one Flyway-managed ordering/filter index, and revalidated the change under
+the same normal and peak profiles: peak non-file p95 fell from 2.07 s to 80.9 ms, DB CPU
+average from 90.9% to 37.1%, and completed business work increased from 29,814 to 44,097
+requests while the project regression criterion passed.

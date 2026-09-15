@@ -1,6 +1,6 @@
 # M9 Performance — Live Evidence
 
-Status: ACTIVE / PHASE 1 QUERY-PLAN BASELINE COMPLETE  
+Status: COMPLETE / E4 CHANGE REVALIDATED  
 Last updated: 2026-09-15 UTC
 
 This document retains sanitized M9 performance diagnosis and before/after evidence.
@@ -272,3 +272,347 @@ Implementation boundary:
 The index uses standard transactional `CREATE INDEX`. On this project-sized dataset this
 keeps the Flyway path simple, but deployment must record migration/build time and acknowledge
 that standard index creation can block concurrent writes while the index is built.
+
+
+## Phase 3 — first intervention live verification
+
+Release deployed:
+
+`d90eb558bdb6317d49b0a7ce82148ddeb4b5babf`
+
+Flyway live result:
+
+- version: 7;
+- description: `m9 reviewer queue access path`;
+- script: `V7__m9_reviewer_queue_access_path.sql`;
+- execution time: 277 ms;
+- success: true.
+
+Live index definition:
+
+`CREATE INDEX idx_applications_review_queue_status_order ON public.applications USING btree (status, updated_at, id) INCLUDE (reviewer_id)`
+
+### Post-index exact reviewer result plan
+
+The original Hibernate result SQL was rerun with the same representative parameters.
+
+Observed changes:
+
+- access path changed from `Parallel Seq Scan` to
+  `Index Scan using idx_applications_review_queue_status_order`;
+- the index supplies `updated_at,id` ordering directly, so the previous top-N sort
+  disappeared;
+- application index scan returned the first 20 qualifying rows directly;
+- application scan buffers dropped from `shared hit=10816` before the change to
+  `shared hit=19 read=3` on the index scan;
+- full plan buffers were `shared hit=80 read=3`;
+- execution time changed from 75.271 ms in the retained pre-change quiet-window plan to
+  0.750 ms in this post-change plan.
+
+The quiet-window execution-time ratio is retained only as SQL-plan evidence, not as the
+representative workload claim.
+
+### Post-index exact reviewer count plan
+
+Observed changes:
+
+- count changed from `Parallel Seq Scan` to a bitmap path using
+  `idx_applications_review_queue_status_order`;
+- the count still evaluates all 10,542 matching SUBMITTED rows;
+- heap blocks remained material: 5,920 exact blocks;
+- buffers changed from `shared hit=10816` before the change to
+  `shared hit=5923 read=76`;
+- execution time changed from 47.994 ms to 19.570 ms.
+
+This confirms the first intervention strongly improves the paged result path while leaving a
+smaller but real residual count cost.
+
+Phase 3 conclusion:
+
+- migration/test/CI: PASS;
+- exact release deployment: PASS;
+- Flyway V7 live application: PASS;
+- post-index exact SQL plan: PASS;
+- no JPQL, pool, VM, cache, or PostgreSQL configuration change was bundled.
+
+## Phase 4 — same-condition W2 remeasurement
+
+Post-change W2 run:
+
+`m8-w2-20260915T165007Z-d90eb558`
+
+Comparable identity:
+
+- source/release/backend/frontend:
+  `d90eb558bdb6317d49b0a7ce82148ddeb4b5babf`;
+- dataset M seed: `20260914`;
+- dataset manifest SHA-256:
+  `9e174ead7c9ae7b77d5adc18c93e336b4cac5e30b5962bf47c31de4f42bea696`;
+- overlay SHA-256:
+  `f93dfb6a030fa552de3dd4c7b9c022368079680bf2b16b13c05883e8b678aae1`;
+- 30 VU / 15 minutes;
+- frozen business mix preserved.
+
+W2 workload result:
+
+- business requests: 26,761 vs 26,864 before;
+- non-file success: 100% vs 100%;
+- non-file p95: 92.346 ms vs 222.197 ms before;
+- regression target: PASS.
+
+Target SQL means:
+
+- applicant list:
+  29.673 ms vs 30.784 ms before;
+- reviewer queue result:
+  3.491 ms vs 100.136 ms before;
+- reviewer queue count:
+  5.781 ms vs 67.933 ms before.
+
+Reviewer workload-family latency:
+
+- average: 53.141 ms;
+- p95: 63.375 ms;
+- p99: 191.842 ms;
+- max: 2,174.452 ms.
+
+The retained pre-change reviewer family p95 was 329.024 ms.
+
+Interpretation:
+
+- applicant-list SQL remained effectively unchanged;
+- the targeted reviewer result/count statements improved by roughly 96.5% and 91.5% in mean
+  execution time respectively;
+- reviewer-family p95 improved by roughly 80.7%;
+- overall W2 non-file p95 improved by roughly 58.4%;
+- success remained 100%;
+- the change is therefore revalidated under the representative normal-load profile without
+  a correctness regression.
+
+This is sufficient to proceed to the same-condition W3 bounded peak. Peak-load evidence is
+still required before closing Phase 4 or promoting the performance evidence maturity.
+
+
+## Phase 4 — same-condition W3 bounded-peak remeasurement
+
+Post-change W3 run:
+
+`m8-w3-20260915T171056Z-d90eb558`
+
+Comparable identity:
+
+- source/release/backend/frontend:
+  `d90eb558bdb6317d49b0a7ce82148ddeb4b5babf`;
+- dataset M seed: `20260914`;
+- dataset manifest SHA-256:
+  `9e174ead7c9ae7b77d5adc18c93e336b4cac5e30b5962bf47c31de4f42bea696`;
+- overlay SHA-256:
+  `f93dfb6a030fa552de3dd4c7b9c022368079680bf2b16b13c05883e8b678aae1`;
+- same Tokyo `loadgen-01`, `e2-standard-2`;
+- same 10-minute open arrival profile and 100-VU ceiling.
+
+### Peak workload result
+
+Before/after:
+
+- completed iterations: 17,336 → 25,164;
+- dropped iterations: 15,668 → 7,830;
+- dropped share: about 47.5% → 23.73%;
+- completed business requests: 29,814 → 44,097;
+- approximate completed business request rate: 49.7/s → 73.5/s;
+- non-file p95: 2,067.479 ms → 80.909 ms;
+- non-file success: 100% → 99.2652%;
+- support-path error rate: about 6.07% → 4.1849%;
+- regression target: FAIL → PASS.
+
+The after-run business mix remained close to the frozen target:
+
+- list/detail: 40.68%;
+- create/save: 14.10%;
+- submit/resubmit: 10.57%;
+- reviewer queue/detail: 20.74%;
+- review action: 9.58%;
+- attachment: 4.33%.
+
+### Peak SQL evidence
+
+Target statement means:
+
+- applicant list: 215.726 ms → 25.321 ms;
+- reviewer queue result: 417.049 ms → 0.645 ms;
+- reviewer queue count: 305.405 ms → 9.497 ms.
+
+The reviewer result/count improvements are the direct target of the index intervention.
+The applicant-list improvement is treated as a secondary effect of lower database saturation,
+not as proof that the applicant-list SQL itself was optimized.
+
+After-run statement calls:
+
+- applicant list: 8,876;
+- reviewer queue result: 4,522;
+- reviewer queue count: 4,522.
+
+### Peak server-side telemetry
+
+Manifest-aligned window:
+
+- start: 2026-09-15T17:10:59Z;
+- end: 2026-09-15T17:21:32Z;
+- Prometheus samples: 43 at 15-second resolution.
+
+Before/after:
+
+- Hikari active average: about 8.61 → 0.977;
+- Hikari active max: 10 → 10;
+- Hikari pending average: about 39.52 → 1.256;
+- Hikari pending max: 54 → 54;
+- db-01 CPU average: about 90.94% → 37.113%;
+- db-01 CPU max: about 99.98% → 61.931%;
+- app-01 CPU average: about 18.83% → 24.504%;
+- app-01 CPU max: about 41.81% → 47.644%;
+- PostgreSQL backends average: about 13.96 → 12.023;
+- PostgreSQL backends max: 19 → 13.
+
+The retained Hikari pending maximum remains 54, but the low 1.256 average over the full
+window shows that peak waiting was not sustained as it was in the baseline. The evidence does
+not use a single maximum sample to claim continuous saturation.
+
+The higher average app CPU is consistent with the application spending less time blocked on
+the database while completing substantially more business work. It is not treated as an
+independent optimization target.
+
+### After-run error interpretation
+
+The after-run passed the project regression criterion but non-file success was 99.2652% rather
+than the baseline 100%, so the error shape was checked before accepting the comparison.
+
+k6 recorded:
+
+- total HTTP requests: 63,022;
+- failed HTTP requests: 1,103;
+- HTTP failure rate: 1.7502%;
+- non-file business errors: 310 of 42,188;
+- reviewer queue/detail errors: 105 of 9,145;
+- list/detail errors: 192 of 17,939.
+
+The manifest-aligned Nginx access log contained 61,947 requests:
+
+- HTTP 200: 56,919;
+- HTTP 201: 4,066;
+- HTTP 204: 951;
+- HTTP 400: 11;
+- HTTP 5xx: 0;
+- requests with Nginx `request_time >= 55s`: 0.
+
+Thus 1,075 k6 requests had no matching request recorded in the edge access log within the
+same retained window, while the edge showed no 5xx response and no 55-second server-side
+request. k6 phase metrics also showed rare extreme client-side/network timing outliers:
+
+- blocked max: 19,703.596 ms, p99 0.033 ms;
+- connecting max: 19,621.948 ms, p99 0 ms;
+- TLS handshake max: 82.750 ms;
+- waiting max: 60,001.225 ms, p99 410.710 ms;
+- request-duration max: 60,001.287 ms, p99 410.864 ms.
+
+This evidence does not establish one exact network root cause. It does show that the after-run
+errors are not accompanied by application/edge 5xx responses or long Nginx request processing.
+They are retained as client/transport-side transient failures rather than silently discarded
+or attributed to the index change.
+
+Correctness confidence therefore rests on:
+
+- unchanged application query semantics;
+- focused reviewer integration coverage remaining green;
+- exact-head CI;
+- W2 100% non-file success;
+- W3 regression criterion PASS;
+- no W3 edge 5xx evidence.
+
+### Phase 4 conclusion
+
+Phase 4 is complete.
+
+The same-condition remeasurement supports a causal performance improvement:
+
+`reviewer queue access-path index → lower reviewer SQL work → lower DB CPU / datasource-pool
+waiting → higher completed peak work and much lower end-to-end latency`.
+
+The evidence is sufficient for E4 change-revalidated maturity. It is not a production
+capacity claim and does not assert that every transient W3 client error has been root-caused.
+
+## Phase 5 — residual bottleneck decision
+
+After the intervention:
+
+- reviewer result mean is 0.645 ms at W3;
+- reviewer count mean is 9.497 ms at W3;
+- applicant-list mean is 25.321 ms at W3;
+- db-01 CPU average is 37.113%;
+- Hikari pending average is 1.256;
+- non-file p95 is 80.909 ms;
+- the project regression target passes.
+
+The applicant-list statement now has the largest total execution time among the retained
+candidate reads because it is called frequently, but its mean execution time is no longer
+materially inflated under peak load and database saturation is absent.
+
+Decision:
+
+- do not add a second M9 database intervention;
+- do not add another index, JPQL rewrite, extended statistics, Hikari resize, VM resize, or
+  cache solely to chase the remaining dropped iterations or isolated client/transport errors;
+- retain the count path's residual bitmap/heap work as a documented limit;
+- carry client/transport transient behavior as a separate observation rather than
+  manufacturing another database bottleneck.
+
+Phase 5 is complete. M9 proceeds to closeout.
+
+
+## Phase 6 — M9 closeout
+
+Final runtime lifecycle:
+
+1. with `enable_loadgen=true` and the retained `storage-03` overrides, the final M9
+   OpenTofu plan reported:
+   `No changes. Your infrastructure matches the configuration.`;
+2. a separate `enable_loadgen=false` destroy plan was reviewed before apply;
+3. the reviewed plan contained exactly four delete actions and no other changes:
+   - `google_compute_instance.loadgen[0]`;
+   - `google_compute_subnetwork.loadgen[0]`;
+   - `google_compute_router.loadgen[0]`;
+   - `google_compute_router_nat.loadgen[0]`;
+4. the saved plan was applied:
+   `0 added, 0 changed, 4 destroyed`;
+5. a final `enable_loadgen=false` OpenTofu plan reported no changes.
+
+The post-apply attempt to read the optional `loadgen` output returned
+`Output "loadgen" not found`. This was a verification-command assumption, not an apply
+failure: the preceding apply had already destroyed exactly four reviewed resources and the
+subsequent no-drift plan confirmed the final state.
+
+Persistent Seoul runtime remains:
+
+- edge-01;
+- app-01;
+- db-01;
+- storage-01;
+- storage-02;
+- storage-03;
+- ops-01;
+- obs-01.
+
+Retained `storage-03` overrides remain:
+
+- machine: `e2-small`;
+- boot disk: `pd-standard`.
+
+M9 closeout decision:
+
+- the PostgreSQL query-bottleneck evidence is promoted from E3 to E4;
+- no second performance intervention is justified by the retained after-run;
+- the temporary M8/M9 load generator and its Tokyo network resources are removed;
+- residual reviewer-count heap work and transient client/transport failures remain explicit
+  limitations;
+- the live persistent runtime is clean under the final reviewed OpenTofu inputs.
+
+M9 is complete.

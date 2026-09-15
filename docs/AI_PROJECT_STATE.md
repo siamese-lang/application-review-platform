@@ -33,17 +33,17 @@ Milestones:
 - M6 Operations & Delivery — complete
 - M7 Observability — complete
 - M8 Workload — **complete**
-- M9 Performance — **ACTIVE**
+- M9 Performance — **complete**
 
 Completed M8 plan:
 
 `docs/plans/completed/M8-workload.md`
 
-Current active plan:
+Completed M9 plan:
 
-`docs/plans/active/M9-performance.md`
+`docs/plans/completed/M9-performance.md`
 
-M9 begins from measured SQL/plan evidence. Do not begin optimization from a predetermined solution.
+There is currently no M10 active plan in the repository. Do not invent M10 execution work before its plan is created and reviewed.
 
 Latest retained workload source baseline:
 
@@ -143,53 +143,62 @@ Retained `storage-03` overrides:
 - machine: `e2-small`;
 - boot disk: `pd-standard`.
 
-Temporary M8/M9 load generator:
+M8/M9 temporary load generator lifecycle:
 
-- `loadgen-01`;
-- Tokyo `asia-northeast1-a`;
-- private IP `10.50.0.10`;
-- machine `e2-standard-2`;
-- no public IP;
-- retained intentionally through M9 for same-condition before/after workload measurement.
+- `loadgen-01` and its Tokyo subnet/router/NAT were removed at M9 closeout;
+- reviewed destroy plan: exactly four delete actions;
+- apply: 0 added, 0 changed, 4 destroyed;
+- final `enable_loadgen=false` OpenTofu plan: no changes.
 
-M8 final runtime OpenTofu plan, with `enable_loadgen=true` and retained overrides:
+Persistent Seoul runtime remains unchanged with the retained `storage-03` overrides.
 
-`No changes. Your infrastructure matches the configuration.`
+## M9 closeout
 
-M9 closeout owns the final loadgen lifecycle/destruction decision.
+M9 Performance is complete.
 
-## M9 immediate next work
+Completed plan:
 
-M9 Phase 1 is complete and Phase 2 intervention selection is complete.
+`docs/plans/completed/M9-performance.md`
 
-First intervention:
+Revalidated release:
 
-- Flyway V7 index:
+`d90eb558bdb6317d49b0a7ce82148ddeb4b5babf`
+
+Retained result:
+
+- reviewer queue result/count bottleneck diagnosed with exact SQL and
+  `EXPLAIN (ANALYZE, BUFFERS)`;
+- predicate-only simplification rejected after measurement;
+- one Flyway-managed index implemented:
   `applications(status, updated_at, id) INCLUDE (reviewer_id)`;
-- no JPQL change;
-- no Hikari/VM/PostgreSQL/cache change;
-- focused PostgreSQL integration test verifies the index contract.
+- W2 and W3 repeated under equivalent conditions;
+- W3 non-file p95: 2,067.479 ms → 80.909 ms;
+- W3 reviewer result/count means:
+  417.049/305.405 ms → 0.645/9.497 ms;
+- W3 db-01 CPU average: about 90.94% → 37.113%;
+- W3 Hikari pending average: about 39.52 → 1.256;
+- completed business requests: 29,814 → 44,097;
+- project regression target: FAIL → PASS;
+- no second database intervention justified;
+- PostgreSQL query-bottleneck evidence: **E4**.
 
-Reason:
+Measurement caveat:
 
-- simplifying the duplicated reviewer/status predicate improved the planner estimate somewhat
-  but did not reduce sequential-scan/buffer work;
-- the measured queue path still scanned the application table and processed 10,542
-  qualifying rows before returning 20.
+- W3 after-run non-file success: 99.2652%;
+- edge window showed no 5xx and no >=55s Nginx request;
+- exact transient client/transport root cause is not claimed.
 
-Continue **M9 Phase 3 — implement and verify the first intervention**.
+Runtime closeout:
 
-Immediate next boundary:
+- M9 retained-runtime plan before teardown: no drift;
+- temporary Tokyo loadgen + subnet/router/NAT: removed;
+- final `enable_loadgen=false` plan: no drift;
+- persistent Seoul runtime retained.
 
-1. review the V7 migration and focused test diff;
-2. exact-head CI must pass;
-3. merge only the index intervention;
-4. deploy the exact reviewed release through the existing delivery path;
-5. record Flyway migration/index-build behavior;
-6. rerun the same reviewer result/count `EXPLAIN (ANALYZE, BUFFERS)` before W2/W3
-   remeasurement.
+Next milestone:
 
-No performance improvement claim exists yet. Evidence remains **E3**.
+- M10 Reliability is next, but no active M10 plan currently exists in the repository.
+- Create/review the M10 plan before executing fault experiments.
 
 ## Do not revisit unless new evidence requires it
 
@@ -204,9 +213,9 @@ No performance improvement claim exists yet. Evidence remains **E3**.
 ## Short resume prompt
 
 > @GitHub `siamese-lang/application-review-platform` 작업을 계속한다.  
-> 먼저 `AGENTS.md`, `docs/AI_PROJECT_STATE.md`, 현재 active plan이 있으면 그것만 읽고
-> repository 실제 상태를 source of truth로 사용하라.  
-> M8은 완료되었으므로 재실행하거나 재설계하지 마라.  
-> `docs/plans/active/M9-performance.md`의 첫 미완료 Phase 1 작업부터 진행하라.  
-> reviewer queue result/count SQL을 1순위 후보로 삼되 solution을 미리 정하지 말고
-> 실제 SQL + `EXPLAIN (ANALYZE, BUFFERS)` 증거부터 확보하라.
+> 먼저 `AGENTS.md`와 `docs/AI_PROJECT_STATE.md`를 읽고 repository 실제 상태를
+> source of truth로 사용하라.  
+> M1–M9는 완료되었으므로 재설계하거나 재실행하지 마라.  
+> M10 Reliability가 다음 milestone이지만 현재 active M10 plan은 없다.  
+> 먼저 기존 프로젝트 원칙과 M9 closeout 상태를 기준으로 M10 실행계획을 작성·검토하고,
+> 승인된 plan의 첫 미완료 작업부터 진행하라.
