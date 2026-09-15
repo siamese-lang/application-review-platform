@@ -160,49 +160,58 @@ M9 closeout owns the final loadgen lifecycle/destruction decision.
 
 ## M9 immediate next work
 
-M9 Phase 1 diagnosis, Phase 2 intervention selection, and Phase 3 implementation/live SQL-plan
-verification are complete.
+M9 Phases 1–5 are complete. Phase 6 closeout is ACTIVE.
 
-Deployed release:
+Revalidated release:
 
 `d90eb558bdb6317d49b0a7ce82148ddeb4b5babf`
 
-First intervention:
+Implemented intervention:
 
 `applications(status, updated_at, id) INCLUDE (reviewer_id)`
 
-Live verification:
+Key after evidence:
 
-- Flyway V7: success, 277 ms;
-- reviewer result plan: ordered index scan, no sort, 0.750 ms quiet-window execution;
-- reviewer count plan: bitmap index/heap path, 19.570 ms quiet-window execution.
+- W2 run: `m8-w2-20260915T165007Z-d90eb558`;
+- W2 non-file p95: 92.346 ms vs 222.197 ms before;
+- W2 reviewer result/count means: 3.491/5.781 ms vs 100.136/67.933 ms before;
+- W3 run: `m8-w3-20260915T171056Z-d90eb558`;
+- W3 completed business requests: 44,097 vs 29,814 before;
+- W3 dropped share: 23.73% vs about 47.5%;
+- W3 non-file p95: 80.909 ms vs 2,067.479 ms;
+- W3 reviewer result/count means: 0.645/9.497 ms vs 417.049/305.405 ms;
+- W3 Hikari pending average: 1.256 vs about 39.52;
+- W3 db-01 CPU average: 37.113% vs about 90.94%;
+- W3 regression target: PASS.
 
-Phase 4 W2 same-condition run is complete:
+W3 after-run caveat:
 
-`m8-w2-20260915T165007Z-d90eb558`
+- non-file success was 99.2652%;
+- edge access log showed no 5xx and no >=55s request in the manifest-aligned window;
+- 1,075 k6 requests were absent from that edge window and rare client timing outliers were
+  present;
+- exact transport root cause is not claimed.
 
-- business requests: 26,761;
-- non-file success: 100%;
-- non-file p95: 92.346 ms vs 222.197 ms before;
-- applicant-list SQL mean: 29.673 ms vs 30.784 ms before;
-- reviewer result SQL mean: 3.491 ms vs 100.136 ms before;
-- reviewer count SQL mean: 5.781 ms vs 67.933 ms before;
-- reviewer family p95: 63.375 ms vs 329.024 ms before;
-- regression target: PASS.
+Phase 5 decision:
 
-Continue **M9 Phase 4 — same-condition W3 bounded peak remeasurement**.
+- no second M9 database intervention;
+- DB saturation is no longer present;
+- applicant-list mean is 25.321 ms under peak and does not justify a new optimization;
+- residual reviewer count heap work is documented rather than chased.
+
+Evidence maturity:
+
+- PostgreSQL query bottleneck: **E4**.
+
+Continue **M9 Phase 6 — closeout**.
 
 Immediate next work:
 
-1. restore dataset M through the existing W3 runner;
-2. run the frozen 100 business requests/s / 100-VU-cap / 10-minute W3 profile;
-3. retain k6 and pg_stat_statements evidence;
-4. compare throughput, dropped iterations, p95, Hikari pressure, DB CPU, and target SQL means
-   against the retained M8 W3 baseline;
-5. do not add another performance intervention before interpreting W3.
-
-Evidence is now representative at normal load but is not promoted to final M9 E4 until W3
-peak revalidation is retained.
+1. perform final runtime/OpenTofu drift check with the retained M9 overrides;
+2. resolve temporary `loadgen-01` lifecycle;
+3. finish M9 closeout docs and move the active plan to completed;
+4. exact-head CI must pass;
+5. merge the closeout PR and confirm post-merge main CI once.
 
 ## Do not revisit unless new evidence requires it
 
