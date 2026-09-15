@@ -198,3 +198,77 @@ The next decision must compare bounded interventions against this retained basel
 The first comparison should isolate query/predicate simplification without schema mutation,
 then determine whether an access-path/index change is still required. A schema change is
 not authorized until that comparison is recorded.
+
+
+## Phase 2 — intervention comparison and decision
+
+### Rejected option: query/predicate simplification alone
+
+A read-only logically equivalent query removed the duplicated status structure while keeping
+the same reviewer semantics:
+
+`status = SUBMITTED AND (reviewer_id IS NULL OR reviewer_id = 2)`
+
+Observed result-plan comparison:
+
+- access path remained a sequential scan of `applications`;
+- result buffers remained effectively unchanged:
+  `shared hit=10816` for the application scan;
+- actual qualifying rows remained 10,542;
+- estimated qualifying rows improved from 48 per parallel process in the original plan to
+  1,391 total in the simplified plan, but still materially underestimated reality;
+- the simplified result plan lost parallel scan/gather behavior and used a single
+  sequential scan plus joins;
+- result execution time changed from 75.271 ms in the retained Phase 1 quiet-window plan to
+  339.376 ms in this diagnostic run;
+- count execution time changed from 47.994 ms to 42.625 ms.
+
+The exact elapsed-time difference is not treated as a controlled before/after performance
+claim because the plans were captured at different quiet-window moments. The structural
+finding is decisive: simplifying the predicate did not reduce the table scan, buffer work,
+or qualifying-row volume.
+
+Decision: do not implement a JPQL rewrite as the first M9 intervention.
+
+### Selected first intervention: reviewer queue access-path index
+
+The first implementation changes only the database access path:
+
+`applications(status, updated_at, id) INCLUDE (reviewer_id)`
+
+Rationale:
+
+- the measured endpoint always supplies an explicit status in the retained W3 reviewer
+  scenario;
+- equality on `status` matches the leading index key;
+- `updated_at,id` matches the deterministic queue ordering;
+- `reviewer_id` is retained in the index leaf so reviewer visibility can be evaluated
+  without adding it ahead of the ordering keys;
+- the change can help both the paged result and pageable count path;
+- application query semantics remain unchanged, keeping causal attribution to one schema
+  intervention.
+
+Rejected/deferred alternatives:
+
+- JPQL simplification alone: rejected by the diagnostic plan above;
+- `(status, reviewer_id, updated_at, id)`: deferred because placing reviewer_id before the
+  ordering keys can make the OR reviewer predicate and ordering interaction less direct for
+  the measured page path;
+- partial SUBMITTED-only index: deferred because it would overfit one status value more
+  aggressively than necessary;
+- extended statistics: deferred as a separate estimation intervention because it does not
+  itself remove the measured full-scan access cost;
+- Hikari/VM/PostgreSQL tuning/cache: rejected for this slice because none addresses the
+  measured access path directly.
+
+Implementation boundary:
+
+- Flyway V7 creates the single index;
+- no repository/JPQL change;
+- a focused integration test verifies the migrated index definition;
+- existing reviewer API integration tests remain the correctness guard for visibility and
+  status semantics.
+
+The index uses standard transactional `CREATE INDEX`. On this project-sized dataset this
+keeps the Flyway path simple, but deployment must record migration/build time and acknowledge
+that standard index creation can block concurrent writes while the index is built.

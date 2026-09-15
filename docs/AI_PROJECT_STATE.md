@@ -160,39 +160,36 @@ M9 closeout owns the final loadgen lifecycle/destruction decision.
 
 ## M9 immediate next work
 
-Phase 1 query-plan diagnosis is **COMPLETE**.
+M9 Phase 1 is complete and Phase 2 intervention selection is complete.
 
-Retained evidence:
+First intervention:
 
-`docs/operations/M9_PERFORMANCE_EVIDENCE.md`
+- Flyway V7 index:
+  `applications(status, updated_at, id) INCLUDE (reviewer_id)`;
+- no JPQL change;
+- no Hikari/VM/PostgreSQL/cache change;
+- focused PostgreSQL integration test verifies the index contract.
 
-Observed reviewer queue baseline:
+Reason:
 
-- reviewer ID `2`, status `SUBMITTED`, page size 20;
-- 10,542 target rows, all currently unassigned;
-- only application PK and applicant_id indexes exist;
-- result and count both use `Parallel Seq Scan` on `applications`;
-- result query performs joins plus top-N sort before returning 20 rows;
-- result quiet-window execution: 75.271 ms, W3 mean: 417.049 ms;
-- count quiet-window execution: 47.994 ms, W3 mean: 305.405 ms;
-- planner estimate: 48 scan rows per process vs about 3,514 actual;
-- no extended statistics exist;
-- status/reviewer distribution is strongly correlated;
-- generated status-filtered SQL repeats status predicates.
+- simplifying the duplicated reviewer/status predicate improved the planner estimate somewhat
+  but did not reduce sequential-scan/buffer work;
+- the measured queue path still scanned the application table and processed 10,542
+  qualifying rows before returning 20.
 
-Continue **M9 Phase 2 — choose one bounded intervention**.
+Continue **M9 Phase 3 — implement and verify the first intervention**.
 
-Immediate next slice:
+Immediate next boundary:
 
-1. run a read-only logically equivalent SUBMITTED reviewer query with the redundant status
-   structure removed;
-2. compare plan/cardinality/buffers/execution with Phase 1;
-3. use that evidence to decide whether query simplification is a useful first intervention
-   or whether the dominant issue remains the missing queue-specific access path;
-4. do not create an index, migration, extended statistics, pool change, VM resize, or cache
-   before this comparison is complete.
+1. review the V7 migration and focused test diff;
+2. exact-head CI must pass;
+3. merge only the index intervention;
+4. deploy the exact reviewed release through the existing delivery path;
+5. record Flyway migration/index-build behavior;
+6. rerun the same reviewer result/count `EXPLAIN (ANALYZE, BUFFERS)` before W2/W3
+   remeasurement.
 
-The PostgreSQL evidence remains **E3**. No performance change has been revalidated yet.
+No performance improvement claim exists yet. Evidence remains **E3**.
 
 ## Do not revisit unless new evidence requires it
 

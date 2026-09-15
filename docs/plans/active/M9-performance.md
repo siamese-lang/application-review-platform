@@ -358,7 +358,7 @@ Done condition:
 
 ### Phase 2 — choose one bounded intervention
 
-Status: **ACTIVE**
+Status: **COMPLETE**
 
 Use Phase 1 evidence to compare the smallest plausible options.
 
@@ -398,9 +398,18 @@ Done condition:
 - the plan states why other plausible changes are deferred/rejected;
 - no unrelated performance change is bundled.
 
+Phase 2 decision:
+
+- predicate simplification alone was rejected after a read-only diagnostic retained the same
+  sequential-scan/buffer work;
+- first intervention is one Flyway index:
+  `applications(status, updated_at, id) INCLUDE (reviewer_id)`;
+- application JPQL remains unchanged;
+- extended statistics, pool sizing, VM sizing, cache, and additional indexes remain deferred.
+
 ### Phase 3 — implement and verify the first intervention
 
-Status: PLANNED
+Status: **ACTIVE**
 
 Implement only the selected intervention.
 
