@@ -504,13 +504,28 @@ W2 valid live checkpoint:
   - count query mean 67.933 ms across 2,687 calls;
 - reviewer queue/detail is also the slowest client-side family at p95 329.024 ms.
 
+W2 telemetry correlation checkpoint:
+
+- Spring histogram buckets were unavailable, so Prometheus server-side p95 was not
+  reconstructable; request count/sum series were used for rate-derived mean comparison;
+- `/api/v1/review/applications` averaged about 177 ms server-side across the sampled
+  workload window and aligned with the two dominant reviewer queue SQL statements
+  (100.136 ms + 67.933 ms mean execution time);
+- Hikari pending remained 0 and active connections peaked at 5;
+- PostgreSQL backends stayed at 12-13, deadlocks remained 0, and cache-hit ratio stayed
+  around 96.6%-99.5%;
+- db-01 CPU averaged about 36.7% and peaked about 52.8%; app-01 averaged about 15.1% and
+  peaked about 38.2%;
+- memory pressure was low and the private application probe stayed at 1.
+
 Immediate next boundary:
 
-- correlate the valid W2 run with M7 edge/application/JVM/PostgreSQL/Garage/host telemetry;
-- preserve server-side evidence sufficient to separate cross-region/client latency from
-  application and database cost;
-- decide from correlated evidence whether W3 or a targeted W4 is justified;
-- do not optimize, add indexes, resize nodes, or begin M9 during this correlation step.
+- implement/review the bounded W3 peak harness;
+- run dataset M at about 100 VU for 10 minutes from the same Tokyo load generator using the
+  same business mix and real security boundary;
+- retain the same client/query/server evidence classes;
+- use W3 evidence to decide whether a targeted W4 adds value;
+- do not optimize, add indexes, resize nodes, or begin M9.
 
 Retain:
 

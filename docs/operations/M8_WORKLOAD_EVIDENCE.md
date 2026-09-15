@@ -119,8 +119,49 @@ The same invalid run exposed that pinned k6 `2.2.0` legacy `--summary-export` pl
 metric fields directly under each metric object rather than under a `values` wrapper. The
 runner parser was corrected before the retained valid W2 run.
 
-Next evidence boundary:
+### W2 server-side telemetry correlation
 
-- correlate the valid W2 run with M7 Nginx/Spring/JVM/PostgreSQL/Garage/host telemetry;
-- decide from correlated evidence whether W3 or a targeted W4 adds useful information;
-- do not tune the reviewer query, add indexes, resize nodes, or begin M9 during this step.
+The retained W2 client/database result was correlated against the existing M7 Prometheus
+telemetry for the workload window (approximately 2026-09-14 20:33Z through 20:49Z).
+
+Spring HTTP histogram buckets were not present for this runtime, so a server-side p95 could
+not be reconstructed from Prometheus. The existing request count/sum series still provide a
+rate-derived mean-duration comparison. During the W2 window:
+
+- `/api/v1/review/applications` was the slowest material business route, with the
+  rate-derived server mean averaging about 177 ms across the sampled window and peaking
+  around 501 ms;
+- this aligns with the client-side reviewer queue/detail family being the slowest family
+  (132.432 ms average, 329.024 ms p95);
+- the reviewer queue result and count SQL statements averaged 100.136 ms and 67.933 ms
+  respectively in the same reset `pg_stat_statements` interval.
+
+The current evidence therefore points to query work in the reviewer queue path rather than
+a general application/runtime saturation condition. This remains a diagnosis candidate,
+not an optimization decision.
+
+No material saturation/failure signal appeared in the correlated telemetry:
+
+- Hikari active connections: average about 1.12, maximum 5;
+- Hikari pending connections: 0 throughout;
+- PostgreSQL backends for `arp`: 12 to 13;
+- PostgreSQL deadlocks: 0;
+- PostgreSQL cache-hit ratio: about 96.6% to 99.5%;
+- db-01 CPU: average about 36.7%, maximum about 52.8%;
+- app-01 CPU: average about 15.1%, maximum about 38.2%;
+- app-01 memory used: about 27.4% to 27.8%;
+- db-01 memory used: about 19.4% to 20.8%;
+- edge and storage CPU remained low;
+- private application probe stayed at `probe_success=1` for the full sampled window.
+
+Lock counts were transiently present under the mixed read/write workload, but no deadlocks
+or connection-pool waiting accompanied them. The W2 evidence does not support a global CPU,
+memory, connection-pool, storage, or availability bottleneck.
+
+W2 conclusion:
+
+- normal load is healthy under the frozen M profile and 30-VU mixed workload;
+- reviewer queue/query cost is the strongest measured M9 candidate so far;
+- W3 bounded peak is justified to determine whether materially different behavior appears
+  at 100 VU before M8 is closed or a targeted W4 is selected;
+- no index/query/runtime change is made in M8.
