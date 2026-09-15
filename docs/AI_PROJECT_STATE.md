@@ -40,11 +40,25 @@ Current active plan:
 
 Current verified main:
 
-`ac3d7657f533f70126d12773c8b27f2c5b40b38e`
+`5de92b5aef5dda744d90c7694a3f667dac1b1d2f`
 
-M8 Phase 1, Phase 2, and Phase 3 are complete. Phase 4 is active; W1 and the valid W2 client/database baseline are complete, with server-side telemetry correlation next.
+M8 Phase 1, Phase 2, and Phase 3 are complete. Phase 4 is active.
 
-Latest verified post-merge `main` baseline CI before this W2 implementation branch:
+W1 and the valid W2 normal baseline/telemetry correlation are complete.
+
+W3 evidence now has two diagnostic checkpoints:
+
+- the first 100-VU attempt aborted after about 30 seconds because one support-path timeout
+  globally aborted the harness; this was retained as diagnostic evidence only;
+- the hardened 100 closed-VU / 10-minute run completed and exposed sustained DB/pool
+  saturation, but its delivered business mix diverged materially under the closed-VU model.
+
+The immediate implementation boundary is to preserve the same dataset/security/runtime
+conditions while changing only W3 load generation to independent constant-arrival-rate
+scenarios. The offered business rate remains 100 req/s at the frozen 40/15/10/20/10/5 mix
+with a hard 100-VU ceiling. Capacity shortfall must surface as dropped iterations.
+
+Latest verified post-merge `main` baseline CI before this W3 arrival-rate implementation branch:
 
 - run `34879613628`;
 - status: completed;
@@ -154,53 +168,40 @@ A negative finding is valid evidence.
 
 ## Immediate next work
 
-Continue **M8 Phase 4 — W2 mixed normal baseline**.
+Continue **M8 Phase 4 — W3 bounded peak**.
 
-W1 is complete and must not be repeated absent new evidence.
+Do not repeat W1 or W2.
 
-Verified W1:
+Retained W2 baseline:
 
-- run ID `m8-w1-20260914T181710Z-faf46c4c`;
-- dataset S / seed `20260914`;
-- source `faf46c4c8256c9921a7aa6da37902b2d3dc53dbf`;
-- backend release `cea4ca09d05efd89bcb9227c866d841968c08547`;
-- frontend release `549511b0a8af9582125e89aaa2bde7fc4bffcd6d`;
-- all frozen workload families passed through the real HTTPS/session/CSRF boundary;
-- W1 timing is not performance evidence.
-
-Verified W2:
-
-- run ID `m8-w2-20260914T203329Z-ac3d7657`;
-- source `ac3d7657f533f70126d12773c8b27f2c5b40b38e`;
-- dataset M / seed `20260914`;
 - 30 VU / 15 minutes;
 - 26,864 business requests;
-- observed mix 40.02/14.98/9.98/20.00/10.01/5.00;
-- non-file success 100.0000%;
+- frozen mix preserved;
 - non-file p95 222.197 ms;
-- internal regression target PASS;
-- reviewer queue/detail client p95 329.024 ms and the corresponding queue result/count SQL
-  dominate the retained `pg_stat_statements` execution-cost snapshot.
+- Hikari pending 0;
+- db-01 CPU average about 36.7%, max about 52.8%.
 
-W2 telemetry correlation is complete:
+Closed-VU W3 saturation diagnostic:
 
-- reviewer queue remains the strongest measured candidate: client family p95 329.024 ms,
-  Spring rate-derived route mean about 177 ms, and the two dominant queue SQL statements
-  average 100.136 ms and 67.933 ms;
-- no general saturation was observed: Hikari pending 0, deadlocks 0, DB connections 12-13,
-  db-01 CPU average about 36.7% / max about 52.8%, app-01 CPU average about 15.1% / max
-  about 38.2%, and the application probe remained healthy;
-- Spring histogram buckets were not present, so no Prometheus server-side p95 is claimed.
+- run ID `m8-w3-20260915T014105Z-5de92b5a`;
+- 100 VU / 10 minutes completed;
+- non-file p95 1,991.346 ms;
+- support error rate 7.8108%;
+- Hikari pending average about 36.18, max 55;
+- db-01 CPU average about 89.47%, max about 99.98%;
+- application probe stayed healthy and edge saturation signals stayed absent;
+- delivered mix diverged to 55.81/1.34/12.93/15.91/12.99/1.02 because slow closed-VU
+  scenarios completed fewer iterations.
 
 Immediate next slice:
 
-1. implement and review W3 bounded peak using dataset M, the same frozen business mix, the
-   same Tokyo load generator, and real session/CSRF behavior;
-2. run about 100 VU for 10 minutes and retain the same evidence classes;
-3. decide from W3 whether a targeted W4 is useful;
-4. do not optimize, resize, add indexes/cache/queue, or begin M9 yet.
-
-Do not optimize, resize business nodes, add indexes/cache/queue, or begin M9 during W2.
+1. review and merge the W3 constant-arrival-rate harness;
+2. run dataset M for 10 minutes with offered 100 business req/s at
+   40/15/10/20/10/5 and a hard 100-VU ceiling;
+3. retain dropped iterations, support failures, client latency, pg_stat_statements, and M7
+   telemetry;
+4. decide from that result whether W4 adds material evidence;
+5. do not optimize, resize, add indexes/cache/queue, or begin M9 yet.
 
 ## Do not revisit unless new evidence requires it
 
