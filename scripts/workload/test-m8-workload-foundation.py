@@ -321,6 +321,83 @@ subprocess.run(
     check=True,
 )
 
+
+w3 = read("workload/k6/w3-peak.js")
+w3_runner = read("workload/run-w3.sh")
+
+for token in [
+    "noCookiesReset: true",
+    "executor: 'constant-vus'",
+    "duration: '10m'",
+    "exec: 'listDetail'",
+    "vus: 40",
+    "exec: 'createSave'",
+    "vus: 14",
+    "exec: 'submitResubmit'",
+    "vus: 10",
+    "exec: 'reviewerQueueDetail'",
+    "vus: 20",
+    "exec: 'reviewAction'",
+    "exec: 'attachment'",
+    "vus: 6",
+    "pace(started, 1.866667)",
+    "pace(started, 2.4)",
+    "slot >= 7000",
+    "7000 + (exec.scenario.iterationInTest % 1000)",
+    "4000 + (exec.scenario.iterationInTest % 2500)",
+]:
+    require(w3, token, "W3 k6 bounded peak contract")
+
+w3_vus = [int(value) for value in re.findall(r"\bvus:\s*(\d+)", w3)]
+if sorted(w3_vus) != [6, 10, 10, 14, 20, 40] or sum(w3_vus) != 100:
+    raise SystemExit(f"W3 must retain exact 100-VU scenario allocation: {w3_vus!r}")
+if w3.count("duration: '10m'") != 6:
+    raise SystemExit("every W3 scenario must retain the 10-minute bounded peak duration")
+
+w3_system_tags = w3.split("systemTags:", 1)[1].split("],", 1)[0]
+if "'url'" in w3_system_tags or '"url"' in w3_system_tags:
+    raise SystemExit("W3 must exclude the dynamic URL system tag to avoid id cardinality")
+
+for token in [
+    "ARP_M8_DATASET_PROFILE=M",
+    "ARP_M8_W3_DATASET_READY",
+    "w2-interactive-overlay.sql",
+    "pg_stat_statements_reset()",
+    "pg-stat-statements-top20.csv",
+    '"scenario": "w3-mixed-bounded-peak"',
+    '"vus": 100',
+    '"duration": "10m"',
+    '"40/15/10/20/10/5 rps for "',
+    "W3_NON_FILE_SUCCESS_RATE",
+    "W3_NON_FILE_P95_MS",
+    "W3_REGRESSION_TARGET",
+    "W3_OVERLAY_SHA256",
+    "PASS: M8 W3 completed and retained",
+]:
+    require(w3_runner, token, "W3 runner contract")
+
+for forbidden in [
+    "StrictHostKeyChecking=no",
+    "tofu apply",
+    "gcloud compute instances create",
+    "-e APPLICANT_PASSWORD=",
+    "-e REVIEWER_PASSWORD=",
+]:
+    if forbidden in w3_runner:
+        raise SystemExit(f"W3 runner must not contain: {forbidden}")
+
+if re.search(r'\$\{ssh_db\[@\]\}.*\s-c\s', w3_runner):
+    raise SystemExit("W3 remote psql must send SQL over stdin instead of ssh -c arguments")
+
+subprocess.run(
+    ["node", "--check", str(ROOT / "workload/k6/w3-peak.js")],
+    check=True,
+)
+subprocess.run(
+    ["bash", "-n", str(ROOT / "workload/run-w3.sh")],
+    check=True,
+)
+
 manifest = json.loads(read("workload/run-manifest.example.json"))
 schema = json.loads(read("workload/run-manifest.schema.json"))
 
