@@ -20,6 +20,7 @@ OUTPUTS = (
     "m7_observability_infrastructure_static",
     "m8_workload_foundation_static",
     "m8_dataset_tooling_static",
+    "m10_reliability_static",
     "release_publish",
 )
 
@@ -88,6 +89,15 @@ def classify(paths: set[str], *, force_full: bool = False) -> dict[str, bool]:
             "deploy/load-m8-dataset.sh",
         ),
     )
+    m10_reliability = any_match(
+        paths,
+        (
+            "scripts/reliability/**",
+            "workload/k6/m10-normal.js",
+            "docs/plans/active/M10-reliability.md",
+        ),
+    )
+
     m8_workload = any_match(
         paths,
         (
@@ -179,6 +189,7 @@ def classify(paths: set[str], *, force_full: bool = False) -> dict[str, bool]:
         "m7_observability_infrastructure_static": m7_observability,
         "m8_workload_foundation_static": m8_workload,
         "m8_dataset_tooling_static": m8_dataset,
+        "m10_reliability_static": m10_reliability,
         "release_publish": release_material,
     }
 
@@ -203,6 +214,10 @@ def self_test() -> None:
     assert not m8_live["m5_browser_e2e"]
     assert not m8_live["m4_infrastructure_static"]
     assert not m8_live["release_publish"]
+
+    m10 = classify({"scripts/reliability/run-m10-control.sh"})
+    assert m10["m10_reliability_static"]
+    assert not m10["release_publish"]
 
     frontend = classify({"frontend/src/App.tsx"})
     for key in (
