@@ -327,36 +327,67 @@ w3_runner = read("workload/run-w3.sh")
 
 for token in [
     "noCookiesReset: true",
-    "executor: 'constant-vus'",
+    "executor: 'constant-arrival-rate'",
     "duration: '10m'",
     "exec: 'listDetail'",
-    "vus: 40",
+    "rate: 20",
+    "timeUnit: '1s'",
+    "preAllocatedVUs: 40",
+    "maxVUs: 40",
     "exec: 'createSave'",
-    "vus: 14",
+    "rate: 15",
+    "timeUnit: '2s'",
+    "preAllocatedVUs: 14",
+    "maxVUs: 14",
     "exec: 'submitResubmit'",
-    "vus: 10",
+    "preAllocatedVUs: 10",
+    "maxVUs: 10",
     "exec: 'reviewerQueueDetail'",
-    "vus: 20",
+    "preAllocatedVUs: 20",
+    "maxVUs: 20",
     "exec: 'reviewAction'",
+    "rate: 5",
     "exec: 'attachment'",
-    "vus: 6",
-    "pace(started, 1.866667)",
-    "pace(started, 2.4)",
+    "preAllocatedVUs: 6",
+    "maxVUs: 6",
+    "m8_support_requests",
+    "m8_support_errors",
+    "m8_support_duration",
+    "return ok ? body : null",
     "slot >= 7000",
     "7000 + (exec.scenario.iterationInTest % 1000)",
     "4000 + (exec.scenario.iterationInTest % 2500)",
 ]:
-    require(w3, token, "W3 k6 bounded peak contract")
+    require(w3, token, "W3 k6 arrival peak contract")
 
-w3_vus = [int(value) for value in re.findall(r"\bvus:\s*(\d+)", w3)]
-if sorted(w3_vus) != [6, 10, 10, 14, 20, 40] or sum(w3_vus) != 100:
-    raise SystemExit(f"W3 must retain exact 100-VU scenario allocation: {w3_vus!r}")
+if w3.count("executor: 'constant-arrival-rate'") != 6:
+    raise SystemExit("every W3 scenario must use constant-arrival-rate")
 if w3.count("duration: '10m'") != 6:
     raise SystemExit("every W3 scenario must retain the 10-minute bounded peak duration")
+
+w3_preallocated = [int(value) for value in re.findall(r"\bpreAllocatedVUs:\s*(\d+)", w3)]
+w3_max = [int(value) for value in re.findall(r"\bmaxVUs:\s*(\d+)", w3)]
+expected_w3_vus = [6, 10, 10, 14, 20, 40]
+if sorted(w3_preallocated) != expected_w3_vus or sum(w3_preallocated) != 100:
+    raise SystemExit(f"W3 must retain exact 100 preallocated VUs: {w3_preallocated!r}")
+if sorted(w3_max) != expected_w3_vus or sum(w3_max) != 100:
+    raise SystemExit(f"W3 must retain exact 100 max VUs: {w3_max!r}")
+
+for forbidden in [
+    "executor: 'constant-vus'",
+    "pace(started",
+]:
+    if forbidden in w3:
+        raise SystemExit(f"W3 arrival profile must not contain: {forbidden}")
 
 w3_system_tags = w3.split("systemTags:", 1)[1].split("],", 1)[0]
 if "'url'" in w3_system_tags or '"url"' in w3_system_tags:
     raise SystemExit("W3 must exclude the dynamic URL system tag to avoid id cardinality")
+
+support_csrf = w3.split("function supportCsrf()", 1)[1].split("function ensureRole", 1)[0]
+ensure_role = w3.split("function ensureRole(role)", 1)[1].split("function recordBusiness", 1)[0]
+if "exec.test.abort" in support_csrf or "exec.test.abort" in ensure_role:
+    raise SystemExit("W3 support request failures must be measured without aborting the whole test")
 
 for token in [
     "ARP_M8_DATASET_PROFILE=M",
@@ -367,7 +398,6 @@ for token in [
     '"scenario": "w3-mixed-bounded-peak"',
     '"vus": 100',
     '"duration": "10m"',
-    '"40/15/10/20/10/5 rps for "',
     "W3_NON_FILE_SUCCESS_RATE",
     "W3_NON_FILE_P95_MS",
     "W3_REGRESSION_TARGET",
