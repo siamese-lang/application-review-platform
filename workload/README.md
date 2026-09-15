@@ -173,3 +173,34 @@ The runner retains:
 
 A regression-target miss is retained as measurement evidence; the runner does not tune the
 system or rerun automatically to obtain a better number.
+
+
+## W3 bounded peak baseline
+
+`k6/w3-peak.js` reuses the verified W2 business/security behavior at a bounded 100-VU
+peak. The repository-owned entrypoint is:
+
+```bash
+bash workload/run-w3.sh
+```
+
+W3 restores the same deterministic dataset M / seed `20260914`, applies the same
+interactive DRAFT ownership overlay, resets `pg_stat_statements`, and retains the same
+evidence classes as W2.
+
+The six scenarios total 100 VU and preserve the frozen business-request mix through
+scenario-specific pacing:
+
+- list/detail: 40 VU, target 40 req/s;
+- create/save: 14 VU, target 15 req/s;
+- submit/resubmit: 10 VU, target 10 req/s;
+- reviewer queue/detail: 20 VU, target 20 req/s;
+- review actions: 10 VU, target 10 req/s;
+- attachment upload/download: 6 VU, target 5 req/s.
+
+The run is bounded to 10 minutes. This keeps the mutable deterministic DRAFT/SUBMITTED
+pools within the profile-M fixture boundary while still testing materially higher
+concurrency than W2.
+
+W3 is still measurement, not optimization. A regression-target miss is retained rather
+than automatically rerun or tuned away.
