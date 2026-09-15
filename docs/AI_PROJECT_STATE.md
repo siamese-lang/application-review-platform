@@ -160,36 +160,49 @@ M9 closeout owns the final loadgen lifecycle/destruction decision.
 
 ## M9 immediate next work
 
-M9 Phase 1 is complete and Phase 2 intervention selection is complete.
+M9 Phase 1 diagnosis, Phase 2 intervention selection, and Phase 3 implementation/live SQL-plan
+verification are complete.
+
+Deployed release:
+
+`d90eb558bdb6317d49b0a7ce82148ddeb4b5babf`
 
 First intervention:
 
-- Flyway V7 index:
-  `applications(status, updated_at, id) INCLUDE (reviewer_id)`;
-- no JPQL change;
-- no Hikari/VM/PostgreSQL/cache change;
-- focused PostgreSQL integration test verifies the index contract.
+`applications(status, updated_at, id) INCLUDE (reviewer_id)`
 
-Reason:
+Live verification:
 
-- simplifying the duplicated reviewer/status predicate improved the planner estimate somewhat
-  but did not reduce sequential-scan/buffer work;
-- the measured queue path still scanned the application table and processed 10,542
-  qualifying rows before returning 20.
+- Flyway V7: success, 277 ms;
+- reviewer result plan: ordered index scan, no sort, 0.750 ms quiet-window execution;
+- reviewer count plan: bitmap index/heap path, 19.570 ms quiet-window execution.
 
-Continue **M9 Phase 3 — implement and verify the first intervention**.
+Phase 4 W2 same-condition run is complete:
 
-Immediate next boundary:
+`m8-w2-20260915T165007Z-d90eb558`
 
-1. review the V7 migration and focused test diff;
-2. exact-head CI must pass;
-3. merge only the index intervention;
-4. deploy the exact reviewed release through the existing delivery path;
-5. record Flyway migration/index-build behavior;
-6. rerun the same reviewer result/count `EXPLAIN (ANALYZE, BUFFERS)` before W2/W3
-   remeasurement.
+- business requests: 26,761;
+- non-file success: 100%;
+- non-file p95: 92.346 ms vs 222.197 ms before;
+- applicant-list SQL mean: 29.673 ms vs 30.784 ms before;
+- reviewer result SQL mean: 3.491 ms vs 100.136 ms before;
+- reviewer count SQL mean: 5.781 ms vs 67.933 ms before;
+- reviewer family p95: 63.375 ms vs 329.024 ms before;
+- regression target: PASS.
 
-No performance improvement claim exists yet. Evidence remains **E3**.
+Continue **M9 Phase 4 — same-condition W3 bounded peak remeasurement**.
+
+Immediate next work:
+
+1. restore dataset M through the existing W3 runner;
+2. run the frozen 100 business requests/s / 100-VU-cap / 10-minute W3 profile;
+3. retain k6 and pg_stat_statements evidence;
+4. compare throughput, dropped iterations, p95, Hikari pressure, DB CPU, and target SQL means
+   against the retained M8 W3 baseline;
+5. do not add another performance intervention before interpreting W3.
+
+Evidence is now representative at normal load but is not promoted to final M9 E4 until W3
+peak revalidation is retained.
 
 ## Do not revisit unless new evidence requires it
 
