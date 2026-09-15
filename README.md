@@ -31,10 +31,13 @@
 - M6 portfolio candidate: E5 in `docs/portfolio/M6_IMMUTABLE_RELEASE_ROLLBACK_EVIDENCE.md`
 - Final deployed M6 release SHA: `9d5fda9871e479e05dc4641fccf7dea3145d2ad6`
 - Final deployed M6 OCI digest: `sha256:13c3d117eef036c6987f00faf44e01b86845528c62bab1a3ea0914a234a103d4`
-- Current implementation milestone: M7 Observability
-- Active plan: `docs/plans/active/M7-observability.md`
-- M7 Phase 1 repository observability foundation: complete
-- Current M7 slice: Phase 2 central observability stack and Alloy baseline; no live GCP change yet
+- M7 Observability: complete
+- M8 Workload: complete
+- M9 Performance: complete
+- M9 PostgreSQL query-bottleneck evidence: E4 in `docs/portfolio/M8_POSTGRESQL_QUERY_BOTTLENECK_EVIDENCE.md`
+- Current implementation milestone: M10 Reliability
+- Active plan: `docs/plans/active/M10-reliability.md`
+- M10 current slice: Phase 1 reliability harness and healthy-control verification; no fault injection yet
 - Repository visibility: public; `protect-main` ruleset active
 
 This project is **production-like**, not a claim of real production operation. All users, organizations, applications, documents, workloads, and measurements are synthetic unless explicitly recorded otherwise.
@@ -88,7 +91,7 @@ Public registration always creates `APPLICANT`; browser clients cannot self-assi
 - M4 proved the seven-role IaaS topology with HTTPS and end-to-end business/attachment smoke.
 - The live M4 runtime was destroyed after verification/merge to stop unnecessary trial-credit consumption.
 - M6 recreated and verified the same seven-role runtime. Final runtime and owner-bootstrap OpenTofu plans are no-drift.
-- The current live runtime is still seven nodes; M7 targets an eight-node Seoul runtime by adding private `obs-01`.
+- The current persistent Seoul runtime is eight nodes including private `obs-01`; M9 removed the temporary Tokyo load generator after same-condition remeasurement.
 - Resource placement follows `docs/architecture/ADR-004-gcp-resource-placement.md`: preserve the Seoul runtime and place later temporary load/backup/DR resources cross-region by default rather than collapsing roles for quota/cost reasons.
 - Repository OpenTofu/Ansible plus sanitized M4/M6 evidence remain the reproducible record.
 
