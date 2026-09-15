@@ -409,7 +409,7 @@ Phase 2 decision:
 
 ### Phase 3 — implement and verify the first intervention
 
-Status: **ACTIVE**
+Status: **COMPLETE**
 
 Implement only the selected intervention.
 
@@ -432,7 +432,17 @@ Done condition:
 
 ### Phase 4 — deploy and same-condition remeasurement
 
-Status: PLANNED
+Status: **ACTIVE**
+
+Retained Phase 4 progress:
+
+- exact release `d90eb558bdb6317d49b0a7ce82148ddeb4b5babf` deployed;
+- Flyway V7 applied successfully in 277 ms;
+- exact result/count SQL plans rechecked after deployment;
+- W2 same-condition run `m8-w2-20260915T165007Z-d90eb558` PASS;
+- W2 non-file p95: 92.346 ms vs 222.197 ms before;
+- reviewer result/count means: 3.491/5.781 ms vs 100.136/67.933 ms before;
+- next required step: same-condition W3 bounded peak remeasurement.
 
 Deploy the exact reviewed release through the existing M6 delivery path.
 
