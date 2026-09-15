@@ -34,6 +34,7 @@ Milestones:
 - M7 Observability — complete
 - M8 Workload — **complete**
 - M9 Performance — **complete**
+- M10 Reliability — **ACTIVE**
 
 Completed M8 plan:
 
@@ -43,7 +44,9 @@ Completed M9 plan:
 
 `docs/plans/completed/M9-performance.md`
 
-There is currently no M10 active plan in the repository. Do not invent M10 execution work before its plan is created and reviewed.
+Current active plan:
+
+`docs/plans/active/M10-reliability.md`
 
 Latest retained workload source baseline:
 
@@ -195,10 +198,37 @@ Runtime closeout:
 - final `enable_loadgen=false` plan: no drift;
 - persistent Seoul runtime retained.
 
-Next milestone:
+## M10 immediate next work
 
-- M10 Reliability is next, but no active M10 plan currently exists in the repository.
-- Create/review the M10 plan before executing fault experiments.
+M10 Reliability is ACTIVE.
+
+Active plan:
+
+`docs/plans/active/M10-reliability.md`
+
+Fixed scenario scope:
+
+- R1 application process failure;
+- R2 PostgreSQL failure during normal synthetic workload;
+- R3 Garage single-node failure;
+- R4 bad deployment/rollback is already satisfied by M6 evidence;
+- R5 logical corruption/PITR remains M11 scope.
+
+Current phase:
+
+**Phase 1 — reliability harness and healthy-control verification**
+
+Immediate next boundary:
+
+1. review/merge the M10 plan PR;
+2. create the minimum repository-owned reliability harness;
+3. reuse Dataset M and W2 business semantics rather than inventing a new mix;
+4. recreate the existing temporary Tokyo loadgen only if the harness requires sustained
+   normal traffic, through a reviewed OpenTofu plan;
+5. run a healthy control before any fault injection;
+6. do not inject R1/R2/R3 until the harness evidence format is verified.
+
+No HA architecture change is authorized in advance.
 
 ## Do not revisit unless new evidence requires it
 
@@ -213,9 +243,10 @@ Next milestone:
 ## Short resume prompt
 
 > @GitHub `siamese-lang/application-review-platform` 작업을 계속한다.  
-> 먼저 `AGENTS.md`와 `docs/AI_PROJECT_STATE.md`를 읽고 repository 실제 상태를
-> source of truth로 사용하라.  
-> M1–M9는 완료되었으므로 재설계하거나 재실행하지 마라.  
-> M10 Reliability가 다음 milestone이지만 현재 active M10 plan은 없다.  
-> 먼저 기존 프로젝트 원칙과 M9 closeout 상태를 기준으로 M10 실행계획을 작성·검토하고,
-> 승인된 plan의 첫 미완료 작업부터 진행하라.
+> 먼저 `AGENTS.md`, `docs/AI_PROJECT_STATE.md`, `docs/plans/active/M10-reliability.md`
+> 를 읽고 repository 실제 상태를 source of truth로 사용하라.  
+> M1–M9은 완료되었으므로 재설계하거나 재실행하지 마라.  
+> M10 Reliability Phase 1부터 진행하되 fault를 바로 주입하지 말고, 먼저 최소
+> reliability harness와 healthy control을 검증하라.  
+> R1 app failure, R2 PostgreSQL failure, R3 Garage node failure만 초기 고정 범위로
+> 수행하고 R4는 M6 evidence를 재사용하며 R5/PITR은 M11로 남겨라.
