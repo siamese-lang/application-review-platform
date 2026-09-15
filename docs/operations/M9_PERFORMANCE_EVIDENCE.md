@@ -272,3 +272,122 @@ Implementation boundary:
 The index uses standard transactional `CREATE INDEX`. On this project-sized dataset this
 keeps the Flyway path simple, but deployment must record migration/build time and acknowledge
 that standard index creation can block concurrent writes while the index is built.
+
+
+## Phase 3 — first intervention live verification
+
+Release deployed:
+
+`d90eb558bdb6317d49b0a7ce82148ddeb4b5babf`
+
+Flyway live result:
+
+- version: 7;
+- description: `m9 reviewer queue access path`;
+- script: `V7__m9_reviewer_queue_access_path.sql`;
+- execution time: 277 ms;
+- success: true.
+
+Live index definition:
+
+`CREATE INDEX idx_applications_review_queue_status_order ON public.applications USING btree (status, updated_at, id) INCLUDE (reviewer_id)`
+
+### Post-index exact reviewer result plan
+
+The original Hibernate result SQL was rerun with the same representative parameters.
+
+Observed changes:
+
+- access path changed from `Parallel Seq Scan` to
+  `Index Scan using idx_applications_review_queue_status_order`;
+- the index supplies `updated_at,id` ordering directly, so the previous top-N sort
+  disappeared;
+- application index scan returned the first 20 qualifying rows directly;
+- application scan buffers dropped from `shared hit=10816` before the change to
+  `shared hit=19 read=3` on the index scan;
+- full plan buffers were `shared hit=80 read=3`;
+- execution time changed from 75.271 ms in the retained pre-change quiet-window plan to
+  0.750 ms in this post-change plan.
+
+The quiet-window execution-time ratio is retained only as SQL-plan evidence, not as the
+representative workload claim.
+
+### Post-index exact reviewer count plan
+
+Observed changes:
+
+- count changed from `Parallel Seq Scan` to a bitmap path using
+  `idx_applications_review_queue_status_order`;
+- the count still evaluates all 10,542 matching SUBMITTED rows;
+- heap blocks remained material: 5,920 exact blocks;
+- buffers changed from `shared hit=10816` before the change to
+  `shared hit=5923 read=76`;
+- execution time changed from 47.994 ms to 19.570 ms.
+
+This confirms the first intervention strongly improves the paged result path while leaving a
+smaller but real residual count cost.
+
+Phase 3 conclusion:
+
+- migration/test/CI: PASS;
+- exact release deployment: PASS;
+- Flyway V7 live application: PASS;
+- post-index exact SQL plan: PASS;
+- no JPQL, pool, VM, cache, or PostgreSQL configuration change was bundled.
+
+## Phase 4 — same-condition W2 remeasurement
+
+Post-change W2 run:
+
+`m8-w2-20260915T165007Z-d90eb558`
+
+Comparable identity:
+
+- source/release/backend/frontend:
+  `d90eb558bdb6317d49b0a7ce82148ddeb4b5babf`;
+- dataset M seed: `20260914`;
+- dataset manifest SHA-256:
+  `9e174ead7c9ae7b77d5adc18c93e336b4cac5e30b5962bf47c31de4f42bea696`;
+- overlay SHA-256:
+  `f93dfb6a030fa552de3dd4c7b9c022368079680bf2b16b13c05883e8b678aae1`;
+- 30 VU / 15 minutes;
+- frozen business mix preserved.
+
+W2 workload result:
+
+- business requests: 26,761 vs 26,864 before;
+- non-file success: 100% vs 100%;
+- non-file p95: 92.346 ms vs 222.197 ms before;
+- regression target: PASS.
+
+Target SQL means:
+
+- applicant list:
+  29.673 ms vs 30.784 ms before;
+- reviewer queue result:
+  3.491 ms vs 100.136 ms before;
+- reviewer queue count:
+  5.781 ms vs 67.933 ms before.
+
+Reviewer workload-family latency:
+
+- average: 53.141 ms;
+- p95: 63.375 ms;
+- p99: 191.842 ms;
+- max: 2,174.452 ms.
+
+The retained pre-change reviewer family p95 was 329.024 ms.
+
+Interpretation:
+
+- applicant-list SQL remained effectively unchanged;
+- the targeted reviewer result/count statements improved by roughly 96.5% and 91.5% in mean
+  execution time respectively;
+- reviewer-family p95 improved by roughly 80.7%;
+- overall W2 non-file p95 improved by roughly 58.4%;
+- success remained 100%;
+- the change is therefore revalidated under the representative normal-load profile without
+  a correctness regression.
+
+This is sufficient to proceed to the same-condition W3 bounded peak. Peak-load evidence is
+still required before closing Phase 4 or promoting the performance evidence maturity.
