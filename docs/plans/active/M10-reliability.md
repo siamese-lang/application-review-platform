@@ -436,8 +436,9 @@ R2 workload caveat:
 
 Follow-up before R3:
 
-- R2 stop/start emitted a systemd daemon-reload warning;
-- inspect `NeedDaemonReload` before the next fault and do not silently ignore it.
+- the R2 daemon-reload warning was resolved with `systemctl daemon-reload` only;
+- PostgreSQL remained on PID `96466`, stayed active/running, and `NeedDaemonReload=no`
+  before R3a.
 
 ### Phase 4 — R3 Garage single-node failure
 
@@ -447,14 +448,28 @@ Run R3a first, restore health, then run R3b.
 
 #### R3a — non-endpoint replica node
 
-- stop Garage only on storage-02 or storage-03;
-- keep its disk/VM intact;
-- verify cluster state;
-- exercise attachment upload/download/hash checks and non-attachment business flow;
-- restore the node;
-- verify cluster recovery and object integrity.
+Status: COMPLETE
+
+Retained result:
+
+- run: `m10-r3a-20260916T055354Z-af5421e5`;
+- source: `af5421e50fc1c0b4cdd2fe4ce89d533dfb468197`;
+- fault target: `storage-02/garage`;
+- application endpoint remained `storage-01:3900`;
+- storage-02 was removed from and later returned to `HEALTHY NODES`;
+- attachment attempts: 240, upload/download/delete/overall error rates all 0%;
+- non-attachment attempts: 480, error rate 0%;
+- PostgreSQL and application probe remained up;
+- Prometheus captured storage-02 Garage `1→0→1` while storage-01/03 stayed at 1;
+- fault-time and post-recovery attachment lifecycle counts were all zero;
+- application MainPID remained `42960`;
+- full post-recovery HTTPS smoke and DB invariants passed;
+- restore command → Garage healthy-set return: about 14.485 s;
+- no corrective architecture change justified by R3a.
 
 #### R3b — application endpoint node
+
+Status: NEXT
 
 - stop Garage only on storage-01;
 - keep PostgreSQL, app, edge, and the other Garage nodes healthy;

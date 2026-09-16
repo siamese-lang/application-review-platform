@@ -1,12 +1,12 @@
 # M10 Reliability Evidence
 
-Status: ACTIVE / R1-R2 COMPLETE / R3 NEXT
+Status: ACTIVE / R1-R2-R3a COMPLETE / R3b NEXT
 
 ## Scope
 
 M10 verifies bounded runtime failure behavior against the deployed Application Review Platform.
 Phase 1 established the healthy control and evidence harness before fault injection.
-R1 application process failure and R2 PostgreSQL outage have now been executed and retained. R3 has not yet been injected.
+R1 application process failure, R2 PostgreSQL outage, and R3a Garage non-endpoint node loss have now been executed and retained. R3b endpoint-node loss has not yet been injected.
 
 ## Repository/runtime identity
 
@@ -519,20 +519,185 @@ The primary R2 hypothesis was supported:
 This is retained as evidence of the known single-primary availability boundary, not as a
 failed experiment and not as justification for silently adding database HA.
 
-Operational note: both stop/start commands emitted a systemd warning that the unit or
-drop-ins had changed on disk and suggested `systemctl daemon-reload`. The commands and
-recovery succeeded, but `NeedDaemonReload` must be inspected before R3 rather than ignored.
+Operational note: both R2 stop/start commands emitted a systemd warning that the unit or
+drop-ins had changed on disk. Follow-up inspection found `NeedDaemonReload=yes`; a
+`systemctl daemon-reload` cleared the stale manager state without restarting PostgreSQL.
+The postmaster PID remained `96466`, the cluster stayed `active/running`, and
+`pg_isready` continued to pass. R3a preflight subsequently required
+`NeedDaemonReload=no`.
 
-## Next evidence boundary — R3
+## Phase 4 / R3a Garage non-endpoint node loss
 
-Before any Garage fault:
+Run:
 
-1. confirm PostgreSQL and application remain healthy after R2;
-2. inspect `NeedDaemonReload` for the PostgreSQL cluster unit and system manager;
-3. inspect the live Garage container/service identity and cluster state on storage-01/02/03;
-4. confirm storage-01 is still the application endpoint;
-5. execute R3a on a non-endpoint node first, restore/verify health, then execute R3b on the
-   endpoint node.
+`m10-r3a-20260916T055354Z-af5421e5`
 
-Do not stop a Garage container until the exact live container identity and cluster state are
-confirmed.
+Artifact directory on ops-01:
+
+`/srv/arp/repo/build/reliability/runs/m10-r3a-20260916T055354Z-af5421e5`
+
+Source/release/dataset identity:
+
+- source SHA: `af5421e50fc1c0b4cdd2fe4ce89d533dfb468197`;
+- backend release: `d90eb558bdb6317d49b0a7ce82148ddeb4b5babf`;
+- frontend release: `d90eb558bdb6317d49b0a7ce82148ddeb4b5babf`;
+- Dataset M manifest:
+  `9e174ead7c9ae7b77d5adc18c93e336b4cac5e30b5962bf47c31de4f42bea696`;
+- deterministic overlay:
+  `f93dfb6a030fa552de3dd4c7b9c022368079680bf2b16b13c05883e8b678aae1`.
+
+Pre-fault Garage boundary:
+
+- Garage version: `v2.4.1`;
+- replication factor: 3;
+- application endpoint: `storage-01:3900`;
+- fault target: `storage-02/garage`;
+- storage-01 and storage-03 were not intentionally stopped;
+- storage-02 was confirmed in the Garage healthy set before injection.
+
+Fault mechanism:
+
+`docker stop --time 10 garage`
+
+Restore mechanism:
+
+`docker start garage`
+
+Observed timing:
+
+- fault command issued: `2026-09-16T05:54:28.511Z`;
+- storage-02 container observed stopped: `2026-09-16T05:54:40.258Z`;
+- restore command issued: `2026-09-16T05:55:43.488Z`;
+- storage-02 observed back in Garage HEALTHY NODES:
+  `2026-09-16T05:55:57.973Z`;
+- observed stopped-state interval before restore: about **63.230 s**;
+- restore command → healthy-set return: about **14.485 s**.
+
+Garage cluster-state verification passed:
+
+- storage-02 was absent from `HEALTHY NODES` during the fault;
+- storage-02 returned to `HEALTHY NODES` after restore.
+
+### Client/business continuity
+
+R3a used the real HTTPS/session/CSRF boundary with two attachment-continuity VUs and two
+non-attachment-continuity VUs for four minutes.
+
+Observed attachment operations:
+
+- attempts: 240;
+- overall error rate: **0%**;
+- upload error rate: **0%**;
+- download error rate: **0%**;
+- delete error rate: **0%**.
+
+Observed non-attachment operations:
+
+- attempts: 480;
+- error rate: **0%**;
+- support-path error rate: **0%**.
+
+The retained driver also compared downloaded attachment bytes with the fixture payload.
+No attachment continuity failure was observed while the non-endpoint replica node was down.
+
+Result:
+
+`M10_R3A_HYPOTHESIS=SUPPORTED`
+
+### Fault-time business-state snapshot
+
+The database snapshot was retained while storage-02 was still absent from the healthy set.
+
+Observed counts:
+
+- attachment DELETE_PENDING: 0;
+- attachment FAILED: 0;
+- attachment PENDING: 0;
+- audit subject-count violations: 0;
+- AVAILABLE attachment metadata incomplete: 0;
+- IN_REVIEW application without reviewer: 0;
+- non-DRAFT application/latest-history status mismatch: 0.
+
+No unexpected partial attachment lifecycle state was observed during the fault.
+
+### Telemetry isolation
+
+Exact-window Prometheus evidence showed:
+
+- PostgreSQL `pg_up`: min 1;
+- application blackbox probe: min 1;
+- storage-01 Garage `up`: min 1 / max 1;
+- storage-02 Garage `up`: min 0 / max 1;
+- storage-03 Garage `up`: min 1 / max 1.
+
+Result:
+
+`M10_R3A_TELEMETRY_NODE_ISOLATION=PASS`
+
+The telemetry therefore captured the intended single-node `1 → 0 → 1` transition without
+an unrelated PostgreSQL, application-probe, storage-01, or storage-03 outage.
+
+### Application and post-recovery verification
+
+The application process remained stable:
+
+- MainPID before/after: `42960 → 42960`;
+- no application restart was required.
+
+The full deployed HTTPS smoke passed after Garage cluster recovery and revalidated:
+
+- SPA/API routing;
+- applicant registration/session/CSRF;
+- application create/edit/submit;
+- Garage attachment upload/download SHA-256 integrity;
+- reviewer start/approve;
+- final status/history.
+
+The retained smoke application ID was `10408`.
+
+Post-R3a database invariants remained clean:
+
+- attachment DELETE_PENDING: 0;
+- attachment FAILED: 0;
+- attachment PENDING: 0;
+- audit subject-count violations: 0;
+- AVAILABLE attachment metadata incomplete: 0;
+- IN_REVIEW application without reviewer: 0;
+- non-DRAFT application/latest-history status mismatch: 0.
+
+Results:
+
+- `M10_R3A_DB_CORE_INVARIANTS=PASS`;
+- `M10_R3A_ATTACHMENT_LIFECYCLE_CLEAN=PASS`;
+- `M10_R3A_APPLICATION_STABLE=PASS`.
+
+### R3a conclusion
+
+The R3a hypothesis was supported for the observed single non-endpoint node loss:
+
+- the faulted storage-02 Garage node actually left the healthy set;
+- storage-01 remained the application endpoint and storage-03 remained healthy;
+- attachment upload/download/delete continuity showed no errors;
+- non-attachment requests showed no errors;
+- PostgreSQL and the application probe stayed healthy;
+- no partial attachment lifecycle state was observed during or after the fault;
+- storage-02 returned to the cluster after manual container restore;
+- no application restart or architecture change was required.
+
+This result demonstrates observed service continuity for one non-endpoint Garage node loss.
+It does **not** demonstrate application attachment availability when the fixed endpoint
+storage-01 itself is unavailable.
+
+## Next evidence boundary — R3b
+
+R3b must test the distinct fixed-endpoint failure boundary:
+
+1. retain storage-02 and storage-03 healthy;
+2. stop only the storage-01 `garage` container;
+3. preserve attachment and non-attachment observations during the endpoint outage;
+4. preserve any partial attachment lifecycle state before repair or reconciliation;
+5. restore storage-01 and verify cluster, object, business, and database state.
+
+If R3b exposes the fixed Garage endpoint as a single point of failure, retain the negative
+availability result first. Do not add a load balancer, alternate endpoint, proxy, or managed
+object store before the Phase 5 residual reliability decision.

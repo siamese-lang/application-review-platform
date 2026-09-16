@@ -1,7 +1,7 @@
 # AI Project State — Fast Resume Checkpoint
 
 Status: ACTIVE  
-Last updated: 2026-09-15 UTC
+Last updated: 2026-09-16 UTC
 
 This file is the short execution checkpoint for ChatGPT/Codex sessions. It is not an
 architecture document, ADR, milestone plan, or evidence record.
@@ -220,22 +220,23 @@ Current phase:
 
 Immediate next boundary:
 
-1. retain R2 as complete:
-   - run `m10-r2-20260916T041420Z-67f15273`;
-   - DB restore readiness 4.543 s;
-   - API/session recovered about 3.7 s after restore command;
-   - app PID/NRestarts unchanged;
-   - static edge stayed available;
-   - `pg_up` and application probe captured 0→1;
-   - Hikari pending max 61;
-   - Garage stayed healthy;
-   - post-recovery smoke and DB invariants PASS;
-2. do not claim the faulted constant-VU run preserved exact 40/15/10/20/10/5 observed
-   proportions; preserve only the 30-VU allocation/business-family/pacing semantics claim;
-3. inspect the R2 systemd daemon-reload warning via `NeedDaemonReload`;
-4. inspect live Garage container/service and cluster state on storage-01/02/03;
-5. confirm storage-01 remains the configured application S3 endpoint;
-6. execute R3a non-endpoint failure first and restore/verify health before R3b endpoint loss.
+1. retain R3a as complete:
+   - run `m10-r3a-20260916T055354Z-af5421e5`;
+   - storage-02 actually left and returned to Garage `HEALTHY NODES`;
+   - 240 attachment attempts with 0% upload/download/delete/overall error;
+   - 480 non-attachment attempts with 0% error;
+   - PostgreSQL and application probe remained up;
+   - Prometheus isolated storage-02 Garage `1→0→1` while storage-01/03 stayed up;
+   - fault-time and post-recovery attachment lifecycle states were all zero;
+   - application PID stayed `42960`;
+   - full HTTPS business smoke and DB invariants passed;
+   - restore command → storage-02 healthy-set return about 14.485 s;
+2. R2 systemd warning is closed:
+   - `systemctl daemon-reload` cleared `NeedDaemonReload=yes` without restarting PostgreSQL;
+   - postmaster PID remained `96466`;
+3. prepare R3b against storage-01, the fixed application Garage endpoint;
+4. preserve any endpoint-fault partial state before cleanup or reconciliation;
+5. do not add endpoint HA before the Phase 5 evidence decision.
 
 No HA architecture change is authorized in advance.
 
@@ -255,8 +256,9 @@ No HA architecture change is authorized in advance.
 > 먼저 `AGENTS.md`, `docs/AI_PROJECT_STATE.md`, `docs/plans/active/M10-reliability.md`
 > 를 읽고 repository 실제 상태를 source of truth로 사용하라.  
 > M1–M9은 완료되었으므로 재설계하거나 재실행하지 마라.  
-> M10 Reliability Phase 1, R1, R2는 완료되었다. 현재 Phase 4 R3 Garage node failure를
-> 진행하되 R3a non-endpoint부터 시작하고, 그 전에 R2의 systemd daemon-reload warning과
-> storage-01/02/03의 실제 Garage container/cluster 상태를 확인하라.  
+> M10 Reliability Phase 1, R1, R2, R3a는 완료되었다. 현재 Phase 4 R3b endpoint
+> Garage node failure가 다음 작업이다. R3a run `m10-r3a-20260916T055354Z-af5421e5`는
+> non-endpoint storage-02 loss에서 attachment/non-attachment 연속성과 clean DB state를
+> 입증했다. storage-01 fixed endpoint loss는 아직 검증하지 않았다.  
 > R1 app failure, R2 PostgreSQL failure, R3 Garage node failure만 초기 고정 범위로
 > 수행하고 R4는 M6 evidence를 재사용하며 R5/PITR은 M11로 남겨라.
