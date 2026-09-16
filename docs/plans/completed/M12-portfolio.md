@@ -1,6 +1,6 @@
 # M12 Portfolio — Execution Plan
 
-Status: ACTIVE
+Status: COMPLETE
 Planning base: `96c6d5008dfac5d59853b9a4e12216de374a0706`
 
 ## Goal
@@ -190,7 +190,7 @@ technology collage.
 
 ## Phase 5 — final runtime lifecycle and repository closeout
 
-Status: ACTIVE
+Status: COMPLETE
 
 The persistent Seoul runtime must not remain running indefinitely without a portfolio reason.
 
@@ -295,21 +295,41 @@ temporary load/backup/PITR/full-DR resources that were already removed.
 No decorative screenshot/logo collage was added because the existing final-system topology and
 evidence tables convey more information with less maintenance risk.
 
-## Immediate next work
+## Phase 5 result
 
-Execute **Phase 5 — final runtime lifecycle and repository closeout**.
+A live public demo was not retained because the final README, portfolio narrative, interview
+packet, and E5 evidence do not depend on live access.
 
-First decide whether a live public demo is materially required for the final portfolio.
+Before teardown, the `ops-01`-controlled state was exported and handed off to Cloud Shell.
+The transferred state contained 30 resources. A destroy-only plan was reviewed as:
 
-The default should not be indefinite runtime retention. If the repository, final portfolio,
-interview packet, and retained evidence are sufficient without live access:
+```text
+Plan: 0 to add, 0 to change, 30 to destroy.
+```
 
-1. verify that no remaining portfolio claim depends on the running Seoul environment;
-2. review an OpenTofu destroy plan before applying it;
-3. destroy the persistent project runtime only after the plan proves the intended scope;
-4. preserve repository/IaC reproducibility and sanitized evidence;
-5. update README/AI state with the final runtime lifecycle;
-6. move M12 plan to completed;
-7. require exact-head and post-merge main CI.
+The first apply partially completed and then hit a transient Compute API connection refusal
+while deleting firewall resources. The state was re-read instead of replaying the stale plan.
+Seven resources remained, a fresh destroy-only plan was reviewed as:
 
-Do not destroy anything as part of Phase 4.
+```text
+Plan: 0 to add, 0 to change, 7 to destroy.
+```
+
+That plan completed successfully. Final OpenTofu state contained zero resources, and GCP
+inventory checks returned no runtime instances, disks, addresses, `arp-m4` network, or
+network-attached firewall rules.
+
+Retained evidence:
+
+`docs/operations/M12_PHASE5_RUNTIME_CLOSEOUT_EVIDENCE.md`
+
+The repository now contains the final portfolio, interview packet, architecture, IaC, and
+sanitized evidence without an indefinitely running runtime.
+
+## Closeout
+
+M12 is complete.
+
+No active milestone remains. Future work should begin only when there is a new concrete
+requirement or evidence gap; do not reopen completed workload, fault, recovery, or portfolio
+work merely to add technology breadth.
