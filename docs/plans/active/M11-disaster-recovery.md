@@ -90,7 +90,7 @@ Current repository backup/restore implementation state:
 - retained Phase 2 evidence:
   `docs/operations/M11_PHASE2_PITR_EVIDENCE.md`.
 
-M11 now proceeds to the verified whole-system checkpoint/full DR phases.
+M11 Phase 3 verified the whole-system maintenance checkpoint. M11 now proceeds to full DR.
 
 ## Guardrails
 
@@ -205,7 +205,7 @@ Do not overwrite the retained db-01 solely to exercise PITR.
 
 ## Phase 3 — verified whole-system checkpoint backup
 
-Status: NEXT
+Status: COMPLETE
 
 Goal: create one DB/object backup set with an explicit cross-store consistency boundary.
 
@@ -238,7 +238,7 @@ attempting full DR.
 
 ## Phase 4 — full DR rebuild and business recovery
 
-Status: PLANNED
+Status: NEXT
 
 Goal: restore the verified checkpoint into newly created recovery infrastructure and prove the
 business system, not only the processes, is recovered.
@@ -325,30 +325,37 @@ Likely M11 implementation areas:
 
 ## Immediate next work
 
-Execute **Phase 3 — verified whole-system checkpoint backup**.
+Execute **Phase 4 — full DR rebuild and business recovery**.
 
-Phase 2 independent PITR is complete and retained in:
+Phase 3 whole-system checkpoint is complete and retained in:
 
-`docs/operations/M11_PHASE2_PITR_EVIDENCE.md`
+`docs/operations/M11_PHASE3_CHECKPOINT_EVIDENCE.md`
 
-Measured Phase 2 result:
+Verified Phase 3 recovery source:
 
-- target: `2026-09-16T10:44:13.321143+00`;
-- recovered marker state: PRE included / POST excluded;
-- verified DB PITR RTO: 27.229 seconds;
-- marker-granularity recovery gap: ≤ 1.087882 seconds before the requested target.
+- checkpoint ID: `m11-checkpoint-20260916T121255Z`;
+- PostgreSQL full backup: `20260916-121314F`;
+- backup start/stop WAL segment: `000000010000000200000087`;
+- Garage object count: 21;
+- Garage manifest SHA-256:
+  `b6749631671f489160740c6e27c30d4aedb69e8cc80914cfc8253129ed0607c8`;
+- frozen start → complete backup verification: 76.718 seconds;
+- frozen start → writes resumed: 98.711 seconds;
+- post-resume representative HTTPS business smoke: PASS.
 
-The next slice must implement only the frozen cross-store checkpoint sequence:
+The next slice must start Phase 4 from this verified checkpoint and first define/review the
+temporary full-DR topology before any apply.
 
-1. block new mutations temporarily;
-2. let in-flight mutations finish;
-3. verify attachment `PENDING` count is zero;
-4. create the PostgreSQL checkpoint backup;
-5. copy Garage objects to `backup-01`;
-6. generate and verify the object manifest;
-7. retain exact checkpoint/backup identities;
-8. resume writes and prove the mutation block was removed;
-9. run representative business smoke after writes resume.
+Phase 4 must:
 
-Do not start full-system DR until the checkpoint backup is independently verified.
+1. create new recovery infrastructure through reviewed IaC;
+2. configure it through repository-owned automation;
+3. restore PostgreSQL from `20260916-121314F`;
+4. restore Garage objects from the matching checkpoint manifest;
+5. activate the intended application/frontend release against only the recovery data path;
+6. verify business and attachment invariants;
+7. run representative HTTPS workflow against the recovered environment;
+8. measure checkpoint age/effective RPO and full DR RTO.
+
+Do not restore into the retained Seoul runtime.
 Do not change the frozen backup architecture.

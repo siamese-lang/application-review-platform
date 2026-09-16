@@ -263,8 +263,10 @@ Current implementation state:
 - optional `backup-01` infrastructure is implemented and live;
 - pgBackRest remote repository configuration is installed;
 - PostgreSQL WAL archive is enabled and live-verified;
-- full backup `20260916-090503F` completed successfully;
-- post-backup WAL archive advanced through at least
+- historical Phase 1 full backup `20260916-090503F` completed successfully and supported the
+  verified Phase 2 PITR experiment; it was later expired by the repository's two-full retention
+  policy during Phase 3;
+- Phase 1 post-backup WAL archive advanced through at least
   `00000001000000020000007C`;
 - Garage object backup run `m11-phase1-20260916T090953Z` verified 21 objects;
 - retained manifest SHA-256:
@@ -283,13 +285,43 @@ Current implementation state:
 - M11 restore-only CI now uses lightweight `m11-recovery-static`; validation run
   `35087862266` completed successfully in about 7 seconds.
 
+Phase 3 retained result:
+
+- checkpoint ID: `m11-checkpoint-20260916T121255Z`;
+- successful checkpoint repository main:
+  `7bdf3b51d25d7caceade2d9ce09a6a587960bff3`;
+- mutation gate drained 2 Nginx workers before the frozen interval;
+- app process stopped to freeze scheduled attachment reconciliation;
+- attachment counts before/after backup:
+  `PENDING=0, DELETE_PENDING=0, AVAILABLE=17, FAILED=0, TOTAL=17`;
+- pgBackRest full backup: `20260916-121314F`;
+- backup start/stop WAL:
+  `000000010000000200000087`;
+- Garage backup verified 21 objects;
+- manifest SHA-256:
+  `b6749631671f489160740c6e27c30d4aedb69e8cc80914cfc8253129ed0607c8`;
+- frozen start → backup verification: 76.718 seconds;
+- frozen start → writes resumed: 98.711 seconds;
+- application health recovered;
+- final mutation gate: DISABLED;
+- representative post-resume HTTPS business smoke: PASS;
+- Phase 3 evidence:
+  `docs/operations/M11_PHASE3_CHECKPOINT_EVIDENCE.md`.
+
+Retention note:
+
+- successful Phase 3 backup creation expired historical Phase 1 backup
+  `20260916-090503F` under `repo1-retention-full=2`;
+- the Phase 2 PITR evidence remains valid historical evidence;
+- Phase 4 recovery source is the verified checkpoint backup `20260916-121314F`.
+
 Immediate next boundary:
 
-**Phase 3 — verified whole-system checkpoint backup**
+**Phase 4 — full DR rebuild and business recovery**
 
-Implement the frozen mutation-block → drain → attachment PENDING=0 → PostgreSQL backup →
-Garage object copy/manifest → verify → resume-writes sequence. Do not begin full-system DR
-until that checkpoint is independently verified.
+Start from the verified Phase 3 checkpoint. Review the temporary recovery topology before
+apply, restore into new recovery infrastructure only, and measure recovery through business-ready
+verification. Do not alter or restore over the retained Seoul runtime.
 
 ## Do not revisit unless new evidence requires it
 
@@ -308,12 +340,17 @@ until that checkpoint is independently verified.
 > `docs/plans/active/M11-disaster-recovery.md`를 읽고 current `main`을 source of truth로
 > 사용하라.  
 > M1–M10은 완료된 결과를 재설계하거나 재실행하지 마라.  
-> M11 Disaster Recovery는 ACTIVE이며 Phase 1 backup foundation과 Phase 2 independent PostgreSQL PITR은 live 검증 완료, 현재 다음 작업은 Phase 3 verified whole-system checkpoint backup이다.  
+> M11 Disaster Recovery는 ACTIVE이며 Phase 1 backup foundation, Phase 2 independent
+> PostgreSQL PITR, Phase 3 verified whole-system checkpoint는 live 검증 완료다. 현재 다음
+> 작업은 Phase 4 full DR rebuild and business recovery이다.  
 > frozen baseline은 pgBackRest + WAL archive, backup-01 independent object backup/manifest,
 > independent DB PITR, verified maintenance checkpoint, new recovery VMs 기반 full DR이다.  
 > PostgreSQL HA, multi-region HA, 새 primary datastore/object store를 추가하지 마라.  
 > Phase 1 증거는 `docs/operations/M11_PHASE1_BACKUP_FOUNDATION_EVIDENCE.md`,
-> Phase 2 증거는 `docs/operations/M11_PHASE2_PITR_EVIDENCE.md`에 보존되어 있다.
-> 다음 slice에서는 mutation block → drain → PENDING=0 → PostgreSQL backup → Garage object
-> copy/manifest → verify → writes resume 순서의 checkpoint만 구현·검증하라.
-> full DR은 아직 시작하지 마라.
+> Phase 2 증거는 `docs/operations/M11_PHASE2_PITR_EVIDENCE.md`,
+> Phase 3 증거는 `docs/operations/M11_PHASE3_CHECKPOINT_EVIDENCE.md`에 보존되어 있다.
+> Phase 4 복구 소스는 checkpoint `m11-checkpoint-20260916T121255Z`, PostgreSQL backup
+> `20260916-121314F`, Garage manifest SHA-256
+> `b6749631671f489160740c6e27c30d4aedb69e8cc80914cfc8253129ed0607c8`이다.
+> 다음 slice에서는 temporary full-DR topology를 먼저 IaC로 설계·review하고, retained
+> Seoul runtime을 덮어쓰지 않은 새 recovery infrastructure에서 restore를 진행하라.
