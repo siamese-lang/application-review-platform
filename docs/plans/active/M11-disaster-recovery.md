@@ -331,7 +331,7 @@ These timings are DB recovery component measurements, not the full-DR RTO.
 
 ### Phase 4 third slice — verified Garage object restore
 
-Status: ACTIVE
+Status: COMPLETE (LIVE)
 
 Implementation boundary:
 
@@ -342,6 +342,35 @@ Implementation boundary:
 - verify every source backup file by size/SHA-256 before upload;
 - after upload, require the exact object-key set and re-read every restored object to verify size/SHA-256;
 - retain Garage restore timing separately from final full-DR RTO.
+
+Live result:
+
+- first restore attempt failed before Garage mutation because the playbook lived outside `config/ansible/` and did not load shared `group_vars`; no peer/layout/bucket/key/object mutation had started;
+- corrective change moved the playbook under `config/ansible/` and added a static group-variable contract;
+- fresh DR Garage cluster bootstrap: PASS;
+- checkpoint object count restored: 21;
+- manifest SHA-256: `b6749631671f489160740c6e27c30d4aedb69e8cc80914cfc8253129ed0607c8` exact match;
+- source files and restored targets both passed key/size/SHA-256 verification;
+- object restore + target verification: 0.766 seconds;
+- final Ansible recap: `backup-01` and all three DR storage nodes `failed=0`, `unreachable=0`;
+- result: `M11_FULL_DR_OBJECT_RESTORE=PASS`.
+
+This timing is the Garage recovery component measurement, not the full-DR RTO.
+
+### Phase 4 fourth slice — exact application/frontend release activation
+
+Status: ACTIVE
+
+Implementation boundary:
+
+- activate the last checkpoint-compatible release, not current repository `main`;
+- exact backend/frontend release identity: `d90eb558bdb6317d49b0a7ce82148ddeb4b5babf`;
+- require the retained local release bundle to pass the existing manifest/checksum verifier before transfer;
+- generate inventory from `full_dr_inventory` only;
+- reuse the existing M6 `release.yml` activation mechanics so Flyway privilege remains temporary and bounded;
+- delegate migration work to `dr-db-01` through the DR `db` group;
+- activate frontend only after backend readiness succeeds;
+- do not target retained Seoul app/edge/db nodes.
 
 Required sequence:
 
@@ -443,8 +472,8 @@ Verified Phase 3 recovery source:
 - frozen start → writes resumed: 98.711 seconds;
 - post-resume representative HTTPS business smoke: PASS.
 
-The temporary full-DR topology, DR foundation, and exact checkpoint database restore are now live-verified.
-The immediate next work is restoring the matching Garage checkpoint object set into the fresh DR Garage tier.
+The temporary full-DR topology, exact checkpoint database restore, and matching Garage object restore are now live-verified.
+The immediate next work is activating exact release `d90eb558bdb6317d49b0a7ce82148ddeb4b5babf` on the recovered app/edge path.
 
 Phase 4 must:
 
