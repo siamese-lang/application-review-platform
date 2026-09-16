@@ -1,6 +1,6 @@
 # M11 Disaster Recovery — Execution Plan
 
-Status: ACTIVE
+Status: COMPLETE
 Planning base: `4030e35ee1c90a4a006dd843ba8502b754bc0ce5`
 
 ## Goal
@@ -491,7 +491,7 @@ Do not repeat successful restore paths solely to manufacture an end-to-end RTO n
 
 ## Phase 6 — M11 closeout
 
-Status: ACTIVE
+Status: COMPLETE
 
 Required closeout:
 
@@ -523,31 +523,29 @@ Likely M11 implementation areas:
 - `docs/portfolio/PORTFOLIO_EVIDENCE_MAP.md`;
 - `docs/portfolio/` evidence card only if warranted.
 
-## Immediate next work
+## Completion result
 
-Execute **Phase 6 — M11 closeout**.
+M11 Disaster Recovery is complete.
 
-Phase 5 is complete with:
+Phase 6 closeout verified:
 
-`M11_PHASE5_CORRECTIVE_CHANGE=NONE`
+- reviewed temporary-resource teardown: 0 add, 0 change, 35 destroy;
+- all M11 temporary backup/PITR/full-DR resources removed;
+- retained Seoul edge/app/obs nodes restored to RUNNING after the quota workaround;
+- teardown exposed stale PostgreSQL pgBackRest WAL-archive wiring after `backup-01` removal;
+- repository-owned cleanup removed the archive drop-in and stale database-host repository config;
+- final PostgreSQL archive state: `archive_mode=off`, `archive_command=(disabled)`;
+- retained Seoul edge → app → PostgreSQL service path: PASS;
+- final persistent OpenTofu plan: `No changes. Your infrastructure matches the configuration.`;
+- R5 from M10 is satisfied by the independent Phase 2 PostgreSQL PITR evidence;
+- full-DR end-to-end RTO/effective full-system RPO remain explicitly unmeasured limitations.
 
-Retained decision evidence:
+Retained Phase 6 evidence:
 
-`docs/operations/M11_PHASE5_RESIDUAL_DECISION_EVIDENCE.md`
+`docs/operations/M11_PHASE6_CLOSEOUT_EVIDENCE.md`
 
-Do not repeat successful PITR/full-DR restore, HTTPS, business-smoke, or integrity paths.
+Portfolio evidence card:
 
-Closeout sequence:
+`docs/portfolio/M11_DISASTER_RECOVERY_EVIDENCE.md`
 
-1. inspect current temporary/recovery resource state and retained Seoul VM power state;
-2. generate and review the OpenTofu destroy plan for temporary M11 recovery resources only;
-3. destroy only the reviewed temporary recovery resources;
-4. restore retained Seoul VMs stopped for the Phase 4 quota workaround as required;
-5. remove the temporary M11 PostgreSQL WAL-archive wiring after `backup-01` teardown, then verify `archive_mode=off` and a disabled `archive_command`;
-6. verify the retained service path and final persistent OpenTofu no-drift;
-7. retain sanitized M11 closeout evidence and unresolved limitations;
-8. update the portfolio evidence map and create an M11 evidence card only if the recovery story
-   meets the repository evidence standard;
-9. move the M11 plan to completed and require exact-head plus post-merge main CI success.
-
-Do not destroy retained Seoul persistent disks or retained service definitions.
+No successful PITR/full-DR path was rerun merely to manufacture additional timing claims.
