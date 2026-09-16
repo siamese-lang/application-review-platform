@@ -483,6 +483,7 @@ print(f"M10_R3B_ENDPOINT_AVAILABILITY_GAP={'OBSERVED' if availability_gap else '
 print(f"M10_R3B_NON_ATTACHMENT_CONTINUITY={'PASS' if unaffected_paths_healthy else 'FAIL'}")
 print(f"M10_R3B_HYPOTHESIS={'SUPPORTED' if supported else 'NOT_SUPPORTED'}")
 PY
+)
 printf '%s\n' "$probe_summary" | tee "$run_dir/probe-summary.txt"
 
 echo "STEP: retain exact-window Prometheus evidence"
@@ -702,6 +703,6 @@ echo "M10_R3B_DATASET_MANIFEST_SHA256=$ARP_M10_DATASET_MANIFEST_SHA"
 echo "M10_R3B_OVERLAY_SHA256=$overlay_sha"
 echo "M10_R3B_FAULT_AT=$fault_at"
 echo "M10_R3B_RESTORE_AT=$restore_at"
-echo "M10_R3B_STORAGE02_HEALTHY_AT=$recovered_at"
+echo "M10_R3B_STORAGE01_HEALTHY_AT=$recovered_at"
 echo "M10_R3B_ARTIFACT_DIR=$run_dir"
 echo "PASS: M10 R3b experiment retained endpoint Garage fault, attachment/non-attachment observations, node telemetry, recovery, business smoke, and DB state."
