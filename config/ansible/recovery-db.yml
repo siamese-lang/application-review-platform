@@ -1,0 +1,4 @@
+---
+- hosts: recovery_db
+  become: true
+  roles: [common, recovery_db]
