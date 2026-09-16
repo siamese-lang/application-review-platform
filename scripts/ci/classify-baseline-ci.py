@@ -118,6 +118,7 @@ def classify(paths: set[str], *, force_full: bool = False) -> dict[str, bool]:
             "deploy/build-and-configure.sh",
             "deploy/bootstrap-garage.sh",
             "deploy/configure-m11-full-dr-foundation.sh",
+            "deploy/restore-m11-full-dr-garage.sh",
             "deploy/check-prerequisites.sh",
             "deploy/tofu-bootstrap-plan.sh",
             "deploy/tofu-init-plan.sh",
@@ -125,6 +126,8 @@ def classify(paths: set[str], *, force_full: bool = False) -> dict[str, bool]:
             "scripts/deploy/test-m11-backup-foundation.py",
             "scripts/deploy/test-m11-full-dr-infrastructure.py",
             "scripts/deploy/test-m11-full-dr-foundation.py",
+            "scripts/deploy/test-m11-full-dr-garage-restore.py",
+            "scripts/restore/m11-full-dr-garage-restore.yml",
         ),
     )
 
@@ -142,6 +145,8 @@ def classify(paths: set[str], *, force_full: bool = False) -> dict[str, bool]:
             "scripts/restore/**",
             "scripts/deploy/test-m11-pitr-execution.py",
             "scripts/deploy/test-m11-full-dr-foundation.py",
+            "scripts/deploy/test-m11-full-dr-garage-restore.py",
+            "deploy/restore-m11-full-dr-garage.sh",
         ),
     )
 
@@ -284,6 +289,11 @@ def self_test() -> None:
     assert m11_full_dr_foundation["m4_infrastructure_static"]
     assert m11_full_dr_foundation["m11_recovery_static"]
     assert not m11_full_dr_foundation["release_publish"]
+
+    m11_full_dr_garage = classify({"scripts/deploy/test-m11-full-dr-garage-restore.py"})
+    assert m11_full_dr_garage["m4_infrastructure_static"]
+    assert m11_full_dr_garage["m11_recovery_static"]
+    assert not m11_full_dr_garage["release_publish"]
 
     ci_config = classify({
         ".github/workflows/baseline-ci.yml",
