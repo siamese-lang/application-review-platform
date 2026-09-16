@@ -1,61 +1,93 @@
 ---
-- name: Capture restored full DR database invariants
+- name: Capture restored full DR missing integrity invariants
   hosts: db
   gather_facts: false
   become: true
   any_errors_fatal: true
   tasks:
-    - name: Query full DR business and attachment invariants
+    - name: Query reviewer, audit, history, and checkpoint attachment invariants
       ansible.builtin.shell: |
         set -euo pipefail
-        sudo -u postgres psql --no-psqlrc --set=ON_ERROR_STOP=1           --set=checkpoint_cutoff="$CHECKPOINT_CUTOFF" --dbname=arp -At <<'SQL'
-        WITH latest AS (
-          SELECT DISTINCT ON (application_id)
-                 application_id,
-                 to_status
-          FROM application_status_history
-          ORDER BY application_id, changed_at DESC, id DESC
-        )
+        sudo -u postgres psql \
+          --no-psqlrc \
+          --set=ON_ERROR_STOP=1 \
+          --set=checkpoint_cutoff="$CHECKPOINT_CUTOFF" \
+          --dbname=arp \
+          -At <<'SQL'
         SELECT json_build_object(
-          'orphan_applications', (
-            SELECT count(*)
-            FROM applications a
-            LEFT JOIN programs p ON p.id=a.program_id
-            LEFT JOIN users applicant ON applicant.id=a.applicant_id
-            LEFT JOIN users reviewer ON reviewer.id=a.reviewer_id
-            WHERE p.id IS NULL
-               OR applicant.id IS NULL
-               OR (a.reviewer_id IS NOT NULL AND reviewer.id IS NULL)
-          ),
-          'history_status_mismatch', (
-            SELECT count(*)
-            FROM applications a
-            JOIN latest l ON l.application_id=a.id
-            WHERE a.status <> l.to_status
-          ),
-          'terminal_history_missing', (
-            SELECT count(*)
-            FROM applications a
-            WHERE a.status IN ('APPROVED','REJECTED')
-              AND NOT EXISTS (
-                SELECT 1
-                FROM application_status_history h
-                WHERE h.application_id=a.id
-                  AND h.to_status=a.status
-              )
-          ),
           'reviewer_state_mismatch', (
             SELECT count(*)
             FROM applications a
-            JOIN users applicant ON applicant.id=a.applicant_id
-            LEFT JOIN users reviewer ON reviewer.id=a.reviewer_id
+            JOIN users applicant ON applicant.id = a.applicant_id
+            LEFT JOIN users reviewer ON reviewer.id = a.reviewer_id
             WHERE applicant.role <> 'APPLICANT'
                OR (a.reviewer_id IS NOT NULL AND reviewer.role <> 'REVIEWER')
-               OR (a.status='DRAFT' AND a.reviewer_id IS NOT NULL)
+               OR (a.status = 'DRAFT' AND a.reviewer_id IS NOT NULL)
                OR (
                  a.status IN ('IN_REVIEW','NEEDS_REVISION','APPROVED','REJECTED')
                  AND a.reviewer_id IS NULL
                )
+          ),
+          'reviewer_history_ownership_mismatch', (
+            SELECT count(*)
+            FROM application_status_history h
+            JOIN applications a ON a.id = h.application_id
+            JOIN users actor ON actor.id = h.changed_by
+            WHERE (
+                h.from_status IN ('DRAFT','NEEDS_REVISION')
+                AND h.to_status = 'SUBMITTED'
+                AND (h.changed_by <> a.applicant_id OR actor.role <> 'APPLICANT')
+              )
+               OR (
+                h.from_status = 'SUBMITTED'
+                AND h.to_status = 'IN_REVIEW'
+                AND (
+                  a.reviewer_id IS NULL
+                  OR h.changed_by <> a.reviewer_id
+                  OR actor.role <> 'REVIEWER'
+                )
+              )
+               OR (
+                h.from_status = 'IN_REVIEW'
+                AND h.to_status IN ('NEEDS_REVISION','APPROVED','REJECTED')
+                AND (
+                  a.reviewer_id IS NULL
+                  OR h.changed_by <> a.reviewer_id
+                  OR actor.role <> 'REVIEWER'
+                )
+              )
+          ),
+          'history_transition_mismatch', (
+            SELECT count(*)
+            FROM application_status_history h
+            WHERE NOT (
+              (h.from_status = 'DRAFT' AND h.to_status = 'SUBMITTED')
+              OR (h.from_status = 'NEEDS_REVISION' AND h.to_status = 'SUBMITTED')
+              OR (h.from_status = 'SUBMITTED' AND h.to_status = 'IN_REVIEW')
+              OR (
+                h.from_status = 'IN_REVIEW'
+                AND h.to_status IN ('NEEDS_REVISION','APPROVED','REJECTED')
+              )
+            )
+          ),
+          'history_chain_mismatch', (
+            SELECT count(*)
+            FROM (
+              SELECT
+                application_id,
+                from_status,
+                row_number() OVER (
+                  PARTITION BY application_id
+                  ORDER BY changed_at, id
+                ) AS sequence_no,
+                lag(to_status) OVER (
+                  PARTITION BY application_id
+                  ORDER BY changed_at, id
+                ) AS previous_to_status
+              FROM application_status_history
+            ) ordered
+            WHERE (sequence_no = 1 AND from_status <> 'DRAFT')
+               OR (sequence_no > 1 AND previous_to_status <> from_status)
           ),
           'audit_subject_mismatch', (
             SELECT count(*)
@@ -65,35 +97,99 @@
                   'APPLICATION_CREATED','APPLICATION_EDITED','APPLICATION_SUBMITTED',
                   'REVIEW_STARTED','REVISION_REQUESTED','APPLICATION_APPROVED','APPLICATION_REJECTED'
                 )
-                AND (e.application_id IS NULL OR e.program_id IS NOT NULL OR e.subject_user_id IS NOT NULL)
+                AND (
+                  e.application_id IS NULL
+                  OR e.program_id IS NOT NULL
+                  OR e.subject_user_id IS NOT NULL
+                )
               )
                OR (
-                e.event_type='USER_REGISTERED'
-                AND (e.subject_user_id IS NULL OR e.application_id IS NOT NULL OR e.program_id IS NOT NULL)
+                e.event_type = 'USER_REGISTERED'
+                AND (
+                  e.subject_user_id IS NULL
+                  OR e.application_id IS NOT NULL
+                  OR e.program_id IS NOT NULL
+                )
               )
                OR (
                 e.event_type IN ('PROGRAM_CREATED','PROGRAM_UPDATED','PROGRAM_PUBLISHED')
-                AND (e.program_id IS NULL OR e.application_id IS NOT NULL OR e.subject_user_id IS NOT NULL)
+                AND (
+                  e.program_id IS NULL
+                  OR e.application_id IS NOT NULL
+                  OR e.subject_user_id IS NOT NULL
+                )
               )
           ),
-          'history_actor_role_mismatch', (
+          'audit_actor_ownership_mismatch', (
             SELECT count(*)
-            FROM application_status_history h
-            JOIN users u ON u.id=h.changed_by
-            WHERE (h.to_status='SUBMITTED' AND u.role <> 'APPLICANT')
+            FROM audit_events e
+            JOIN users actor ON actor.id = e.actor_id
+            LEFT JOIN applications a ON a.id = e.application_id
+            WHERE (
+                e.event_type IN ('APPLICATION_CREATED','APPLICATION_EDITED','APPLICATION_SUBMITTED')
+                AND (
+                  a.id IS NULL
+                  OR e.actor_id <> a.applicant_id
+                  OR actor.role <> 'APPLICANT'
+                )
+              )
                OR (
-                 h.to_status IN ('IN_REVIEW','NEEDS_REVISION','APPROVED','REJECTED')
-                 AND u.role <> 'REVIEWER'
-               )
+                e.event_type IN (
+                  'REVIEW_STARTED','REVISION_REQUESTED','APPLICATION_APPROVED','APPLICATION_REJECTED'
+                )
+                AND (
+                  a.id IS NULL
+                  OR a.reviewer_id IS NULL
+                  OR e.actor_id <> a.reviewer_id
+                  OR actor.role <> 'REVIEWER'
+                )
+              )
+               OR (
+                e.event_type = 'USER_REGISTERED'
+                AND (
+                  e.subject_user_id IS NULL
+                  OR e.actor_id <> e.subject_user_id
+                  OR actor.role <> 'APPLICANT'
+                )
+              )
+               OR (
+                e.event_type IN ('PROGRAM_CREATED','PROGRAM_UPDATED','PROGRAM_PUBLISHED')
+                AND actor.role <> 'ADMIN'
+              )
           ),
-          'pending_attachments', (
-            SELECT count(*) FROM attachments WHERE status='PENDING'
+          'checkpoint_attachment_uploader_mismatch', (
+            SELECT count(*)
+            FROM attachments att
+            JOIN applications a ON a.id = att.application_id
+            JOIN users uploader ON uploader.id = att.uploaded_by
+            WHERE att.created_at <= :'checkpoint_cutoff'::timestamptz
+              AND (
+                att.uploaded_by <> a.applicant_id
+                OR uploader.role <> 'APPLICANT'
+              )
           ),
-          'failed_attachments', (
-            SELECT count(*) FROM attachments WHERE status='FAILED'
+          'checkpoint_pending_attachments', (
+            SELECT count(*)
+            FROM attachments
+            WHERE created_at <= :'checkpoint_cutoff'::timestamptz
+              AND status = 'PENDING'
           ),
-          'delete_pending_attachments', (
-            SELECT count(*) FROM attachments WHERE status='DELETE_PENDING'
+          'checkpoint_failed_attachments', (
+            SELECT count(*)
+            FROM attachments
+            WHERE created_at <= :'checkpoint_cutoff'::timestamptz
+              AND status = 'FAILED'
+          ),
+          'checkpoint_delete_pending_attachments', (
+            SELECT count(*)
+            FROM attachments
+            WHERE created_at <= :'checkpoint_cutoff'::timestamptz
+              AND status = 'DELETE_PENDING'
+          ),
+          'post_checkpoint_attachment_rows', (
+            SELECT count(*)
+            FROM attachments
+            WHERE created_at > :'checkpoint_cutoff'::timestamptz
           ),
           'checkpoint_available_attachments', COALESCE((
             SELECT json_agg(
@@ -107,7 +203,7 @@
               ORDER BY id
             )
             FROM attachments
-            WHERE status='AVAILABLE'
+            WHERE status = 'AVAILABLE'
               AND created_at <= :'checkpoint_cutoff'::timestamptz
           ), '[]'::json)
         )::text;
@@ -119,7 +215,7 @@
       register: m11_full_dr_db_snapshot
       changed_when: false
 
-- name: Verify restored checkpoint data against Garage and manifest
+- name: Verify restored checkpoint attachment metadata against Garage and manifest
   hosts: backup
   gather_facts: false
   become: true
@@ -150,7 +246,7 @@
         group: pgbackrest
         mode: '0750'
 
-    - name: Verify full DR data integrity with temporary credentials
+    - name: Verify full DR checkpoint attachment integrity with temporary credentials
       block:
         - name: Write database invariant snapshot
           ansible.builtin.copy:
@@ -171,12 +267,18 @@
               GARAGE_SECRET_KEY={{ garage_app_secret_key }}
           no_log: true
 
-        - name: Verify restored database and checkpoint objects
+        - name: Verify checkpoint attachment metadata and restored objects
           ansible.builtin.shell: |
             set -euo pipefail
             . "{{ m11_integrity_secret_file }}"
             export GARAGE_ACCESS_KEY GARAGE_SECRET_KEY
-            /usr/bin/python3 /usr/local/lib/arp/verify_m11_full_dr_integrity.py               --db-snapshot "{{ m11_integrity_db_snapshot }}"               --manifest "{{ m11_manifest_path }}"               --manifest-sha256 "{{ m11_manifest_sha256 }}"               --endpoint "{{ m11_dr_garage_endpoint }}"               --bucket "{{ garage_bucket }}"               --expected-checkpoint-available "{{ m11_expected_checkpoint_available }}"
+            /usr/bin/python3 /usr/local/lib/arp/verify_m11_full_dr_integrity.py \
+              --db-snapshot "{{ m11_integrity_db_snapshot }}" \
+              --manifest "{{ m11_manifest_path }}" \
+              --manifest-sha256 "{{ m11_manifest_sha256 }}" \
+              --endpoint "{{ m11_dr_garage_endpoint }}" \
+              --bucket "{{ garage_bucket }}" \
+              --expected-checkpoint-available "{{ m11_expected_checkpoint_available }}"
           args:
             executable: /bin/bash
           become_user: pgbackrest

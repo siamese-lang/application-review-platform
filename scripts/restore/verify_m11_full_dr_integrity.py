@@ -21,7 +21,10 @@ def sha256_stream(body) -> tuple[int, str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Verify restored M11 DR database invariants and checkpoint attachment integrity."
+        description=(
+            "Verify the M11 DR missing business invariants and checkpoint "
+            "DB/manifest/Garage attachment consistency."
+        )
     )
     parser.add_argument("--db-snapshot", type=Path, required=True)
     parser.add_argument("--manifest", type=Path, required=True)
@@ -43,15 +46,16 @@ def main() -> int:
 
     db = json.loads(args.db_snapshot.read_text(encoding="utf-8"))
     zero_invariants = [
-        "orphan_applications",
-        "history_status_mismatch",
-        "terminal_history_missing",
         "reviewer_state_mismatch",
+        "reviewer_history_ownership_mismatch",
+        "history_transition_mismatch",
+        "history_chain_mismatch",
         "audit_subject_mismatch",
-        "history_actor_role_mismatch",
-        "pending_attachments",
-        "failed_attachments",
-        "delete_pending_attachments",
+        "audit_actor_ownership_mismatch",
+        "checkpoint_attachment_uploader_mismatch",
+        "checkpoint_pending_attachments",
+        "checkpoint_failed_attachments",
+        "checkpoint_delete_pending_attachments",
     ]
     for name in zero_invariants:
         value = int(db.get(name, -1))
@@ -121,34 +125,69 @@ def main() -> int:
     paginator = client.get_paginator("list_objects_v2")
     for page in paginator.paginate(Bucket=args.bucket):
         target_keys.update(item["Key"] for item in page.get("Contents", []))
-    missing_manifest_keys = sorted(set(manifest_by_key) - target_keys)
-    if missing_manifest_keys:
-        raise SystemExit(
-            f"restored target is missing {len(missing_manifest_keys)} checkpoint object(s)"
-        )
 
-    verified_manifest_objects = 0
-    for key, row in manifest_by_key.items():
-        response = client.get_object(Bucket=args.bucket, Key=key)
+    verified_attachment_objects = 0
+    for row in attachments:
+        key = row["object_key"]
+        try:
+            response = client.get_object(Bucket=args.bucket, Key=key)
+        except client.exceptions.NoSuchKey as exc:
+            raise SystemExit(
+                f"checkpoint attachment object missing from restored target: {key!r}"
+            ) from exc
         size, digest = sha256_stream(response["Body"])
-        if size != int(row["size"]):
-            raise SystemExit(f"target size mismatch for checkpoint object {key!r}")
-        if digest != row["sha256"]:
-            raise SystemExit(f"target SHA-256 mismatch for checkpoint object {key!r}")
-        verified_manifest_objects += 1
+        expected_size = int(row["size_bytes"])
+        expected_sha = row["sha256"]
+        if size != expected_size:
+            raise SystemExit(f"target size mismatch for checkpoint attachment {key!r}")
+        if digest != expected_sha:
+            raise SystemExit(f"target SHA-256 mismatch for checkpoint attachment {key!r}")
+        verified_attachment_objects += 1
 
-    print(f"M11_FULL_DR_ORPHAN_APPLICATIONS={db['orphan_applications']}")
-    print(f"M11_FULL_DR_HISTORY_STATUS_MISMATCH={db['history_status_mismatch']}")
-    print(f"M11_FULL_DR_TERMINAL_HISTORY_MISSING={db['terminal_history_missing']}")
+    post_checkpoint_target_objects = len(target_keys - set(manifest_by_key))
     print(f"M11_FULL_DR_REVIEWER_STATE_MISMATCH={db['reviewer_state_mismatch']}")
+    print(
+        "M11_FULL_DR_REVIEWER_HISTORY_OWNERSHIP_MISMATCH="
+        f"{db['reviewer_history_ownership_mismatch']}"
+    )
+    print(f"M11_FULL_DR_HISTORY_TRANSITION_MISMATCH={db['history_transition_mismatch']}")
+    print(f"M11_FULL_DR_HISTORY_CHAIN_MISMATCH={db['history_chain_mismatch']}")
     print(f"M11_FULL_DR_AUDIT_SUBJECT_MISMATCH={db['audit_subject_mismatch']}")
-    print(f"M11_FULL_DR_HISTORY_ACTOR_ROLE_MISMATCH={db['history_actor_role_mismatch']}")
-    print(f"M11_FULL_DR_PENDING_ATTACHMENTS={db['pending_attachments']}")
-    print(f"M11_FULL_DR_FAILED_ATTACHMENTS={db['failed_attachments']}")
-    print(f"M11_FULL_DR_DELETE_PENDING_ATTACHMENTS={db['delete_pending_attachments']}")
+    print(
+        "M11_FULL_DR_AUDIT_ACTOR_OWNERSHIP_MISMATCH="
+        f"{db['audit_actor_ownership_mismatch']}"
+    )
+    print(
+        "M11_FULL_DR_CHECKPOINT_ATTACHMENT_UPLOADER_MISMATCH="
+        f"{db['checkpoint_attachment_uploader_mismatch']}"
+    )
+    print(
+        "M11_FULL_DR_CHECKPOINT_PENDING_ATTACHMENTS="
+        f"{db['checkpoint_pending_attachments']}"
+    )
+    print(
+        "M11_FULL_DR_CHECKPOINT_FAILED_ATTACHMENTS="
+        f"{db['checkpoint_failed_attachments']}"
+    )
+    print(
+        "M11_FULL_DR_CHECKPOINT_DELETE_PENDING_ATTACHMENTS="
+        f"{db['checkpoint_delete_pending_attachments']}"
+    )
+    print(
+        "M11_FULL_DR_POST_CHECKPOINT_ATTACHMENT_ROWS="
+        f"{db.get('post_checkpoint_attachment_rows', 0)}"
+    )
     print(f"M11_FULL_DR_CHECKPOINT_AVAILABLE_ATTACHMENTS={len(attachments)}")
     print(f"M11_FULL_DR_CHECKPOINT_MANIFEST_OBJECTS={len(manifest_by_key)}")
-    print(f"M11_FULL_DR_TARGET_MANIFEST_OBJECTS_VERIFIED={verified_manifest_objects}")
+    print(
+        "M11_FULL_DR_CHECKPOINT_ATTACHMENT_OBJECTS_VERIFIED="
+        f"{verified_attachment_objects}"
+    )
+    print(f"M11_FULL_DR_TARGET_OBJECTS_CURRENT={len(target_keys)}")
+    print(
+        "M11_FULL_DR_TARGET_OBJECTS_NOT_IN_CHECKPOINT_MANIFEST="
+        f"{post_checkpoint_target_objects}"
+    )
     print(f"M11_FULL_DR_MANIFEST_SHA256={actual_manifest_sha}")
     print("M11_FULL_DR_INTEGRITY=PASS")
     return 0

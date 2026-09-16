@@ -41,20 +41,51 @@ require(
     "hosts: db",
     "hosts: backup",
     "reviewer_state_mismatch",
+    "reviewer_history_ownership_mismatch",
+    "history_transition_mismatch",
+    "history_chain_mismatch",
     "audit_subject_mismatch",
-    "history_actor_role_mismatch",
+    "audit_actor_ownership_mismatch",
+    "checkpoint_attachment_uploader_mismatch",
+    "checkpoint_pending_attachments",
+    "checkpoint_failed_attachments",
+    "checkpoint_delete_pending_attachments",
+    "post_checkpoint_attachment_rows",
     "checkpoint_available_attachments",
     "verify_m11_full_dr_integrity.py",
 )
+playbook = read("config/ansible/full-dr-integrity.yml")
+for already_verified in [
+    "orphan_applications",
+    "history_status_mismatch",
+    "terminal_history_missing",
+]:
+    if already_verified in playbook:
+        raise SystemExit(
+            f"full DR integrity playbook must not repeat already-passed DB check: {already_verified}"
+        )
 
 require(
     "scripts/restore/verify_m11_full_dr_integrity.py",
+    "M11_FULL_DR_REVIEWER_HISTORY_OWNERSHIP_MISMATCH",
+    "M11_FULL_DR_AUDIT_ACTOR_OWNERSHIP_MISMATCH",
     "M11_FULL_DR_CHECKPOINT_AVAILABLE_ATTACHMENTS",
-    "M11_FULL_DR_TARGET_MANIFEST_OBJECTS_VERIFIED",
+    "M11_FULL_DR_CHECKPOINT_ATTACHMENT_OBJECTS_VERIFIED",
+    "M11_FULL_DR_TARGET_OBJECTS_NOT_IN_CHECKPOINT_MANIFEST",
     "M11_FULL_DR_INTEGRITY=PASS",
-    "target SHA-256 mismatch",
+    "target SHA-256 mismatch for checkpoint attachment",
     "DB/manifest SHA-256 mismatch",
 )
+verifier = read("scripts/restore/verify_m11_full_dr_integrity.py")
+for repeated_restore_check in [
+    "M11_FULL_DR_TARGET_MANIFEST_OBJECTS_VERIFIED",
+    "for key, row in manifest_by_key.items()",
+]:
+    if repeated_restore_check in verifier:
+        raise SystemExit(
+            "full DR integrity verifier must not repeat the already-passed full manifest "
+            f"object verification: {repeated_restore_check}"
+        )
 
 path = ROOT / "deploy/verify-m11-full-dr-integrity.sh"
 if not (path.stat().st_mode & 0o111):
