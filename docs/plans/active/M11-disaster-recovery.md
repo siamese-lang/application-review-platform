@@ -463,7 +463,7 @@ Internal design target RTO ≤ 60 minutes becomes a claim only if measured.
 
 ## Phase 5 — residual recovery decision
 
-Status: ACTIVE
+Status: COMPLETE
 
 After PITR and full DR evidence:
 
@@ -476,16 +476,29 @@ After PITR and full DR evidence:
 A result outside the design target is valid evidence when the cause and trade-off are
 documented.
 
+Live decision:
+
+- Phase 2 DB PITR RPO: ≤ 1.087882 seconds, within the ≤5 minute internal target;
+- Phase 2 DB PITR RTO: 27.229 seconds, within the ≤30 minute internal target;
+- Phase 4 full DR correctness/business/integrity: PASS;
+- full-DR end-to-end RTO/effective full-system RPO: not authoritatively measured and retained as
+  an evidence limitation;
+- no additional bounded corrective recovery implementation is justified;
+- result: `M11_PHASE5_CORRECTIVE_CHANGE=NONE`;
+- retained evidence: `docs/operations/M11_PHASE5_RESIDUAL_DECISION_EVIDENCE.md`.
+
+Do not repeat successful restore paths solely to manufacture an end-to-end RTO number.
+
 ## Phase 6 — M11 closeout
 
-Status: PLANNED
+Status: ACTIVE
 
 Required closeout:
 
 - sanitized M11 backup/recovery evidence;
 - exact backup/checkpoint/restore/source/release identities;
 - DB PITR measured RPO/RTO;
-- full DR measured RPO/RTO;
+- full DR measured RPO/RTO when authoritative measurements exist; otherwise explicit retained limitations;
 - restored business/attachment integrity evidence;
 - explicit unresolved limitations;
 - Evidence Map update;
@@ -512,20 +525,28 @@ Likely M11 implementation areas:
 
 ## Immediate next work
 
-Execute **Phase 5 — residual recovery decision**.
+Execute **Phase 6 — M11 closeout**.
 
-Phase 4 full DR recovery correctness and business readiness are live-verified and retained in:
+Phase 5 is complete with:
 
-`docs/operations/M11_PHASE4_FULL_DR_EVIDENCE.md`
+`M11_PHASE5_CORRECTIVE_CHANGE=NONE`
 
-Do not repeat the successful DB restore, Garage restore, HTTPS smoke, representative business
-workflow, or restored checkpoint integrity verification merely for confirmation.
+Retained decision evidence:
 
-Phase 5 must:
+`docs/operations/M11_PHASE5_RESIDUAL_DECISION_EVIDENCE.md`
 
-1. compare the verified Phase 2 PITR result and Phase 4 full-DR result with the frozen recovery targets;
-2. retain the lack of authoritative end-to-end full-DR RTO/effective RPO measurement as an explicit limitation rather than inventing a value;
-3. identify at most one bounded corrective change only if the recovery evidence itself justifies it;
-4. otherwise record that no corrective implementation is justified and proceed to Phase 6 closeout.
+Do not repeat successful PITR/full-DR restore, HTTPS, business-smoke, or integrity paths.
 
-Do not add PostgreSQL HA, multi-region HA, another backup platform, or another storage layer.
+Closeout sequence:
+
+1. inspect current temporary/recovery resource state and retained Seoul VM power state;
+2. generate and review the OpenTofu destroy plan for temporary M11 recovery resources only;
+3. destroy only the reviewed temporary recovery resources;
+4. restore retained Seoul VMs stopped for the Phase 4 quota workaround as required;
+5. verify the retained service path and final persistent OpenTofu no-drift;
+6. retain sanitized M11 closeout evidence and unresolved limitations;
+7. update the portfolio evidence map and create an M11 evidence card only if the recovery story
+   meets the repository evidence standard;
+8. move the M11 plan to completed and require exact-head plus post-merge main CI success.
+
+Do not destroy retained Seoul persistent disks or retained service definitions.

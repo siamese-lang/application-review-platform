@@ -249,7 +249,7 @@ Active plan:
 
 `docs/plans/active/M11-disaster-recovery.md`
 
-Phases 1–4 are complete from their defined live-verification boundaries.
+Phases 1–5 are complete.
 
 Primary evidence:
 
@@ -260,56 +260,37 @@ Primary evidence:
 - Phase 3 verified whole-system checkpoint:
   `docs/operations/M11_PHASE3_CHECKPOINT_EVIDENCE.md`;
 - Phase 4 full DR recovery:
-  `docs/operations/M11_PHASE4_FULL_DR_EVIDENCE.md`.
+  `docs/operations/M11_PHASE4_FULL_DR_EVIDENCE.md`;
+- Phase 5 residual recovery decision:
+  `docs/operations/M11_PHASE5_RESIDUAL_DECISION_EVIDENCE.md`.
 
-Phase 4 retained recovery identities:
+Phase 5 result:
 
-- checkpoint: `m11-checkpoint-20260916T121255Z`;
-- frozen checkpoint boundary: `2026-09-16T12:13:11.077Z`;
-- PostgreSQL backup: `20260916-121314F`;
-- Garage manifest SHA-256:
-  `b6749631671f489160740c6e27c30d4aedb69e8cc80914cfc8253129ed0607c8`;
-- release:
-  `d90eb558bdb6317d49b0a7ce82148ddeb4b5babf`;
-- public DR HTTPS boundary: PASS;
-- representative applicant/reviewer workflow: PASS;
-- restored checkpoint full integrity: `M11_FULL_DR_INTEGRITY=PASS`.
+- DB PITR marker-granularity RPO: ≤ 1.087882 seconds, within ≤5 minute target;
+- DB PITR RTO: 27.229 seconds, within ≤30 minute target;
+- full DR recovery correctness/business/integrity: PASS;
+- authoritative end-to-end full-DR RTO/effective full-system RPO: not measured;
+- missing full-DR timing boundary is retained as an evidence limitation, not converted into an
+  unsupported claim;
+- no further corrective recovery implementation is justified;
+- result: `M11_PHASE5_CORRECTIVE_CHANGE=NONE`.
 
-Checkpoint integrity result:
+Current main before Phase 5 documentation:
 
-- reviewer/state ownership mismatches: 0;
-- reviewer/history ownership mismatches: 0;
-- history transition/chain mismatches: 0/0;
-- audit subject/actor ownership mismatches: 0/0;
-- checkpoint PENDING/FAILED/DELETE_PENDING: 0/0/0;
-- checkpoint AVAILABLE attachment rows: 17;
-- all 17 DB-referenced checkpoint attachments matched manifest and restored Garage key/size/SHA-256;
-- checkpoint manifest objects: 21;
-- current DR target objects: 22;
-- one post-checkpoint attachment row/object is the representative recovery-smoke addition and
-  remains explicitly separated from checkpoint data.
+`753078df49d3fd2e09737b4a0a4988cfef01076c`
 
-Measured component timings:
+Its post-merge baseline CI:
 
-- DB restore command: 10.961 seconds;
-- DB ready: 15.006 seconds;
-- DB initial invariant verification: 16.051 seconds;
-- Garage restore + complete target verification: 0.766 seconds.
-
-Do not claim full-DR RTO or effective full-system RPO from these component measurements. The
-exercise did not retain one authoritative end-to-end recovery start and business-ready end
-boundary.
-
-PR #163 final head `6e68b320b4bee3c84244a9588ec0bf5ef5d2b733` passed CI
-`35113214792`; merged main `6b964f62fdc2c606446865d4bcdace8defc56de6` passed post-merge CI `35113354947`.
+`35114106802` — SUCCESS
 
 Immediate next boundary:
 
-**Phase 5 — residual recovery decision.**
+**Phase 6 — M11 closeout.**
 
-Decide from the retained evidence whether one bounded corrective change is justified. Do not
-repeat successful Phase 4 recovery paths merely for confirmation. If no corrective change is
-evidence-supported, record that decision and proceed to Phase 6 closeout.
+Do not repeat successful recovery paths. Review temporary recovery teardown before apply, remove
+only temporary M11 recovery infrastructure, restore the retained Seoul VM power state affected by
+the Phase 4 quota workaround, verify the retained service path and final persistent OpenTofu
+no-drift, then complete the evidence map/card and milestone documentation.
 
 ## Do not revisit unless new evidence requires it
 
@@ -328,17 +309,11 @@ evidence-supported, record that decision and proceed to Phase 6 closeout.
 > `docs/plans/active/M11-disaster-recovery.md`를 읽고 current `main`을 source of truth로
 > 사용하라.  
 > M1–M10은 완료된 결과를 재설계하거나 재실행하지 마라.  
-> M11 Disaster Recovery는 ACTIVE이며 Phase 1 backup foundation, Phase 2 independent
-> PostgreSQL PITR, Phase 3 verified whole-system checkpoint는 live 검증 완료다. 현재 다음
-> 작업은 Phase 4 full DR rebuild and business recovery이다.  
-> frozen baseline은 pgBackRest + WAL archive, backup-01 independent object backup/manifest,
-> independent DB PITR, verified maintenance checkpoint, new recovery VMs 기반 full DR이다.  
-> PostgreSQL HA, multi-region HA, 새 primary datastore/object store를 추가하지 마라.  
-> Phase 1 증거는 `docs/operations/M11_PHASE1_BACKUP_FOUNDATION_EVIDENCE.md`,
-> Phase 2 증거는 `docs/operations/M11_PHASE2_PITR_EVIDENCE.md`,
-> Phase 3 증거는 `docs/operations/M11_PHASE3_CHECKPOINT_EVIDENCE.md`에 보존되어 있다.
-> Phase 4 복구 소스는 checkpoint `m11-checkpoint-20260916T121255Z`, PostgreSQL backup
-> `20260916-121314F`, Garage manifest SHA-256
-> `b6749631671f489160740c6e27c30d4aedb69e8cc80914cfc8253129ed0607c8`이다.
-> 다음 slice에서는 temporary full-DR topology를 먼저 IaC로 설계·review하고, retained
-> Seoul runtime을 덮어쓰지 않은 새 recovery infrastructure에서 restore를 진행하라.
+> M11 Disaster Recovery는 ACTIVE이고 Phase 1–5는 완료되었다. Phase 5 결론은
+> `M11_PHASE5_CORRECTIVE_CHANGE=NONE`이며, full-DR end-to-end RTO/effective RPO 미측정은
+> 명시적 limitation으로 유지한다. 성공한 PITR/full-DR 복구 경로를 재실행하지 마라.  
+> 현재 다음 작업은 Phase 6 closeout이다. temporary M11 recovery infrastructure의
+> destroy plan을 먼저 review하고, retained Seoul disk/정의를 삭제하지 않은 채 임시
+> 자원만 제거하라. Phase 4 quota 대응으로 중지한 retained Seoul VM 상태를 복구하고,
+> retained service path 및 final persistent OpenTofu no-drift를 검증한 뒤 evidence
+> map/card와 M11 closeout 문서를 완성하라.
