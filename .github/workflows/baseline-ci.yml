@@ -138,10 +138,12 @@ jobs:
           python3 scripts/deploy/test-m11-pitr-execution.py
           python3 scripts/deploy/test-m11-full-dr-foundation.py
           python3 scripts/deploy/test-m11-full-dr-garage-restore.py
+          python3 scripts/deploy/test-m11-full-dr-release.py
           bash -n scripts/restore/run-m11-pitr-marker.sh
           bash -n scripts/restore/run-m11-pitr-restore.sh
           bash -n scripts/restore/run-m11-full-dr-db-restore.sh
           bash -n deploy/restore-m11-full-dr-garage.sh
+          bash -n deploy/deploy-m11-full-dr-release.sh
           python3 -m py_compile scripts/restore/garage_object_restore.py
 
   m7-observability-infrastructure-static:

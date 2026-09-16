@@ -147,6 +147,8 @@ def classify(paths: set[str], *, force_full: bool = False) -> dict[str, bool]:
             "scripts/deploy/test-m11-full-dr-foundation.py",
             "scripts/deploy/test-m11-full-dr-garage-restore.py",
             "deploy/restore-m11-full-dr-garage.sh",
+            "deploy/deploy-m11-full-dr-release.sh",
+            "scripts/deploy/test-m11-full-dr-release.py",
             "config/ansible/full-dr-garage-restore.yml",
         ),
     )
@@ -295,6 +297,11 @@ def self_test() -> None:
     assert m11_full_dr_garage["m4_infrastructure_static"]
     assert m11_full_dr_garage["m11_recovery_static"]
     assert not m11_full_dr_garage["release_publish"]
+
+    m11_full_dr_release = classify({"scripts/deploy/test-m11-full-dr-release.py"})
+    assert m11_full_dr_release["m11_recovery_static"]
+    assert not m11_full_dr_release["m4_infrastructure_static"]
+    assert not m11_full_dr_release["release_publish"]
 
     ci_config = classify({
         ".github/workflows/baseline-ci.yml",
