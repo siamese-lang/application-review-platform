@@ -133,11 +133,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate M11 PITR execution tooling
+      - name: Validate M11 recovery execution tooling
         run: |
           python3 scripts/deploy/test-m11-pitr-execution.py
+          python3 scripts/deploy/test-m11-full-dr-foundation.py
           bash -n scripts/restore/run-m11-pitr-marker.sh
           bash -n scripts/restore/run-m11-pitr-restore.sh
+          bash -n scripts/restore/run-m11-full-dr-db-restore.sh
 
   m7-observability-infrastructure-static:
     needs: changes
@@ -775,6 +777,7 @@ jobs:
           ansible-playbook --inventory 'loadgen,' loadgen.yml --syntax-check
           ansible-playbook --inventory inventory/example.yml backup.yml --syntax-check
           ansible-playbook --inventory inventory/example.yml recovery-db.yml --syntax-check
+          ansible-playbook --inventory inventory/example.yml full-dr-foundation.yml --syntax-check
           ansible-playbook --inventory inventory/example.yml release.yml --syntax-check \
             --extra-vars 'arp_release_sha=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa arp_release_bundle_dir=/tmp/bundle'
           ansible-playbook --inventory inventory/example.yml rollback.yml --syntax-check \
@@ -796,7 +799,9 @@ jobs:
       - name: Validate M11 Phase 3 checkpoint foundation contract
         run: python3 scripts/deploy/test-m11-checkpoint-foundation.py
       - name: Validate M11 Phase 4 full DR infrastructure contract
-        run: python3 scripts/deploy/test-m11-full-dr-infrastructure.py
+        run: |
+          python3 scripts/deploy/test-m11-full-dr-infrastructure.py
+          python3 scripts/deploy/test-m11-full-dr-foundation.py
       - name: Verify M4 bootstrap wiring
         shell: bash
         run: |

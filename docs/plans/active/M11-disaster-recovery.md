@@ -238,12 +238,23 @@ attempting full DR.
 
 ## Phase 4 — full DR rebuild and business recovery
 
-Status: NEXT
+Status: ACTIVE
 
 Goal: restore the verified checkpoint into newly created recovery infrastructure and prove the
 business system, not only the processes, is recovered.
 
 ### Phase 4 first slice — temporary full-DR topology
+
+Status: COMPLETE (LIVE)
+
+Live result:
+
+- reviewed initial plan: 23 add, 0 change, 0 destroy;
+- GCP `CPUS_ALL_REGIONS` limit 12 caused two partial applies; partial state was preserved rather than cleaned up blindly;
+- `recovery-db-01`, `edge-01`, `app-01`, and `obs-01` were temporarily stopped to free quota without deleting their disks or IaC definitions;
+- reviewed final incremental plan: 4 add, 0 change, 0 destroy;
+- `dr-edge-01`, `dr-app-01`, `dr-db-01`, and `dr-storage-01/02/03` are all RUNNING;
+- retained Seoul database, Garage data disks, ops-01, and backup-01 remain intact.
 
 Goal:
 
@@ -293,6 +304,18 @@ Verification before apply:
 - reviewed plan creates only the explicitly enabled temporary DR resources;
 - no retained Seoul resource is changed or destroyed;
 - no Phase 4 restore begins until the create plan is reviewed.
+
+### Phase 4 second slice — DR foundation and exact checkpoint DB restore
+
+Status: ACTIVE
+
+Implementation boundary:
+
+- use a dedicated DR inventory containing only the six DR service nodes plus `backup-01` as the delegated repository host;
+- do not run the retained-runtime `site.yml` because the DR path does not require Alloy/observability for business recovery;
+- prepare `dr-db-01` without `initdb` and keep PostgreSQL stopped until the checkpoint restore command;
+- restore exact backup label `20260916-121314F` with immediate recovery so later archived WAL cannot move the database past the verified checkpoint boundary;
+- record DB restore component timings separately from the final full-DR RTO.
 
 Required sequence:
 
@@ -394,19 +417,18 @@ Verified Phase 3 recovery source:
 - frozen start → writes resumed: 98.711 seconds;
 - post-resume representative HTTPS business smoke: PASS.
 
-The next slice must start Phase 4 from this verified checkpoint and first define/review the
-temporary full-DR topology before any apply.
+The temporary full-DR topology is now live. The immediate next work is the DR foundation and
+exact checkpoint database restore slice.
 
 Phase 4 must:
 
-1. create new recovery infrastructure through reviewed IaC;
-2. configure it through repository-owned automation;
-3. restore PostgreSQL from `20260916-121314F`;
-4. restore Garage objects from the matching checkpoint manifest;
-5. activate the intended application/frontend release against only the recovery data path;
-6. verify business and attachment invariants;
-7. run representative HTTPS workflow against the recovered environment;
-8. measure checkpoint age/effective RPO and full DR RTO.
+1. configure the six recovery service nodes through the dedicated repository-owned DR automation;
+2. restore PostgreSQL from `20260916-121314F` without replaying later WAL beyond the checkpoint boundary;
+3. restore Garage objects from the matching checkpoint manifest;
+4. activate the intended application/frontend release against only the recovery data path;
+5. verify business and attachment invariants;
+6. run representative HTTPS workflow against the recovered environment;
+7. measure checkpoint age/effective RPO and full DR RTO.
 
 Do not restore into the retained Seoul runtime.
 Do not change the frozen backup architecture.

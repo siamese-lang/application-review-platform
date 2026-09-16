@@ -1,4 +1,4 @@
-listen_addresses = '127.0.0.1'
+listen_addresses = '{{ recovery_db_listen_addresses | default("127.0.0.1") }}'
 data_directory = '/srv/postgresql/data'
 password_encryption = 'scram-sha-256'
 shared_preload_libraries = 'pg_stat_statements'

@@ -36,12 +36,12 @@
 - name: Format uninitialized recovery database disk
   community.general.filesystem:
     fstype: ext4
-    dev: /dev/disk/by-id/google-arp-recovery-db-data
+    dev: "{{ recovery_db_disk_device | default('/dev/disk/by-id/google-arp-recovery-db-data') }}"
 
 - name: Mount recovery database disk
   ansible.posix.mount:
     path: /srv/postgresql
-    src: /dev/disk/by-id/google-arp-recovery-db-data
+    src: "{{ recovery_db_disk_device | default('/dev/disk/by-id/google-arp-recovery-db-data') }}"
     fstype: ext4
     opts: 'defaults,noatime'
     state: mounted
@@ -141,6 +141,15 @@
     group: postgres
     mode: '0644'
 
+- name: Configure recovery database client authentication when explicitly enabled
+  ansible.builtin.template:
+    src: pg_hba.conf.j2
+    dest: "/etc/postgresql/{{ recovery_pg_major.stdout }}/main/pg_hba.conf"
+    owner: postgres
+    group: postgres
+    mode: '0640'
+  when: (recovery_db_app_private_ip | default('') | length) > 0
+
 - name: Read recovery pgBackRest version
   ansible.builtin.command: pgbackrest version
   register: recovery_pgbackrest_version
@@ -167,7 +176,7 @@
   become_user: postgres
   changed_when: false
 
-- name: Verify recovery PostgreSQL remains stopped before PITR
+- name: Verify recovery PostgreSQL remains stopped before restore
   ansible.builtin.command:
     argv:
       - systemctl
