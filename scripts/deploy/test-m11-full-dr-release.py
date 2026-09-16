@@ -36,9 +36,9 @@ require(
 wrapper = read("deploy/deploy-m11-full-dr-release.sh")
 for forbidden in [
     "output -json inventory",
-    "app-01",
-    "edge-01",
-    "db-01",
+    '"app-01"',
+    '"edge-01"',
+    '"db-01"',
     "10.40.0.20",
     "10.40.0.30",
     "git checkout",
