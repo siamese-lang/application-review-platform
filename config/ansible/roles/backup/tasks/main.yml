@@ -123,6 +123,14 @@
     state: present
   become_user: pgbackrest
 
+- name: Create pgBackRest configuration directory
+  ansible.builtin.file:
+    path: /etc/pgbackrest
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
 - name: Write repository-host pgBackRest configuration
   ansible.builtin.template:
     src: pgbackrest.conf.j2
