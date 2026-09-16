@@ -17,7 +17,7 @@ The original M0 architecture remains the baseline. Accepted ADRs supersede only 
 9. Operations / Infrastructure
 10. Verification Harness
 
-## Target topology
+## Final persistent topology
 
 ```text
 Internet
@@ -27,12 +27,11 @@ edge-01: Nginx
   ├─ /, /assets/** → versioned React/Vite static release
   └─ /api/v1/**    → app-01: Spring Boot REST API + Spring Security + Spring Session JDBC
                           ├─ JDBC → db-01: PostgreSQL
-                          └─ S3 API → app-local Nginx Garage proxy
-                                      └─ storage-01 / storage-02 / storage-03
-
-DB backup/WAL ─────┐
-Garage object copy ├→ backup-01
-OpenTofu state ────┘
+                          └─ S3 API → 127.0.0.1:3910
+                                      app-local Nginx Garage proxy
+                                        ├─ storage-01
+                                        ├─ storage-02
+                                        └─ storage-03
 
 edge/app/db/storage telemetry → obs-01
 Prometheus / Loki / Tempo / Grafana / Alertmanager
@@ -41,7 +40,11 @@ GitHub/Codex → ops-01
 OpenTofu / Ansible / deploy scripts / encrypted secrets / state → GCP
 ```
 
-Temporary resources only when required: `loadgen-01` for k6, `app-02` for scale-out experiments, and new DR VMs for recovery exercises.
+Temporary resources are not part of the final persistent topology. M8–M11 created bounded
+`loadgen-01`, backup/PITR, and full-DR resources when an experiment required them; those
+temporary resources were removed after their evidence was retained. M11 recovery evidence
+therefore demonstrates rebuildability without implying that a second live region or backup VM
+remains continuously provisioned.
 
 Resource placement follows ADR-004:
 
@@ -109,11 +112,9 @@ Do not collapse Nginx, Spring, PostgreSQL, Garage, and observability into one al
 
 The frontend static files do not create a meaningful independent runtime failure domain and therefore do not justify a separate VM.
 
-## API and deployment evolution
+## Release boundary
 
-The browser/API boundary must be settled before Operations, Observability, Workload, and Performance milestones build around it.
-
-Backend and frontend are separate artifacts from the same repository revision. Later deployment automation must be able to identify and roll back both artifacts while respecting additive database migration policy.
+The final browser/API boundary is settled by ADR-001. Backend and frontend are separate artifacts from the same reviewed repository revision and are activated as one release identity. Deployment automation retains exact source/artifact identity and supports schema-compatible application rollback while database migrations remain forward-only.
 
 
 ## Garage client endpoint amendment
