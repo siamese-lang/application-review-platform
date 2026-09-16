@@ -46,7 +46,7 @@
     - name: Require standalone PostgreSQL archive state
       ansible.builtin.assert:
         that:
-          - m11_archive_state_after.stdout == 'off|'
+          - m11_archive_state_after.stdout in ['off|', 'off|(disabled)']
         fail_msg: >-
           PostgreSQL still has temporary M11 archive wiring:
           {{ m11_archive_state_after.stdout }}

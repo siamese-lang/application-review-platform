@@ -22,7 +22,7 @@ require(
     "Restart PostgreSQL after removing temporary archive wiring",
     "current_setting('archive_mode')",
     "current_setting('archive_command')",
-    "m11_archive_state_after.stdout == 'off|'",
+    "m11_archive_state_after.stdout in ['off|', 'off|(disabled)']",
     "Remove stale database-host pgBackRest repository configuration",
     "path: /etc/pgbackrest/pgbackrest.conf",
 )
