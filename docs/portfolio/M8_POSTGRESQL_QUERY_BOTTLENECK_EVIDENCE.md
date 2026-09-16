@@ -1,8 +1,8 @@
 # Evidence Card — PostgreSQL read-path saturation under representative peak load
 
-Status: CHANGE REVALIDATED  
+Status: FINAL  
 Milestone: M8  
-Evidence maturity: E4  
+Evidence maturity: E5  
 Baseline source SHA: `d6c30508eed79fbc6dfc67de07ce0099817f3a60`
 Revalidated release SHA: `d90eb558bdb6317d49b0a7ce82148ddeb4b5babf`
 
@@ -258,7 +258,7 @@ saturated, reviewer result/count means were small, and applicant-list mean was 2
 under the bounded peak. A second index/query/pool/VM/cache change would therefore have been
 speculative rather than evidence-driven.
 
-## E4 claim
+## E5 claim
 
 Using a deterministic 100,000-application workload, I traced peak-load database saturation
 to the reviewer queue result/count access path, rejected a predicate-only rewrite after plan
