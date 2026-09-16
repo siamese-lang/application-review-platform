@@ -146,9 +146,10 @@ Retained Seoul runtime:
 - ops-01
 - obs-01
 
-Temporary M11 backup runtime:
+Temporary M11 recovery runtime:
 
 - backup-01 — Tokyo `10.60.0.10`, independent 100 GB backup disk
+- recovery-db-01 — Tokyo `10.60.0.20`, disposable PostgreSQL PITR verification VM with 30 GB recovery disk
 
 Retained `storage-03` overrides:
 
@@ -269,16 +270,26 @@ Current implementation state:
 - retained manifest SHA-256:
   `42ab06b602af75011bf081ae642d8b2308a0cbb531a324e8c5bef4267f083893`;
 - Phase 1 evidence:
-  `docs/operations/M11_PHASE1_BACKUP_FOUNDATION_EVIDENCE.md`.
+  `docs/operations/M11_PHASE1_BACKUP_FOUNDATION_EVIDENCE.md`;
+- disposable `recovery-db-01` is live and isolated from the retained Seoul database;
+- independent PITR target:
+  `2026-09-16T10:44:13.321143+00`;
+- recovered marker state: PRE included / POST excluded;
+- verified DB PITR RTO: 27.229 seconds;
+- marker-granularity recovery gap: ≤ 1.087882 seconds before the target;
+- retained live marker was cleaned from `db-01`;
+- Phase 2 evidence:
+  `docs/operations/M11_PHASE2_PITR_EVIDENCE.md`;
+- M11 restore-only CI now uses lightweight `m11-recovery-static`; validation run
+  `35087862266` completed successfully in about 7 seconds.
 
 Immediate next boundary:
 
-**Phase 2 — independent PostgreSQL PITR experiment**
+**Phase 3 — verified whole-system checkpoint backup**
 
-Create/review only the minimum disposable recovery database infrastructure, record two
-distinguishable synthetic states around a PITR target, restore into the separate recovery VM,
-and measure/verify the recovered point. Do not overwrite retained `db-01` and do not begin
-full-system DR in this slice.
+Implement the frozen mutation-block → drain → attachment PENDING=0 → PostgreSQL backup →
+Garage object copy/manifest → verify → resume-writes sequence. Do not begin full-system DR
+until that checkpoint is independently verified.
 
 ## Do not revisit unless new evidence requires it
 
@@ -297,10 +308,12 @@ full-system DR in this slice.
 > `docs/plans/active/M11-disaster-recovery.md`를 읽고 current `main`을 source of truth로
 > 사용하라.  
 > M1–M10은 완료된 결과를 재설계하거나 재실행하지 마라.  
-> M11 Disaster Recovery는 ACTIVE이며 Phase 1 backup/recovery foundation은 live 검증 완료, 현재 다음 작업은 Phase 2 independent PostgreSQL PITR이다.  
+> M11 Disaster Recovery는 ACTIVE이며 Phase 1 backup foundation과 Phase 2 independent PostgreSQL PITR은 live 검증 완료, 현재 다음 작업은 Phase 3 verified whole-system checkpoint backup이다.  
 > frozen baseline은 pgBackRest + WAL archive, backup-01 independent object backup/manifest,
 > independent DB PITR, verified maintenance checkpoint, new recovery VMs 기반 full DR이다.  
 > PostgreSQL HA, multi-region HA, 새 primary datastore/object store를 추가하지 마라.  
-> Phase 1 증거는 `docs/operations/M11_PHASE1_BACKUP_FOUNDATION_EVIDENCE.md`에 보존되어 있다.
-> 다음 slice에서는 retained db-01을 덮어쓰지 말고 disposable recovery VM에서 PITR만 검증하라.
+> Phase 1 증거는 `docs/operations/M11_PHASE1_BACKUP_FOUNDATION_EVIDENCE.md`,
+> Phase 2 증거는 `docs/operations/M11_PHASE2_PITR_EVIDENCE.md`에 보존되어 있다.
+> 다음 slice에서는 mutation block → drain → PENDING=0 → PostgreSQL backup → Garage object
+> copy/manifest → verify → writes resume 순서의 checkpoint만 구현·검증하라.
 > full DR은 아직 시작하지 마라.
