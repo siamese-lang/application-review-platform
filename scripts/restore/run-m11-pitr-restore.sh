@@ -59,11 +59,13 @@ done
 
 ready_ms=$(date +%s%3N)
 psql_arp=(sudo -u postgres psql --no-psqlrc --set ON_ERROR_STOP=1 --dbname=arp)
+psql_marker() {
+  local sql=$1
+  printf '%s\n' "$sql" | "${psql_arp[@]}" -Atq --set "marker_code=$marker_code"
+}
 
-marker_count=$("${psql_arp[@]}" -At --set "marker_code=$marker_code" -c \
-  "SELECT count(*) FROM programs WHERE code=:'marker_code'")
-marker_state=$("${psql_arp[@]}" -At --set "marker_code=$marker_code" -c \
-  "SELECT description FROM programs WHERE code=:'marker_code'")
+marker_count=$(psql_marker "SELECT count(*) FROM programs WHERE code=:'marker_code'")
+marker_state=$(psql_marker "SELECT description FROM programs WHERE code=:'marker_code'")
 
 [[ $marker_count == 1 ]] || {
   echo "expected exactly one restored marker row, found: $marker_count" >&2

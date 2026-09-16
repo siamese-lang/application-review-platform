@@ -16,16 +16,19 @@ fi
 psql_arp=(sudo -u postgres psql --no-psqlrc --set ON_ERROR_STOP=1 --dbname=arp)
 utc_sql="to_char(clock_timestamp(), 'YYYY-MM-DD\"T\"HH24:MI:SS.USOF')"
 
+psql_marker() {
+  local sql=$1
+  printf '%s\n' "$sql" | "${psql_arp[@]}" -Atq --set "marker_code=$marker_code"
+}
+
 if [[ $mode == cleanup ]]; then
-  refs=$("${psql_arp[@]}" -At --set "marker_code=$marker_code" -c \
-    "SELECT count(*) FROM applications a JOIN programs p ON p.id=a.program_id WHERE p.code=:'marker_code'")
+  refs=$(psql_marker "SELECT count(*) FROM applications a JOIN programs p ON p.id=a.program_id WHERE p.code=:'marker_code'")
   [[ $refs == 0 ]] || {
     echo "refusing to remove marker program referenced by applications: $refs" >&2
     exit 1
   }
 
-  deleted=$("${psql_arp[@]}" -At --set "marker_code=$marker_code" -c \
-    "DELETE FROM programs WHERE code=:'marker_code' RETURNING code")
+  deleted=$(psql_marker "DELETE FROM programs WHERE code=:'marker_code' RETURNING code")
   if [[ -n $deleted && $deleted != "$marker_code" ]]; then
     echo "unexpected cleanup result: $deleted" >&2
     exit 1
@@ -34,8 +37,7 @@ if [[ $mode == cleanup ]]; then
   exit 0
 fi
 
-existing=$("${psql_arp[@]}" -At --set "marker_code=$marker_code" -c \
-  "SELECT count(*) FROM programs WHERE code=:'marker_code'")
+existing=$(psql_marker "SELECT count(*) FROM programs WHERE code=:'marker_code'")
 [[ $existing == 0 ]] || {
   echo "marker already exists: $marker_code" >&2
   exit 1
@@ -71,14 +73,14 @@ sleep 1
 target_time=$("${psql_arp[@]}" -Atc "SELECT $utc_sql")
 sleep 1
 
-post_state=$("${psql_arp[@]}" -At --set "marker_code=$marker_code" -c \
-  "UPDATE programs
-     SET description='M11_PITR_POST',
-         updated_at=clock_timestamp(),
-         version=version+1
-   WHERE code=:'marker_code'
-     AND description='M11_PITR_PRE'
-   RETURNING description")
+post_state=$(psql_marker "
+UPDATE programs
+SET description='M11_PITR_POST',
+    updated_at=clock_timestamp(),
+    version=version+1
+WHERE code=:'marker_code'
+  AND description='M11_PITR_PRE'
+RETURNING description")
 [[ $post_state == M11_PITR_POST ]] || {
   echo "failed to create POST marker state" >&2
   exit 1
@@ -87,8 +89,7 @@ post_state=$("${psql_arp[@]}" -At --set "marker_code=$marker_code" -c \
 post_visible_at=$("${psql_arp[@]}" -Atc "SELECT $utc_sql")
 wal_switch=$("${psql_arp[@]}" -Atc "SELECT pg_switch_wal()")
 sudo -u postgres pgbackrest --stanza=arp check >/dev/null
-live_state=$("${psql_arp[@]}" -At --set "marker_code=$marker_code" -c \
-  "SELECT description FROM programs WHERE code=:'marker_code'")
+live_state=$(psql_marker "SELECT description FROM programs WHERE code=:'marker_code'")
 [[ $live_state == M11_PITR_POST ]] || {
   echo "unexpected live marker state: $live_state" >&2
   exit 1
