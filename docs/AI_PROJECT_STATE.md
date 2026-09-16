@@ -123,7 +123,7 @@ Active plan:
 
 `docs/plans/active/M12-portfolio.md`
 
-Phase 1 selection is complete. Final primary stories are M9 PostgreSQL performance diagnosis, M10 Garage endpoint reliability, and M11 disaster recovery correctness. M9 is E5 from already-retained evidence. M6 immutable release/rollback remains a high-value supporting story. Current slice: Phase 2 — create the final-system portfolio master narrative; no new technical implementation or experiment is planned.
+Phase 1 story selection and Phase 2 final-system narrative are complete. Final primary stories are M9 PostgreSQL performance diagnosis, M10 Garage endpoint reliability, and M11 disaster recovery correctness; M6 immutable release/rollback is a supporting story. Portfolio entry: `docs/portfolio/PROJECT_PORTFOLIO.md`. Current slice: Phase 3 — compress the selected evidence into résumé/interview explanations without adding new claims or experiments.
 
 ## Do not revisit unless new evidence requires it
 
@@ -140,4 +140,4 @@ Phase 1 selection is complete. Final primary stories are M9 PostgreSQL performan
 > @GitHub `siamese-lang/application-review-platform` 작업을 계속한다.  
 > 먼저 `AGENTS.md`와 `docs/AI_PROJECT_STATE.md`를 읽고 current `main`을 source of truth로 사용하라.  
 > M1–M11은 완료되었으므로 성공한 구현·부하·장애·복구 실험을 재실행하거나 재설계하지 마라.  
-> M12 Portfolio가 ACTIVE다. Phase 1은 완료되었고 최종 primary story는 M9 성능 진단, M10 Garage endpoint reliability, M11 DR correctness다. M6 rollback은 supporting story다. `docs/plans/active/M12-portfolio.md`의 Phase 2부터 진행해 최종 시스템 중심 포트폴리오 본문을 작성하라. 새 기술이나 새 실험을 추가하지 마라.
+> M12 Portfolio가 ACTIVE다. Phase 1–2는 완료되었다. `docs/portfolio/PROJECT_PORTFOLIO.md`가 최종 시스템 중심 본문이며 primary story는 M9/M10/M11, M6 rollback은 supporting story다. `docs/plans/active/M12-portfolio.md`의 Phase 3부터 진행해 이력서·면접 설명으로 압축하라. 새 기술·실험·근거 없는 수치는 추가하지 마라.

@@ -14,16 +14,30 @@
 - M6 Operations & Delivery: complete — immutable release/rollback E5 evidence retained
 - M7 Observability: complete
 - M8 Workload: complete
-- M9 Performance: complete — PostgreSQL query-bottleneck evidence retained at E4
+- M9 Performance: complete — PostgreSQL query-bottleneck evidence retained at E5
 - M10 Reliability: complete — Garage endpoint failover E5 evidence retained
 - M11 Disaster Recovery: complete — PITR/full-DR correctness E5 evidence retained
 - M11 completed plan: `docs/plans/completed/M11-disaster-recovery.md`
 - M11 closeout evidence: `docs/operations/M11_PHASE6_CLOSEOUT_EVIDENCE.md`
 - M11 portfolio evidence: `docs/portfolio/M11_DISASTER_RECOVERY_EVIDENCE.md`
-- Next planned milestone: M12 Portfolio
+- M12 Portfolio: active — final primary stories selected; final-system narrative in progress
 - Repository visibility: public; `protect-main` ruleset active
 
 This project is **production-like**, not a claim of real production operation. All users, organizations, applications, documents, workloads, and measurements are synthetic unless explicitly recorded otherwise.
+
+## Portfolio entry
+
+The final portfolio is organized around three evidence-backed problem-solving cases rather than
+a milestone or technology list:
+
+1. PostgreSQL peak-load diagnosis and same-condition remeasurement;
+2. Garage endpoint fault isolation and same-fault reliability verification;
+3. PostgreSQL/Garage disaster-recovery correctness.
+
+Start with `docs/portfolio/PROJECT_PORTFOLIO.md`.
+
+Supporting selection rationale and detailed evidence remain under `docs/portfolio/`.
+
 
 ## Current target architecture
 
