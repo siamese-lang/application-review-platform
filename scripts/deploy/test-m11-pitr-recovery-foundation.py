@@ -35,7 +35,7 @@ require(
     "Pin backup host key for recovery PostgreSQL service",
     "Require exact pgBackRest version match",
     "Verify recovery host can read the retained repository",
-    "Verify recovery PostgreSQL remains stopped before PITR",
+    "Verify recovery PostgreSQL remains stopped before restore",
 )
 
 tasks = read("config/ansible/roles/recovery_db/tasks/main.yml")
@@ -61,7 +61,7 @@ require(
 
 require(
     "config/ansible/roles/recovery_db/templates/postgresql-recovery.conf.j2",
-    "listen_addresses = '127.0.0.1'",
+    "recovery_db_listen_addresses | default(\"127.0.0.1\")",
     "data_directory = '/srv/postgresql/data'",
 )
 
