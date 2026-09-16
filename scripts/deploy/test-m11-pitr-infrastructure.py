@@ -59,6 +59,10 @@ require(
     '"recovery-db-01"',
     'role       = "recovery_db"',
 )
+require(
+    "deploy/generate-inventory.py",
+    '"recovery_db"',
+)
 
 firewall = read("infra/opentofu/firewall.tf")
 forbidden = [
