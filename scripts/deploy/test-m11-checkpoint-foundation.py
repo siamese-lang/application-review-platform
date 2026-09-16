@@ -96,6 +96,7 @@ require(
     "M11_CHECKPOINT=PASS",
     "trap cleanup EXIT",
     "mutation_gate_left_enabled_for_safety",
+    "mktemp /tmp/m11-checkpoint-inventory.XXXXXX.yml",
 )
 
 for executable in [
