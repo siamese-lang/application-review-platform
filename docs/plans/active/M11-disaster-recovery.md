@@ -307,7 +307,7 @@ Verification before apply:
 
 ### Phase 4 second slice — DR foundation and exact checkpoint DB restore
 
-Status: ACTIVE
+Status: COMPLETE (LIVE)
 
 Implementation boundary:
 
@@ -316,6 +316,32 @@ Implementation boundary:
 - prepare `dr-db-01` without `initdb` and keep PostgreSQL stopped until the checkpoint restore command;
 - restore exact backup label `20260916-121314F` with immediate recovery so later archived WAL cannot move the database past the verified checkpoint boundary;
 - record DB restore component timings separately from the final full-DR RTO.
+
+Live result:
+
+- DR foundation Ansible recap: all six DR service nodes `failed=0`, `unreachable=0`;
+- exact PostgreSQL backup restored: `20260916-121314F`;
+- restored database invariant checks: orphan applications 0, history/status mismatch 0, terminal-history missing 0;
+- DB restore command: 10.961 seconds;
+- PostgreSQL ready: 15.006 seconds from DB restore start;
+- DB invariant verification complete: 16.051 seconds from DB restore start;
+- result: `M11_FULL_DR_DB_RESTORE=PASS`.
+
+These timings are DB recovery component measurements, not the full-DR RTO.
+
+### Phase 4 third slice — verified Garage object restore
+
+Status: ACTIVE
+
+Implementation boundary:
+
+- bootstrap only the fresh `dr-storage-01/02/03` Garage cluster;
+- use the exact checkpoint object set `m11-checkpoint-20260916T121255Z`;
+- require manifest SHA-256 `b6749631671f489160740c6e27c30d4aedb69e8cc80914cfc8253129ed0607c8` before upload;
+- refuse a non-empty DR target bucket rather than overwrite unknown state;
+- verify every source backup file by size/SHA-256 before upload;
+- after upload, require the exact object-key set and re-read every restored object to verify size/SHA-256;
+- retain Garage restore timing separately from final full-DR RTO.
 
 Required sequence:
 
@@ -417,8 +443,8 @@ Verified Phase 3 recovery source:
 - frozen start → writes resumed: 98.711 seconds;
 - post-resume representative HTTPS business smoke: PASS.
 
-The temporary full-DR topology is now live. The immediate next work is the DR foundation and
-exact checkpoint database restore slice.
+The temporary full-DR topology, DR foundation, and exact checkpoint database restore are now live-verified.
+The immediate next work is restoring the matching Garage checkpoint object set into the fresh DR Garage tier.
 
 Phase 4 must:
 
