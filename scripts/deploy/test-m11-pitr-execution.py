@@ -25,6 +25,7 @@ for forbidden in [
     "DELETE FROM applications",
     "TRUNCATE",
     "DROP TABLE",
+    '--set "marker_code=$marker_code" -c',
 ]:
     if forbidden in marker:
         raise SystemExit(f"marker tooling must not mutate retained application rows/schema: {forbidden}")
@@ -50,6 +51,7 @@ for forbidden in [
     "db-01",
     "10.40.0.30",
     "StrictHostKeyChecking=no",
+    '--set "marker_code=$marker_code" -c',
 ]:
     if forbidden in restore:
         raise SystemExit(f"restore tooling violates recovery isolation guardrail: {forbidden}")
