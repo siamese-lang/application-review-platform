@@ -24,7 +24,7 @@ M12 starts from the completed M1–M11 repository state.
 Primary candidate evidence:
 
 - M6 immutable release + schema-compatible rollback — E5;
-- M9 PostgreSQL query bottleneck and same-condition remeasurement — currently E4;
+- M9 PostgreSQL query bottleneck and same-condition remeasurement — E5 after Phase 1 normalization;
 - M10 Garage fixed-endpoint failure and failover revalidation — E5;
 - M11 disaster recovery correctness — E5.
 
@@ -171,7 +171,7 @@ Do not create company-specific self-introduction answers inside the repository.
 
 ## Phase 4 — visual/repository presentation
 
-Status: ACTIVE
+Status: COMPLETE
 
 Review whether the public repository can be understood in a few minutes.
 
@@ -190,7 +190,7 @@ technology collage.
 
 ## Phase 5 — final runtime lifecycle and repository closeout
 
-Status: PENDING
+Status: ACTIVE
 
 The persistent Seoul runtime must not remain running indefinitely without a portfolio reason.
 
@@ -274,17 +274,42 @@ It retains:
 - job-family usage guidance;
 - wording that must be avoided because it exceeds retained evidence.
 
+## Phase 4 result
+
+Public repository presentation was simplified around the final system instead of milestone
+chronology.
+
+README now exposes, in first-review order:
+
+1. project purpose and synthetic-data claim boundary;
+2. M9/M10/M11 result table;
+3. product workflow;
+4. final persistent architecture including the app-local Garage proxy;
+5. integrity/operations boundaries;
+6. evidence links and explicit non-claims;
+7. only then a concise technology summary and milestone status.
+
+`docs/architecture/ARCHITECTURE.md` now distinguishes the final persistent topology from the
+temporary load/backup/PITR/full-DR resources that were already removed.
+
+No decorative screenshot/logo collage was added because the existing final-system topology and
+evidence tables convey more information with less maintenance risk.
+
 ## Immediate next work
 
-Execute **Phase 4 — visual/repository presentation**.
+Execute **Phase 5 — final runtime lifecycle and repository closeout**.
 
-Review the public repository as a first-time reviewer would:
+First decide whether a live public demo is materially required for the final portfolio.
 
-1. README should expose the final project and three primary cases quickly;
-2. architecture representation must match the final system, including the app-local Garage proxy;
-3. portfolio/evidence entry links must be easy to reach;
-4. stale M12/M9/M11 wording must not contradict current state;
-5. visuals should be added only if they improve understanding of architecture or evidence;
-6. do not create a technology-logo collage or milestone timeline as the primary presentation.
+The default should not be indefinite runtime retention. If the repository, final portfolio,
+interview packet, and retained evidence are sufficient without live access:
 
-Prefer a small number of durable visual/repository improvements rather than decorative work.
+1. verify that no remaining portfolio claim depends on the running Seoul environment;
+2. review an OpenTofu destroy plan before applying it;
+3. destroy the persistent project runtime only after the plan proves the intended scope;
+4. preserve repository/IaC reproducibility and sanitized evidence;
+5. update README/AI state with the final runtime lifecycle;
+6. move M12 plan to completed;
+7. require exact-head and post-merge main CI.
+
+Do not destroy anything as part of Phase 4.

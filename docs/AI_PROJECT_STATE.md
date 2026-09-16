@@ -105,15 +105,21 @@ M10 R5 logical corruption/PITR is now formally satisfied by M11 Phase 2.
 
 ## Portfolio checkpoint
 
-Current E5 candidates include:
+Final primary stories:
 
-- M6 immutable release + rollback;
-- M10 Garage endpoint failure and same-fault failover revalidation;
-- M11 disaster recovery correctness;
-- M9 PostgreSQL bottleneck remains E4 and should be evaluated in M12.
+- M9 PostgreSQL performance diagnosis — E5;
+- M10 Garage endpoint failure and same-fault failover revalidation — E5;
+- M11 disaster recovery correctness — E5.
 
-The final portfolio still has a 2–3 primary-story budget. M11 becoming E5 does not
-automatically mean it must be selected.
+M6 immutable release + rollback remains the high-value supporting delivery/change-control story.
+
+Final portfolio narrative:
+
+`docs/portfolio/PROJECT_PORTFOLIO.md`
+
+Interview/application packet:
+
+`docs/portfolio/INTERVIEW_PACKET.md`
 
 ## Next milestone
 
@@ -123,7 +129,7 @@ Active plan:
 
 `docs/plans/active/M12-portfolio.md`
 
-Phase 1–3 are complete. Final primary stories are M9 PostgreSQL performance diagnosis, M10 Garage endpoint reliability, and M11 disaster recovery correctness; M6 immutable release/rollback is supporting. Portfolio entry: `docs/portfolio/PROJECT_PORTFOLIO.md`; interview/application compression: `docs/portfolio/INTERVIEW_PACKET.md`. Current slice: Phase 4 — review the public repository/visual presentation for fast first-time comprehension without adding decorative technology lists.
+Phase 1–4 are complete. README now exposes the final system, M9/M10/M11 evidence, current Garage proxy topology, claim boundaries, and direct portfolio/interview links without milestone-first presentation. Current slice: Phase 5 — decide the persistent Seoul runtime lifecycle and close M12; do not retain live infrastructure indefinitely without a portfolio reason.
 
 ## Do not revisit unless new evidence requires it
 
@@ -140,4 +146,4 @@ Phase 1–3 are complete. Final primary stories are M9 PostgreSQL performance di
 > @GitHub `siamese-lang/application-review-platform` 작업을 계속한다.  
 > 먼저 `AGENTS.md`와 `docs/AI_PROJECT_STATE.md`를 읽고 current `main`을 source of truth로 사용하라.  
 > M1–M11은 완료되었으므로 성공한 구현·부하·장애·복구 실험을 재실행하거나 재설계하지 마라.  
-> M12 Portfolio가 ACTIVE다. Phase 1–3은 완료되었다. `PROJECT_PORTFOLIO.md`와 `INTERVIEW_PACKET.md`가 최종 narrative/면접 자료다. `docs/plans/active/M12-portfolio.md`의 Phase 4부터 public README/architecture/evidence 진입 경로를 검토하라. 장식용 기술 나열이나 새 실험은 추가하지 마라.
+> M12 Portfolio가 ACTIVE다. Phase 1–4는 완료되었다. README/PROJECT_PORTFOLIO/INTERVIEW_PACKET이 최종 공개 진입 경로다. `docs/plans/active/M12-portfolio.md`의 Phase 5부터 live Seoul runtime 유지 필요성을 판단하고, 필요하지 않다면 reviewed OpenTofu destroy plan을 거쳐 프로젝트 runtime을 정리한 뒤 M12를 closeout하라.
