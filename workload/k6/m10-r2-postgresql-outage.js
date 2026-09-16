@@ -36,6 +36,7 @@ const familyNames = [
 const familyMetrics = {};
 for (const family of familyNames) {
   familyMetrics[family] = {
+    attempts: new Counter(`m10_r2_${family}_attempts`),
     requests: new Counter(`m10_r2_${family}_requests`),
     errors: new Rate(`m10_r2_${family}_errors`),
     duration: new Trend(`m10_r2_${family}_duration`, true),
@@ -301,6 +302,7 @@ function submittedId(slot) {
 
 export function listDetail() {
   const started = Date.now();
+  familyMetrics['list_detail'].attempts.add(1);
   if (!ensureRole('APPLICANT')) {
     pace(started, 2.0);
     return;
@@ -324,6 +326,7 @@ export function listDetail() {
 
 export function createSave() {
   const started = Date.now();
+  familyMetrics['create_save'].attempts.add(1);
   if (!ensureRole('APPLICANT')) {
     pace(started, 1.777778);
     return;
@@ -370,6 +373,7 @@ export function createSave() {
 
 export function submitResubmit() {
   const started = Date.now();
+  familyMetrics['submit_resubmit'].attempts.add(1);
   if (!ensureRole('APPLICANT')) {
     pace(started, 1.0);
     return;
@@ -394,6 +398,7 @@ export function submitResubmit() {
 
 export function reviewerQueueDetail() {
   const started = Date.now();
+  familyMetrics['reviewer_queue_detail'].attempts.add(1);
   if (!ensureRole('REVIEWER')) {
     pace(started, 2.0);
     return;
@@ -417,6 +422,7 @@ export function reviewerQueueDetail() {
 
 export function reviewAction() {
   const started = Date.now();
+  familyMetrics['review_action'].attempts.add(1);
   if (!ensureRole('REVIEWER')) {
     pace(started, 2.0);
     return;
@@ -475,6 +481,7 @@ export function reviewAction() {
 
 export function attachment() {
   const started = Date.now();
+  familyMetrics['attachment'].attempts.add(1);
   if (!ensureRole('APPLICANT')) {
     pace(started, 2.666667);
     return;
