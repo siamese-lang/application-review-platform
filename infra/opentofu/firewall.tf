@@ -201,3 +201,129 @@ resource "google_compute_firewall" "recovery_db_backup_ssh" {
     ports    = ["22"]
   }
 }
+
+resource "google_compute_firewall" "full_dr_edge_https" {
+  count         = var.enable_full_dr ? 1 : 0
+  name          = "arp-m11-dr-edge-https"
+  network       = google_compute_network.m4.name
+  direction     = "INGRESS"
+  source_ranges = ["0.0.0.0/0"]
+  target_tags   = ["arp-dr-edge"]
+
+  allow {
+    protocol = "tcp"
+    ports    = ["443"]
+  }
+}
+
+resource "google_compute_firewall" "full_dr_edge_http" {
+  count         = var.enable_full_dr && var.enable_http ? 1 : 0
+  name          = "arp-m11-dr-edge-http"
+  network       = google_compute_network.m4.name
+  direction     = "INGRESS"
+  source_ranges = ["0.0.0.0/0"]
+  target_tags   = ["arp-dr-edge"]
+
+  allow {
+    protocol = "tcp"
+    ports    = ["80"]
+  }
+}
+
+resource "google_compute_firewall" "full_dr_edge_app" {
+  count       = var.enable_full_dr ? 1 : 0
+  name        = "arp-m11-dr-edge-to-app"
+  network     = google_compute_network.m4.name
+  direction   = "INGRESS"
+  source_tags = ["arp-dr-edge"]
+  target_tags = ["arp-dr-app"]
+
+  allow {
+    protocol = "tcp"
+    ports    = ["8080"]
+  }
+}
+
+resource "google_compute_firewall" "full_dr_app_db" {
+  count       = var.enable_full_dr ? 1 : 0
+  name        = "arp-m11-dr-app-to-db"
+  network     = google_compute_network.m4.name
+  direction   = "INGRESS"
+  source_tags = ["arp-dr-app"]
+  target_tags = ["arp-dr-db"]
+
+  allow {
+    protocol = "tcp"
+    ports    = ["5432"]
+  }
+}
+
+resource "google_compute_firewall" "full_dr_app_garage" {
+  count       = var.enable_full_dr ? 1 : 0
+  name        = "arp-m11-dr-app-to-garage"
+  network     = google_compute_network.m4.name
+  direction   = "INGRESS"
+  source_tags = ["arp-dr-app"]
+  target_tags = ["arp-dr-storage"]
+
+  allow {
+    protocol = "tcp"
+    ports    = ["3900"]
+  }
+}
+
+resource "google_compute_firewall" "full_dr_garage_rpc" {
+  count       = var.enable_full_dr ? 1 : 0
+  name        = "arp-m11-dr-garage-rpc"
+  network     = google_compute_network.m4.name
+  direction   = "INGRESS"
+  source_tags = ["arp-dr-storage"]
+  target_tags = ["arp-dr-storage"]
+
+  allow {
+    protocol = "tcp"
+    ports    = ["3901"]
+  }
+}
+
+resource "google_compute_firewall" "backup_full_dr_db_ssh" {
+  count       = var.enable_full_dr && var.enable_backup ? 1 : 0
+  name        = "arp-m11-backup-to-dr-db"
+  network     = google_compute_network.m4.name
+  direction   = "INGRESS"
+  source_tags = ["arp-backup"]
+  target_tags = ["arp-dr-db"]
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
+}
+
+resource "google_compute_firewall" "full_dr_db_backup_ssh" {
+  count       = var.enable_full_dr && var.enable_backup ? 1 : 0
+  name        = "arp-m11-dr-db-to-backup"
+  network     = google_compute_network.m4.name
+  direction   = "INGRESS"
+  source_tags = ["arp-dr-db"]
+  target_tags = ["arp-backup"]
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
+}
+
+resource "google_compute_firewall" "backup_full_dr_garage_s3" {
+  count       = var.enable_full_dr && var.enable_backup ? 1 : 0
+  name        = "arp-m11-backup-to-dr-garage"
+  network     = google_compute_network.m4.name
+  direction   = "INGRESS"
+  source_tags = ["arp-backup"]
+  target_tags = ["arp-dr-storage"]
+
+  allow {
+    protocol = "tcp"
+    ports    = ["3900"]
+  }
+}
