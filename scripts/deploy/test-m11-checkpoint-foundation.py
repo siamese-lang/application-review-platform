@@ -62,9 +62,52 @@ for forbidden in [
     if forbidden in script:
         raise SystemExit(f"mutation gate must preserve graceful/drained behavior: {forbidden}")
 
+require(
+    "scripts/backup/m11-object-backup.yml",
+    "hosts: backup",
+    "Refuse to overwrite an existing checkpoint object backup",
+    "/usr/local/lib/arp/garage_object_backup.py",
+    "GARAGE_ACCESS_KEY: \"{{ garage_app_access_key }}\"",
+    "GARAGE_SECRET_KEY: \"{{ garage_app_secret_key }}\"",
+    "become_user: pgbackrest",
+    "no_log: true",
+)
+
+require(
+    "scripts/backup/run-m11-checkpoint.sh",
+    "run-m11-mutation-gate.sh",
+    "systemctl stop arp",
+    "systemctl start arp",
+    "PENDING",
+    "DELETE_PENDING",
+    "run-pgbackrest-full.sh",
+    "m11-object-backup.yml",
+    "verify_object_backup.py",
+    "M11_CHECKPOINT_FREEZE_START",
+    "M11_CHECKPOINT_BACKUP_VERIFIED_AT",
+    "M11_CHECKPOINT_WRITES_RESUMED_AT",
+    "M11_CHECKPOINT=PASS",
+    "trap cleanup EXIT",
+    "mutation_gate_left_enabled_for_safety",
+)
+
+checkpoint = read("scripts/backup/run-m11-checkpoint.sh")
+for forbidden in [
+    "rm -rf /srv/backup",
+    "rm -rf /srv/postgresql",
+    "StrictHostKeyChecking=no",
+    "systemctl restart arp",
+]:
+    if forbidden in checkpoint:
+        raise SystemExit(f"checkpoint orchestrator violates recovery guardrail: {forbidden}")
+
 subprocess.run(
     ["bash", "-n", str(ROOT / "scripts/backup/run-m11-mutation-gate.sh")],
     check=True,
 )
+subprocess.run(
+    ["bash", "-n", str(ROOT / "scripts/backup/run-m11-checkpoint.sh")],
+    check=True,
+)
 
-print("M11 Phase 3 checkpoint mutation-gate contract: PASS")
+print("M11 Phase 3 checkpoint foundation contract: PASS")
