@@ -35,6 +35,7 @@ Milestones:
 - M8 Workload — **complete**
 - M9 Performance — **complete**
 - M10 Reliability — **complete**
+- M11 Disaster Recovery — **ACTIVE**
 
 Completed M8 plan:
 
@@ -235,6 +236,41 @@ of FAILED rows.
 
 Do not add another Garage HA layer or PostgreSQL HA as M10 follow-up work.
 
+## M11 immediate next work
+
+M11 Disaster Recovery is ACTIVE.
+
+Active plan:
+
+`docs/plans/active/M11-disaster-recovery.md`
+
+Frozen recovery scope:
+
+- pgBackRest manages PostgreSQL backup, WAL archiving, restore, and PITR;
+- DB PITR is verified independently before full DR;
+- `backup-01` holds an independent Garage object backup and key/size/SHA-256/timestamp manifest;
+- whole-system backup uses the frozen maintenance checkpoint sequence;
+- full DR restores into newly created recovery infrastructure, not the retained live VMs;
+- PostgreSQL automatic failover and multi-region HA remain out of scope.
+
+Current implementation state:
+
+- no pgBackRest configuration exists;
+- no backup-01 IaC/Ansible role exists;
+- no WAL archive implementation exists;
+- no object backup/manifest implementation exists;
+- `scripts/backup/` and `scripts/restore/` are empty foundations.
+
+Immediate next boundary:
+
+**Phase 1 — backup/recovery foundation**
+
+Implement one repository slice that adds optional temporary backup-01/recovery infrastructure,
+pgBackRest/WAL archive configuration, object-backup manifest tooling, and focused static tests.
+
+Do not execute PITR or full DR in that first implementation slice. Before any OpenTofu apply,
+review the exact plan and reject any persistent Seoul resource replacement/destruction.
+
 ## Do not revisit unless new evidence requires it
 
 - M1–M8 completed design/evidence;
@@ -248,13 +284,13 @@ Do not add another Garage HA layer or PostgreSQL HA as M10 follow-up work.
 ## Short resume prompt
 
 > @GitHub `siamese-lang/application-review-platform` 작업을 계속한다.  
-> 먼저 `AGENTS.md`, `docs/AI_PROJECT_STATE.md`, 현재 active plan을 확인하고 repository
-> 실제 상태를 source of truth로 사용하라.  
+> 먼저 `AGENTS.md`, `docs/AI_PROJECT_STATE.md`,
+> `docs/plans/active/M11-disaster-recovery.md`를 읽고 current `main`을 source of truth로
+> 사용하라.  
 > M1–M10은 완료된 결과를 재설계하거나 재실행하지 마라.  
-> M10 closeout evidence는 `docs/operations/M10_PHASE6_CLOSEOUT_EVIDENCE.md`,
-> Garage endpoint E5 card는 `docs/portfolio/M10_GARAGE_ENDPOINT_FAILOVER_EVIDENCE.md`다.  
-> R3b baseline은 fixed storage-01 endpoint loss에서 attachment error 28.6920%와
-> 64 FAILED rows를 남겼고, ADR-005 app-local proxy 적용 후 동일 fault retest에서는
-> attachment/non-attachment error 0%, lifecycle clean을 검증했다.  
-> R2의 single PostgreSQL primary limitation은 문서화된 상태로 남겨 두고, R5/PITR은
-> M11 범위로 진행하라.
+> M11 Disaster Recovery는 ACTIVE이며 첫 작업은 Phase 1 backup/recovery foundation이다.  
+> frozen baseline은 pgBackRest + WAL archive, backup-01 independent object backup/manifest,
+> independent DB PITR, verified maintenance checkpoint, new recovery VMs 기반 full DR이다.  
+> PostgreSQL HA, multi-region HA, 새 primary datastore/object store를 추가하지 마라.  
+> 첫 implementation slice에서는 backup-01/recovery IaC, pgBackRest/WAL, object manifest,
+> static tests까지만 구현하고 PITR/full DR 실행은 아직 하지 마라.
