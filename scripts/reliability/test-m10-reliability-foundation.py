@@ -400,7 +400,7 @@ subprocess.run(
 )
 for token in [
     "export ARP_M10_R3B_MODE=retest",
-    'exec "$root/scripts/reliability/run-m10-r3b.sh" "$@"',
+    'exec bash "$root/scripts/reliability/run-m10-r3b.sh" "$@"',
 ]:
     require(r3b_retest, token, "M10 R3b retest wrapper")
 
