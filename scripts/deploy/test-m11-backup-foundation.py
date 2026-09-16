@@ -30,6 +30,14 @@ require(
     '"arp-backup"',
     'device_name = "arp-backup-data"',
 )
+compute = read("infra/opentofu/compute.tf")
+backup_start = compute.find('resource "google_compute_instance" "backup"')
+if backup_start < 0:
+    raise SystemExit("missing backup-01 resource")
+backup_block = compute[backup_start:]
+if "service_account" in backup_block:
+    raise SystemExit("backup-01 must not inherit a broad workload service account")
+
 require(
     "infra/opentofu/disks.tf",
     'resource "google_compute_disk" "backup"',
