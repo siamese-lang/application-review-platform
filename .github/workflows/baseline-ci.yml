@@ -119,7 +119,9 @@ jobs:
         run: |
           python3 scripts/backup/test-m11-backup-tooling.py
           python3 scripts/deploy/test-m11-checkpoint-foundation.py
+          python3 scripts/deploy/test-m11-backup-closeout.py
           bash -n scripts/backup/run-pgbackrest-full.sh
+          bash -n deploy/closeout-m11-backup.sh
           bash -n scripts/backup/run-m11-mutation-gate.sh
           python3 -m py_compile \
             scripts/backup/garage_object_backup.py \
@@ -787,6 +789,7 @@ jobs:
           ansible-playbook --inventory 'localhost,' bootstrap-ops.yml --syntax-check
           ansible-playbook --inventory 'loadgen,' loadgen.yml --syntax-check
           ansible-playbook --inventory inventory/example.yml backup.yml --syntax-check
+          ansible-playbook --inventory inventory/example.yml m11-backup-closeout.yml --syntax-check
           ansible-playbook --inventory inventory/example.yml recovery-db.yml --syntax-check
           ansible-playbook --inventory inventory/example.yml full-dr-foundation.yml --syntax-check
           ansible-playbook --inventory inventory/example.yml full-dr-garage-restore.yml --syntax-check

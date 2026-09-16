@@ -139,6 +139,9 @@ def classify(paths: set[str], *, force_full: bool = False) -> dict[str, bool]:
         (
             "scripts/backup/**",
             "scripts/deploy/test-m11-checkpoint-foundation.py",
+            "scripts/deploy/test-m11-backup-closeout.py",
+            "deploy/closeout-m11-backup.sh",
+            "config/ansible/m11-backup-closeout.yml",
         ),
     )
 
@@ -281,6 +284,10 @@ def self_test() -> None:
     m11_checkpoint = classify({"scripts/backup/run-m11-mutation-gate.sh"})
     assert m11_checkpoint["m11_backup_static"]
     assert not m11_checkpoint["m4_infrastructure_static"]
+
+    m11_backup_closeout = classify({"deploy/closeout-m11-backup.sh"})
+    assert m11_backup_closeout["m11_backup_static"]
+    assert not m11_backup_closeout["release_publish"]
 
     m11_restore = classify({"scripts/restore/run-m11-pitr-restore.sh"})
     assert m11_restore["m11_recovery_static"]
