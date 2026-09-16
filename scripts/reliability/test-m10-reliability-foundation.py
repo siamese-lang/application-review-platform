@@ -261,4 +261,67 @@ subprocess.run(
     check=True,
 )
 
-print("M10 reliability foundation and R1/R2 contracts: PASS")
+
+r3a_driver = read("workload/k6/m10-r3a-garage-non-endpoint.js")
+r3a_runner = read("scripts/reliability/run-m10-r3a.sh")
+
+for token in [
+    "profile: 'r3a-garage-non-endpoint'",
+    "exec: 'attachmentContinuity'",
+    "exec: 'nonAttachmentContinuity'",
+    "m10_r3a_attachment_attempts",
+    "m10_r3a_attachment_upload_errors",
+    "m10_r3a_attachment_download_errors",
+    "m10_r3a_attachment_delete_errors",
+    "m10_r3a_non_attachment_errors",
+    "M10_R3A_ATTACHMENT_OK",
+    "M10_R3A_NON_ATTACHMENT_OK",
+]:
+    require(r3a_driver, token, "M10 R3a driver")
+
+for token in [
+    "ARP_CONFIRM_M10_DATASET_RESET",
+    "ARP_CONFIRM_M8_DATASET_RESET=yes",
+    "ARP_M8_DATASET_PROFILE=M",
+    "w2-interactive-overlay.sql",
+    "GARAGE_ENDPOINT",
+    "http://10.40.0.41:3900",
+    "storage-02",
+    "docker stop --time 10 garage",
+    "docker start garage",
+    "hold bounded non-endpoint node outage for 60 seconds",
+    "M10_R3A_STORAGE02_REMOVED_FROM_HEALTHY_SET=PASS",
+    "M10_R3A_HYPOTHESIS=",
+    "M10_R3A_TELEMETRY_NODE_ISOLATION=PASS",
+    "M10_R3A_APPLICATION_STABLE=PASS",
+    "deploy/cloud-smoke.sh",
+    "m10-db-invariants.sql",
+    "db-invariants-during-fault.txt",
+    "capture-m10-prometheus.py",
+    '"scenario": "R3a-garage-non-endpoint-node-loss"',
+    '"fault_injected": True',
+    "EMERGENCY_RECOVERY: storage-02 Garage may still be stopped; starting it.",
+]:
+    require(r3a_runner, token, "M10 R3a runner")
+
+for forbidden in [
+    "docker stop garage && docker stop",
+    "systemctl stop arp.service",
+    "systemctl stop postgresql",
+    "gcloud compute instances stop",
+    "tofu apply",
+    "StrictHostKeyChecking=no",
+]:
+    if forbidden in r3a_runner:
+        raise SystemExit(f"M10 R3a runner must not contain: {forbidden}")
+
+subprocess.run(
+    ["node", "--check", str(ROOT / "workload/k6/m10-r3a-garage-non-endpoint.js")],
+    check=True,
+)
+subprocess.run(
+    ["bash", "-n", str(ROOT / "scripts/reliability/run-m10-r3a.sh")],
+    check=True,
+)
+
+print("M10 reliability foundation and R1/R2/R3a contracts: PASS")
