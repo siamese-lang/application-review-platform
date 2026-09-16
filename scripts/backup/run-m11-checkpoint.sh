@@ -28,7 +28,7 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 inventory_json=$(mktemp)
-inventory_yml=$(mktemp)
+inventory_yml=$(mktemp /tmp/m11-checkpoint-inventory.XXXXXX.yml)
 secret_vars=$(mktemp)
 decrypted_secrets=
 gate_enabled=false
