@@ -74,6 +74,13 @@ require(
 )
 
 require(
+    "config/ansible/roles/app/templates/arp.service.j2",
+    "ExecStart=/usr/bin/java -jar /opt/arp/application.jar",
+    "SuccessExitStatus=143",
+    "Restart=on-failure",
+)
+
+require(
     "scripts/backup/run-m11-checkpoint.sh",
     "run-m11-mutation-gate.sh",
     "systemctl stop arp",
