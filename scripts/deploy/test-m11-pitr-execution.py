@@ -33,6 +33,7 @@ for forbidden in [
 for token in [
     "--type=time",
     "--target=",
+    "pgbackrest_target_time=${target_time/T/ }",
     "--target-action=promote",
     "recovery data directory is not empty",
     "M11_PITR_PRE_INCLUDED=PASS",
