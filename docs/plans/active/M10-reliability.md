@@ -469,15 +469,32 @@ Retained result:
 
 #### R3b — application endpoint node
 
-Status: NEXT
+Status: COMPLETE
 
-- stop Garage only on storage-01;
-- keep PostgreSQL, app, edge, and the other Garage nodes healthy;
-- verify whether non-attachment workflow remains available;
-- measure attachment failure/recovery behavior;
-- inspect metadata/object partial states;
-- restore storage-01;
-- run reconciliation only after preserving pre-reconciliation evidence.
+Retained result:
+
+- run: `m10-r3b-20260916T061256Z-11b3a54f`;
+- source: `11b3a54f7e0a2798089773beef05bab51d350077`;
+- fault target: `storage-01/garage`, the fixed application endpoint;
+- storage-01 left and returned to `HEALTHY NODES`;
+- attachment overall error rate: 28.6920%;
+- existing attachment download error rate: 27.8481%;
+- new upload error rate: 27.0042%;
+- non-attachment attempts: 480 with 0% error;
+- PostgreSQL and application probe stayed up;
+- storage-02/03 Garage stayed up;
+- application MainPID remained `42960`;
+- fault-time lifecycle: FAILED 22, DELETE_PENDING 2;
+- immediate post-run lifecycle: FAILED 64, DELETE_PENDING 2;
+- later read-only row snapshot: FAILED 64, DELETE_PENDING 0;
+- all 64 FAILED rows were created within the storage-01 stopped interval and belong to the
+  two R3b attachment-probe applications;
+- the two DELETE_PENDING rows disappearing before the later snapshot is consistent with the
+  scheduled reconciliation path, but no exact execution log was retained;
+- FAILED rows are not automatically revisited by the current reconciliation implementation;
+- full post-recovery HTTPS smoke and core DB invariants passed;
+- endpoint-availability gap and persistent attachment lifecycle residue are retained evidence;
+- no endpoint HA change has been implemented.
 
 Decision after R3:
 
@@ -489,7 +506,7 @@ Decision after R3:
 
 ### Phase 5 — residual reliability decision
 
-Status: PLANNED
+Status: ACTIVE
 
 After R1–R3:
 
