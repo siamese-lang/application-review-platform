@@ -424,11 +424,11 @@ Phase 4 must:
 
 1. configure the six recovery service nodes through the dedicated repository-owned DR automation;
 2. restore PostgreSQL from `20260916-121314F` without replaying later WAL beyond the checkpoint boundary;
-4. restore Garage objects from the matching checkpoint manifest;
-5. activate the intended application/frontend release against only the recovery data path;
-6. verify business and attachment invariants;
-7. run representative HTTPS workflow against the recovered environment;
-8. measure checkpoint age/effective RPO and full DR RTO.
+3. restore Garage objects from the matching checkpoint manifest;
+4. activate the intended application/frontend release against only the recovery data path;
+5. verify business and attachment invariants;
+6. run representative HTTPS workflow against the recovered environment;
+7. measure checkpoint age/effective RPO and full DR RTO.
 
 Do not restore into the retained Seoul runtime.
 Do not change the frozen backup architecture.
