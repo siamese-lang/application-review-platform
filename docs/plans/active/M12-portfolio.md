@@ -121,7 +121,7 @@ No résumé bullets are written before this selection is committed.
 
 ## Phase 2 — portfolio master narrative
 
-Status: ACTIVE
+Status: COMPLETE
 
 Create one reviewer-facing project narrative that explains the final system, not the milestone
 history.
@@ -145,7 +145,7 @@ Expected output:
 
 ## Phase 3 — interview and application compression
 
-Status: PENDING
+Status: ACTIVE
 
 For each selected primary story, retain three levels of explanation:
 
@@ -241,11 +241,35 @@ M9 was promoted from E4 to E5 without a new experiment because its retained M9 s
 contains the complete E5 chain: observed problem, SQL/plan analysis, rejected alternative,
 bounded intervention, same-condition W2/W3 remeasurement, and retained trade-offs.
 
+## Phase 2 result
+
+Final-system narrative:
+
+`docs/portfolio/PROJECT_PORTFOLIO.md`
+
+The document presents the project as one implemented system:
+
+- support-program workflow first;
+- final architecture and intentional modular-monolith boundary;
+- data/security/integrity boundaries;
+- M9/M10/M11 as the three primary cases;
+- M6 as supporting release/change-control evidence;
+- explicit non-goals and claim limits;
+- technology summary only after the evidence narrative.
+
+README now provides a short portfolio entry path rather than relying on milestone history.
+
 ## Immediate next work
 
-Execute **Phase 2 — portfolio master narrative**.
+Execute **Phase 3 — interview and application compression**.
 
-Create `docs/portfolio/PROJECT_PORTFOLIO.md` as a final-system narrative. Do not organize it
-as M1 → M11 history. Lead with the support-program workflow and final architecture, then use
-M9/M10/M11 as the three evidence-backed problem-solving cases. M6 should appear as delivery
-support, not a fourth headline story.
+Create `docs/portfolio/INTERVIEW_PACKET.md` with:
+
+1. one concise overall project introduction;
+2. one-line résumé/project bullets for M9/M10/M11;
+3. 60–90 second spoken explanations for each;
+4. deeper follow-up notes, including alternatives and limitations;
+5. M6 rollback as a supporting answer for CI/CD/change-control questions.
+
+Do not write company-specific self-introduction answers and do not introduce claims not present
+in the evidence cards.
