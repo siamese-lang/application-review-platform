@@ -1,0 +1,140 @@
+---
+- name: Install backup repository packages
+  ansible.builtin.apt:
+    name: [pgbackrest, python3-boto3]
+    state: present
+    update_cache: true
+
+- name: Create dedicated pgBackRest repository user
+  ansible.builtin.user:
+    name: pgbackrest
+    system: true
+    create_home: true
+    home: /var/lib/pgbackrest
+    shell: /bin/bash
+
+- name: Create backup mount point
+  ansible.builtin.file:
+    path: /srv/backup
+    state: directory
+    owner: pgbackrest
+    group: pgbackrest
+    mode: '0750'
+
+- name: Format uninitialized backup repository disk
+  community.general.filesystem:
+    fstype: ext4
+    dev: /dev/disk/by-id/google-arp-backup-data
+
+- name: Mount independent backup repository disk
+  ansible.posix.mount:
+    path: /srv/backup
+    src: /dev/disk/by-id/google-arp-backup-data
+    fstype: ext4
+    opts: defaults,noatime
+    state: mounted
+
+- name: Restore backup repository ownership after mounting
+  ansible.builtin.file:
+    path: /srv/backup
+    state: directory
+    owner: pgbackrest
+    group: pgbackrest
+    mode: '0750'
+
+- name: Create backup repository directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: pgbackrest
+    group: pgbackrest
+    mode: '0750'
+  loop:
+    - /srv/backup/pgbackrest
+    - /srv/backup/objects
+    - /var/log/pgbackrest
+    - /var/lib/pgbackrest/.ssh
+    - /usr/local/lib/arp
+
+- name: Restrict pgBackRest SSH directory
+  ansible.builtin.file:
+    path: /var/lib/pgbackrest/.ssh
+    owner: pgbackrest
+    group: pgbackrest
+    mode: '0700'
+
+- name: Create repository service SSH key once
+  ansible.builtin.command:
+    argv:
+      - ssh-keygen
+      - -q
+      - -t
+      - rsa
+      - -b
+      - "4096"
+      - -N
+      - ""
+      - -f
+      - /var/lib/pgbackrest/.ssh/id_rsa
+  args:
+    creates: /var/lib/pgbackrest/.ssh/id_rsa
+  become_user: pgbackrest
+
+- name: Read repository service public key
+  ansible.builtin.slurp:
+    src: /var/lib/pgbackrest/.ssh/id_rsa.pub
+  register: pgbackrest_repo_public_key_raw
+
+- name: Retain repository service public key for database play
+  ansible.builtin.set_fact:
+    pgbackrest_repo_public_key: "{{ pgbackrest_repo_public_key_raw.content | b64decode | trim }}"
+
+- name: Read backup host ED25519 key
+  ansible.builtin.slurp:
+    src: /etc/ssh/ssh_host_ed25519_key.pub
+  register: pgbackrest_repo_host_key_raw
+
+- name: Retain backup host key for strict database-side SSH verification
+  ansible.builtin.set_fact:
+    pgbackrest_repo_host_key: "{{ pgbackrest_repo_host_key_raw.content | b64decode | trim }}"
+
+- name: Read database host ED25519 key through Ansible control path
+  ansible.builtin.slurp:
+    src: /etc/ssh/ssh_host_ed25519_key.pub
+  register: pgbackrest_db_host_key_raw
+  delegate_to: db-01
+
+- name: Pin database host key for repository service
+  ansible.builtin.known_hosts:
+    name: "{{ db_private_ip }}"
+    path: /var/lib/pgbackrest/.ssh/known_hosts
+    key: >-
+      {{ db_private_ip }}
+      {{ (pgbackrest_db_host_key_raw.content | b64decode | trim).split()[0] }}
+      {{ (pgbackrest_db_host_key_raw.content | b64decode | trim).split()[1] }}
+    state: present
+  become_user: pgbackrest
+
+- name: Write repository-host pgBackRest configuration
+  ansible.builtin.template:
+    src: pgbackrest.conf.j2
+    dest: /etc/pgbackrest/pgbackrest.conf
+    owner: root
+    group: pgbackrest
+    mode: '0640'
+
+- name: Install Garage object-backup tool
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../scripts/backup/garage_object_backup.py"
+    dest: /usr/local/lib/arp/garage_object_backup.py
+    owner: root
+    group: pgbackrest
+    mode: '0750'
+
+- name: Install Garage object-backup verifier
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../scripts/backup/verify_object_backup.py"
+    dest: /usr/local/lib/arp/verify_object_backup.py
+    owner: root
+    group: pgbackrest
+    mode: '0750'
