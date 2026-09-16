@@ -91,6 +91,13 @@ require(
     "mutation_gate_left_enabled_for_safety",
 )
 
+for executable in [
+    "scripts/backup/run-m11-mutation-gate.sh",
+    "scripts/backup/run-m11-checkpoint.sh",
+]:
+    if not ((ROOT / executable).stat().st_mode & 0o111):
+        raise SystemExit(f"{executable}: expected executable mode")
+
 checkpoint = read("scripts/backup/run-m11-checkpoint.sh")
 for forbidden in [
     "rm -rf /srv/backup",
