@@ -76,14 +76,16 @@ Temporary M10 loadgen infrastructure has been destroyed.
 
 Current repository backup/restore implementation state:
 
-- no pgBackRest configuration exists;
-- no backup-01 IaC/Ansible role exists;
-- no WAL archive path is configured;
-- no object-backup/manifest implementation exists;
-- `scripts/backup/` contains only `.gitkeep`;
-- `scripts/restore/` contains only `.gitkeep`.
+- optional `backup-01` IaC and Ansible role are implemented and live-verified;
+- pgBackRest remote repository configuration is installed;
+- PostgreSQL WAL archiving is enabled and live-verified;
+- a full backup `20260916-090503F` completed successfully;
+- Garage object-backup tooling and manifest verification are implemented;
+- retained Phase 1 evidence:
+  `docs/operations/M11_PHASE1_BACKUP_FOUNDATION_EVIDENCE.md`;
+- `scripts/restore/` remains the next implementation boundary for Phase 2 PITR.
 
-M11 therefore implements the frozen backup/recovery design before executing recovery drills.
+M11 now proceeds to independent PITR before the verified whole-system checkpoint/full DR phases.
 
 ## Guardrails
 
@@ -126,7 +128,7 @@ Do not silently collapse the full DR exercise into the original live VMs.
 
 ## Phase 1 — backup/recovery foundation
 
-Status: NEXT
+Status: COMPLETE
 
 Goal: create the minimum repository-owned infrastructure and automation needed to produce a
 verified backup set before any recovery drill.
@@ -162,7 +164,7 @@ Do not execute PITR until this healthy backup foundation is proven.
 
 ## Phase 2 — independent PostgreSQL PITR experiment
 
-Status: PLANNED
+Status: NEXT
 
 Goal: measure whether a PostgreSQL point-in-time restore can recover a known synthetic
 business state into a separate recovery database environment.
@@ -318,15 +320,20 @@ Likely M11 implementation areas:
 
 ## Immediate next work
 
-Implement **Phase 1 repository baseline only**.
+Execute **Phase 2 — independent PostgreSQL PITR experiment**.
 
-The first implementation slice should establish optional backup-01/recovery infrastructure,
-pgBackRest/WAL archive configuration, object-backup manifest tooling, and focused static tests.
-Do not mix PITR execution or full DR fault/recovery evidence into that first slice.
+Start from the verified Phase 1 backup foundation:
 
-Before any OpenTofu apply:
+- pgBackRest full backup: `20260916-090503F`;
+- WAL archive status: healthy through at least `00000001000000020000007C`;
+- Phase 1 object manifest:
+  `42ab06b602af75011bf081ae642d8b2308a0cbb531a324e8c5bef4267f083893`.
 
-- inspect the exact plan;
-- verify no persistent Seoul resource replacement/destruction;
-- preserve storage-03 overrides;
-- keep temporary recovery resource lifecycle explicit.
+The next slice must:
+
+- define/review only the minimum disposable PostgreSQL recovery VM needed for PITR;
+- record two distinguishable committed synthetic states around a target timestamp;
+- restore into the separate recovery VM, never overwrite retained `db-01`;
+- measure restore start, PostgreSQL ready, and business/data verification completion;
+- retain expected pre-target inclusion and post-target exclusion evidence;
+- do not start full-system DR or change the frozen backup architecture.
