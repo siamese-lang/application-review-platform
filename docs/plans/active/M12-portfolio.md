@@ -145,7 +145,7 @@ Expected output:
 
 ## Phase 3 — interview and application compression
 
-Status: ACTIVE
+Status: COMPLETE
 
 For each selected primary story, retain three levels of explanation:
 
@@ -171,7 +171,7 @@ Do not create company-specific self-introduction answers inside the repository.
 
 ## Phase 4 — visual/repository presentation
 
-Status: PENDING
+Status: ACTIVE
 
 Review whether the public repository can be understood in a few minutes.
 
@@ -259,17 +259,32 @@ The document presents the project as one implemented system:
 
 README now provides a short portfolio entry path rather than relying on milestone history.
 
+## Phase 3 result
+
+Interview/application packet:
+
+`docs/portfolio/INTERVIEW_PACKET.md`
+
+It retains:
+
+- 30-second and 60-second overall project introductions;
+- one-line résumé/project bullets for M9/M10/M11 plus supporting M6;
+- 60–90 second Korean spoken explanations;
+- likely technical follow-up questions and evidence-bounded answers;
+- job-family usage guidance;
+- wording that must be avoided because it exceeds retained evidence.
+
 ## Immediate next work
 
-Execute **Phase 3 — interview and application compression**.
+Execute **Phase 4 — visual/repository presentation**.
 
-Create `docs/portfolio/INTERVIEW_PACKET.md` with:
+Review the public repository as a first-time reviewer would:
 
-1. one concise overall project introduction;
-2. one-line résumé/project bullets for M9/M10/M11;
-3. 60–90 second spoken explanations for each;
-4. deeper follow-up notes, including alternatives and limitations;
-5. M6 rollback as a supporting answer for CI/CD/change-control questions.
+1. README should expose the final project and three primary cases quickly;
+2. architecture representation must match the final system, including the app-local Garage proxy;
+3. portfolio/evidence entry links must be easy to reach;
+4. stale M12/M9/M11 wording must not contradict current state;
+5. visuals should be added only if they improve understanding of architecture or evidence;
+6. do not create a technology-logo collage or milestone timeline as the primary presentation.
 
-Do not write company-specific self-introduction answers and do not introduce claims not present
-in the evidence cards.
+Prefer a small number of durable visual/repository improvements rather than decorative work.
