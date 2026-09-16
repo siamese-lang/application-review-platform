@@ -1,0 +1,178 @@
+---
+- name: Install PostgreSQL recovery packages
+  ansible.builtin.apt:
+    name: [acl, postgresql, postgresql-client, pgbackrest]
+    state: present
+    update_cache: true
+
+- name: Find PostgreSQL major version for recovery
+  ansible.builtin.shell: "set -o pipefail && pg_config --version | awk '{print $2}' | cut -d. -f1"
+  args:
+    executable: /bin/bash
+  register: recovery_pg_major
+  changed_when: false
+
+- name: Stop recovery PostgreSQL cluster before restore preparation
+  ansible.builtin.systemd:
+    name: "postgresql@{{ recovery_pg_major.stdout }}-main.service"
+    state: stopped
+
+- name: Prevent automatic recovery cluster startup
+  ansible.builtin.copy:
+    dest: "/etc/postgresql/{{ recovery_pg_major.stdout }}/main/start.conf"
+    content: "manual\n"
+    owner: postgres
+    group: postgres
+    mode: '0644'
+
+- name: Create recovery database mount point
+  ansible.builtin.file:
+    path: /srv/postgresql
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: '0700'
+
+- name: Format uninitialized recovery database disk
+  community.general.filesystem:
+    fstype: ext4
+    dev: /dev/disk/by-id/google-arp-recovery-db-data
+
+- name: Mount recovery database disk
+  ansible.posix.mount:
+    path: /srv/postgresql
+    src: /dev/disk/by-id/google-arp-recovery-db-data
+    fstype: ext4
+    opts: 'defaults,noatime'
+    state: mounted
+
+- name: Restore recovery database mount ownership after mounting
+  ansible.builtin.file:
+    path: /srv/postgresql
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: '0700'
+
+- name: Create recovery PostgreSQL data directory without initializing it
+  ansible.builtin.file:
+    path: /srv/postgresql/data
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: '0700'
+
+- name: Create PostgreSQL service SSH directory for recovery
+  ansible.builtin.file:
+    path: /var/lib/postgresql/.ssh
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: '0700'
+
+- name: Create recovery PostgreSQL service SSH key once
+  ansible.builtin.command:
+    argv:
+      - ssh-keygen
+      - -q
+      - -t
+      - rsa
+      - -b
+      - "4096"
+      - -N
+      - ""
+      - -f
+      - /var/lib/postgresql/.ssh/id_rsa
+  args:
+    creates: /var/lib/postgresql/.ssh/id_rsa
+  become_user: postgres
+
+- name: Read recovery PostgreSQL service public key
+  ansible.builtin.slurp:
+    src: /var/lib/postgresql/.ssh/id_rsa.pub
+  register: recovery_db_public_key_raw
+
+- name: Authorize recovery database service on repository for pgBackRest only
+  ansible.posix.authorized_key:
+    user: pgbackrest
+    key: "{{ recovery_db_public_key_raw.content | b64decode | trim }}"
+    key_options: 'no-agent-forwarding,no-X11-forwarding,no-port-forwarding,command="/usr/bin/pgbackrest ${SSH_ORIGINAL_COMMAND#* }"'
+    state: present
+  delegate_to: backup-01
+
+- name: Read backup host ED25519 key through Ansible control path
+  ansible.builtin.slurp:
+    src: /etc/ssh/ssh_host_ed25519_key.pub
+  register: recovery_backup_host_key_raw
+  delegate_to: backup-01
+
+- name: Pin backup host key for recovery PostgreSQL service
+  ansible.builtin.known_hosts:
+    name: "{{ backup_private_ip }}"
+    path: /var/lib/postgresql/.ssh/known_hosts
+    key: >-
+      {{ backup_private_ip }}
+      {{ (recovery_backup_host_key_raw.content | b64decode | trim).split()[0] }}
+      {{ (recovery_backup_host_key_raw.content | b64decode | trim).split()[1] }}
+    state: present
+  become_user: postgres
+
+- name: Create recovery pgBackRest configuration directory
+  ansible.builtin.file:
+    path: /etc/pgbackrest
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Write recovery-host pgBackRest configuration
+  ansible.builtin.template:
+    src: pgbackrest.conf.j2
+    dest: /etc/pgbackrest/pgbackrest.conf
+    owner: root
+    group: postgres
+    mode: '0640'
+
+- name: Write isolated recovery PostgreSQL configuration
+  ansible.builtin.template:
+    src: postgresql-recovery.conf.j2
+    dest: "/etc/postgresql/{{ recovery_pg_major.stdout }}/main/conf.d/arp-recovery.conf"
+    owner: postgres
+    group: postgres
+    mode: '0644'
+
+- name: Read recovery pgBackRest version
+  ansible.builtin.command: pgbackrest version
+  register: recovery_pgbackrest_version
+  changed_when: false
+
+- name: Read repository pgBackRest version
+  ansible.builtin.command: pgbackrest version
+  register: repository_pgbackrest_version
+  changed_when: false
+  delegate_to: backup-01
+
+- name: Require exact pgBackRest version match
+  ansible.builtin.assert:
+    that:
+      - recovery_pgbackrest_version.stdout == repository_pgbackrest_version.stdout
+    fail_msg: >-
+      pgBackRest versions must match exactly:
+      recovery={{ recovery_pgbackrest_version.stdout }}
+      repository={{ repository_pgbackrest_version.stdout }}
+
+- name: Verify recovery host can read the retained repository
+  ansible.builtin.command:
+    argv: [pgbackrest, --stanza=arp, info]
+  become_user: postgres
+  changed_when: false
+
+- name: Verify recovery PostgreSQL remains stopped before PITR
+  ansible.builtin.command:
+    argv:
+      - systemctl
+      - is-active
+      - "postgresql@{{ recovery_pg_major.stdout }}-main.service"
+  register: recovery_postgresql_active
+  changed_when: false
+  failed_when: recovery_postgresql_active.stdout != "inactive"
