@@ -43,7 +43,7 @@ IN_REVIEW
 
 권한과 상태 전이 규칙은 UI가 아니라 service/domain 계층에서 검증합니다. 상태 변경과 history는 하나의 relational transaction으로 처리하며, 동시 수정/claim에는 optimistic locking을 사용합니다.
 
-## Final architecture
+## Verified final architecture
 
 ```text
 Internet
@@ -68,7 +68,7 @@ ops-01
   └─→ OpenTofu / Ansible / release / verification tooling
 ```
 
-Persistent service/runtime roles are separated so edge, application, database, object storage, observability, and operations have distinct access/failure boundaries. The application itself remains a modular monolith; microservices or Kubernetes were not added without a measured need.
+The verified GCP runtime used separate edge, application, database, object-storage, observability, and operations roles so their access and failure boundaries could be exercised independently. The application itself remains a modular monolith; microservices or Kubernetes were not added without a measured need.
 
 The final application S3 endpoint is the app-local proxy, not one fixed Garage node. PostgreSQL remains a single primary; this project does not claim database HA.
 
@@ -171,15 +171,10 @@ React / TypeScript / Vite · Nginx · Java 21 / Spring Boot / Spring Security / 
 
 ## Project status
 
-M1–M11 implementation, workload, fault, and recovery milestones are complete.
+M1–M12 are complete.
 
-M12 Portfolio is active:
-- Phase 1 story selection — complete
-- Phase 2 final-system narrative — complete
-- Phase 3 interview/application compression — complete
-- Phase 4 public repository presentation — active
-- Phase 5 runtime lifecycle / final closeout — pending
+The final Seoul GCP runtime was intentionally destroyed after all portfolio evidence was retained. The project is therefore presented as an implemented and verified system, not as an always-running hosted demo. Repository IaC, architecture, portfolio documents, and sanitized operational evidence remain reproducible records.
 
-The persistent Seoul runtime remains retained only until the M12 Phase 5 lifecycle decision. Temporary M10/M11 load, backup, PITR, and full-DR resources have already been removed.
+Runtime closeout evidence: **[M12_PHASE5_RUNTIME_CLOSEOUT_EVIDENCE.md](docs/operations/M12_PHASE5_RUNTIME_CLOSEOUT_EVIDENCE.md)**
 
 Completed milestone plans and historical operational evidence remain under `docs/plans/completed/` and `docs/operations/`.

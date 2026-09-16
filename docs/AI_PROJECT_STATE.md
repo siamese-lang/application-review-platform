@@ -1,6 +1,6 @@
 # AI Project State — Fast Resume Checkpoint
 
-Status: ACTIVE  
+Status: COMPLETE  
 Last updated: 2026-09-16 UTC
 
 This file is the short execution checkpoint for ChatGPT/Codex sessions. It is not an
@@ -31,6 +31,7 @@ Completed milestones:
 - M9 Performance
 - M10 Reliability
 - M11 Disaster Recovery
+- M12 Portfolio
 
 M11 completed plan:
 
@@ -121,15 +122,37 @@ Interview/application packet:
 
 `docs/portfolio/INTERVIEW_PACKET.md`
 
-## Next milestone
+## Project closeout
 
-Current milestone: **M12 Portfolio — ACTIVE**.
+Current milestone: **none — M1–M12 complete**.
 
-Active plan:
+M12 completed plan:
 
-`docs/plans/active/M12-portfolio.md`
+`docs/plans/completed/M12-portfolio.md`
 
-Phase 1–4 are complete. README now exposes the final system, M9/M10/M11 evidence, current Garage proxy topology, claim boundaries, and direct portfolio/interview links without milestone-first presentation. Current slice: Phase 5 — decide the persistent Seoul runtime lifecycle and close M12; do not retain live infrastructure indefinitely without a portfolio reason.
+M12 runtime closeout evidence:
+
+`docs/operations/M12_PHASE5_RUNTIME_CLOSEOUT_EVIDENCE.md`
+
+Final portfolio entry:
+
+`docs/portfolio/PROJECT_PORTFOLIO.md`
+
+Interview/application packet:
+
+`docs/portfolio/INTERVIEW_PACKET.md`
+
+The final Seoul runtime was intentionally destroyed after evidence retention:
+
+- reviewed initial destroy plan: 0 add / 0 change / 30 destroy;
+- partial first apply encountered transient Compute API connection refusal;
+- remaining state: 7 resources;
+- reviewed fresh plan: 0 add / 0 change / 7 destroy;
+- final OpenTofu state: 0 resources;
+- final runtime instance/disk/address/network/firewall inventory checks: empty.
+
+No live demo is required for the retained portfolio. Repository IaC and sanitized evidence are
+the durable record.
 
 ## Do not revisit unless new evidence requires it
 
@@ -143,7 +166,7 @@ Phase 1–4 are complete. README now exposes the final system, M9/M10/M11 eviden
 
 ## Short resume prompt
 
-> @GitHub `siamese-lang/application-review-platform` 작업을 계속한다.  
-> 먼저 `AGENTS.md`와 `docs/AI_PROJECT_STATE.md`를 읽고 current `main`을 source of truth로 사용하라.  
-> M1–M11은 완료되었으므로 성공한 구현·부하·장애·복구 실험을 재실행하거나 재설계하지 마라.  
-> M12 Portfolio가 ACTIVE다. Phase 1–4는 완료되었다. README/PROJECT_PORTFOLIO/INTERVIEW_PACKET이 최종 공개 진입 경로다. `docs/plans/active/M12-portfolio.md`의 Phase 5부터 live Seoul runtime 유지 필요성을 판단하고, 필요하지 않다면 reviewed OpenTofu destroy plan을 거쳐 프로젝트 runtime을 정리한 뒤 M12를 closeout하라.
+> @GitHub `siamese-lang/application-review-platform`의 현재 `main`을 source of truth로 사용하라.  
+> M1–M12는 완료되었고 live GCP runtime은 M12 closeout에서 의도적으로 destroy되었다.  
+> 먼저 `AGENTS.md`, `docs/AI_PROJECT_STATE.md`, `docs/portfolio/PROJECT_PORTFOLIO.md`를 읽어라.  
+> 새로운 구체적 요구사항이나 evidence gap이 없다면 완료된 부하·장애·복구 실험이나 아키텍처를 재설계하지 마라.
