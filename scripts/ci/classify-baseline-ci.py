@@ -119,6 +119,9 @@ def classify(paths: set[str], *, force_full: bool = False) -> dict[str, bool]:
             "deploy/bootstrap-garage.sh",
             "deploy/configure-m11-full-dr-foundation.sh",
             "deploy/restore-m11-full-dr-garage.sh",
+            "deploy/bootstrap-m11-full-dr-ip-tls.sh",
+            "scripts/deploy/test-m11-full-dr-https.py",
+            "config/ansible/full-dr-edge-https.yml",
             "deploy/check-prerequisites.sh",
             "deploy/tofu-bootstrap-plan.sh",
             "deploy/tofu-init-plan.sh",
@@ -148,6 +151,8 @@ def classify(paths: set[str], *, force_full: bool = False) -> dict[str, bool]:
             "scripts/deploy/test-m11-full-dr-garage-restore.py",
             "deploy/restore-m11-full-dr-garage.sh",
             "deploy/deploy-m11-full-dr-release.sh",
+            "deploy/bootstrap-m11-full-dr-ip-tls.sh",
+            "scripts/deploy/test-m11-full-dr-https.py",
             "scripts/deploy/test-m11-full-dr-release.py",
             "config/ansible/full-dr-garage-restore.yml",
         ),
@@ -302,6 +307,11 @@ def self_test() -> None:
     assert m11_full_dr_release["m11_recovery_static"]
     assert not m11_full_dr_release["m4_infrastructure_static"]
     assert not m11_full_dr_release["release_publish"]
+
+    m11_full_dr_https = classify({"scripts/deploy/test-m11-full-dr-https.py"})
+    assert m11_full_dr_https["m4_infrastructure_static"]
+    assert m11_full_dr_https["m11_recovery_static"]
+    assert not m11_full_dr_https["release_publish"]
 
     ci_config = classify({
         ".github/workflows/baseline-ci.yml",
