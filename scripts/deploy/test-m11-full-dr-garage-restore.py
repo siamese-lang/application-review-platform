@@ -24,11 +24,13 @@ require(
     "dr-storage-02",
     "dr-storage-03",
     "generate-inventory.py",
-    "m11-full-dr-garage-restore.yml",
+    "full-dr-garage-restore.yml",
     "m11_checkpoint_id=$checkpoint_id",
     "m11_manifest_sha256=$manifest_sha256",
 )
 wrapper = read("deploy/restore-m11-full-dr-garage.sh")
+if "scripts/restore/m11-full-dr-garage-restore.yml" in wrapper:
+    raise SystemExit("full DR Garage playbook must live under config/ansible so group_vars load")
 for forbidden in [
     "output -json inventory",
     "storage-01 storage-02 storage-03",
@@ -39,7 +41,7 @@ for forbidden in [
         raise SystemExit(f"full DR Garage wrapper violates isolation boundary: {forbidden}")
 
 require(
-    "scripts/restore/m11-full-dr-garage-restore.yml",
+    "config/ansible/full-dr-garage-restore.yml",
     "hosts: storage",
     "Require exactly three DR Garage nodes",
     "node, id, -q",
