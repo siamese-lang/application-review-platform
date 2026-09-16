@@ -34,7 +34,7 @@ Milestones:
 - M7 Observability — complete
 - M8 Workload — **complete**
 - M9 Performance — **complete**
-- M10 Reliability — **ACTIVE**
+- M10 Reliability — **complete**
 
 Completed M8 plan:
 
@@ -44,9 +44,13 @@ Completed M9 plan:
 
 `docs/plans/completed/M9-performance.md`
 
-Current active plan:
+M10 closeout evidence:
 
-`docs/plans/active/M10-reliability.md`
+`docs/operations/M10_PHASE6_CLOSEOUT_EVIDENCE.md`
+
+M10 portfolio evidence card:
+
+`docs/portfolio/M10_GARAGE_ENDPOINT_FAILOVER_EVIDENCE.md`
 
 Latest retained workload source baseline:
 
@@ -146,14 +150,15 @@ Retained `storage-03` overrides:
 - machine: `e2-small`;
 - boot disk: `pd-standard`.
 
-M8/M9 temporary load generator lifecycle:
+Temporary load-generator lifecycle:
 
-- `loadgen-01` and its Tokyo subnet/router/NAT were removed at M9 closeout;
-- reviewed destroy plan: exactly four delete actions;
-- apply: 0 added, 0 changed, 4 destroyed;
+- M9 removed the prior Tokyo load generator;
+- M10 recreated the same repository-defined Tokyo loadgen topology for reliability experiments;
+- M10 closeout reviewed exactly four delete actions for loadgen-01/subnet/router/NAT;
+- closeout apply: 0 added, 0 changed, 4 destroyed;
 - final `enable_loadgen=false` OpenTofu plan: no changes.
 
-Persistent Seoul runtime remains unchanged with the retained `storage-03` overrides.
+Persistent Seoul runtime remains with the retained `storage-03` overrides and no unexplained OpenTofu drift.
 
 ## M9 closeout
 
@@ -198,41 +203,37 @@ Runtime closeout:
 - final `enable_loadgen=false` plan: no drift;
 - persistent Seoul runtime retained.
 
-## M10 immediate next work
+## M10 closeout
 
-M10 Reliability is ACTIVE.
+M10 Reliability is complete from the runtime/evidence perspective.
 
-Active plan:
+Primary closeout evidence:
 
-`docs/plans/active/M10-reliability.md`
+`docs/operations/M10_PHASE6_CLOSEOUT_EVIDENCE.md`
 
-Fixed scenario scope:
+Portfolio evidence card:
 
-- R1 application process failure;
-- R2 PostgreSQL failure during normal synthetic workload;
-- R3 Garage single-node failure;
-- R4 bad deployment/rollback is already satisfied by M6 evidence;
+`docs/portfolio/M10_GARAGE_ENDPOINT_FAILOVER_EVIDENCE.md`
+
+Retained result:
+
+- R1 application-process failure recovered through existing systemd behavior; no architecture change;
+- R2 proved the single PostgreSQL primary remains a DB-dependent availability limitation;
+- R3a non-endpoint Garage node loss caused 0% observed attachment/non-attachment error;
+- R3b fixed storage-01 endpoint loss caused 28.6920% attachment error and 64 FAILED rows;
+- ADR-005 introduced one app-local Nginx Garage S3 failover proxy;
+- same-fault retest `m10-r3b-retest-20260916T071400Z-70e1b7f3` produced 0% observed
+  attachment/non-attachment error and zero new lifecycle residue;
+- temporary M10 loadgen resources were removed;
+- final persistent-runtime OpenTofu plan reported no changes;
+- R4 remains satisfied by M6 rollback evidence;
 - R5 logical corruption/PITR remains M11 scope.
 
-Current phase:
+The earlier 64 FAILED rows remain retained baseline evidence. The guarded Dataset M reset
+before the retest reset the synthetic live dataset; it did not prove automatic reconciliation
+of FAILED rows.
 
-**Phase 5 — residual reliability decision**
-
-Immediate next boundary:
-
-1. Phase 5 decision selected one corrective change:
-   - ADR-005 app-local Nginx Garage S3 proxy;
-   - application endpoint becomes `http://127.0.0.1:3910`;
-   - proxy upstreams are storage-01/02/03:3900;
-   - app-to-S3 firewall targets all `arp-storage` nodes;
-2. no PostgreSQL HA is added in M10; R2 remains a documented single-primary limitation;
-3. the 64 R3b FAILED rows remain explicit failure evidence and M3 FAILED semantics are not
-   silently redefined;
-4. merge and deploy ADR-005/proxy configuration;
-5. rerun the same storage-01 R3b fault and require attachment continuity plus clean new
-   lifecycle state before calling the corrective change verified.
-
-No second corrective change or additional HA layer is authorized before the ADR-005 R3b retest.
+Do not add another Garage HA layer or PostgreSQL HA as M10 follow-up work.
 
 ## Do not revisit unless new evidence requires it
 
@@ -247,13 +248,13 @@ No second corrective change or additional HA layer is authorized before the ADR-
 ## Short resume prompt
 
 > @GitHub `siamese-lang/application-review-platform` 작업을 계속한다.  
-> 먼저 `AGENTS.md`, `docs/AI_PROJECT_STATE.md`, `docs/plans/active/M10-reliability.md`
-> 를 읽고 repository 실제 상태를 source of truth로 사용하라.  
-> M1–M9은 완료되었으므로 재설계하거나 재실행하지 마라.  
-> M10 Reliability R1-R3는 완료됐고 Phase 5에서 ADR-005 app-local Nginx Garage
-> endpoint proxy를 유일한 corrective change로 선택했다. R3b baseline
-> `m10-r3b-20260916T061256Z-11b3a54f`의 storage-01 endpoint fault를 동일하게 재실행해
-> attachment continuity가 회복되는지 검증해야 한다. PostgreSQL HA나 두 번째 HA 변경을
-> 추가하지 마라.  
-> R1 app failure, R2 PostgreSQL failure, R3 Garage node failure만 초기 고정 범위로
-> 수행하고 R4는 M6 evidence를 재사용하며 R5/PITR은 M11로 남겨라.
+> 먼저 `AGENTS.md`, `docs/AI_PROJECT_STATE.md`, 현재 active plan을 확인하고 repository
+> 실제 상태를 source of truth로 사용하라.  
+> M1–M10은 완료된 결과를 재설계하거나 재실행하지 마라.  
+> M10 closeout evidence는 `docs/operations/M10_PHASE6_CLOSEOUT_EVIDENCE.md`,
+> Garage endpoint E5 card는 `docs/portfolio/M10_GARAGE_ENDPOINT_FAILOVER_EVIDENCE.md`다.  
+> R3b baseline은 fixed storage-01 endpoint loss에서 attachment error 28.6920%와
+> 64 FAILED rows를 남겼고, ADR-005 app-local proxy 적용 후 동일 fault retest에서는
+> attachment/non-attachment error 0%, lifecycle clean을 검증했다.  
+> R2의 single PostgreSQL primary limitation은 문서화된 상태로 남겨 두고, R5/PITR은
+> M11 범위로 진행하라.
