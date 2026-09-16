@@ -324,4 +324,78 @@ subprocess.run(
     check=True,
 )
 
-print("M10 reliability foundation and R1/R2/R3a contracts: PASS")
+r3b_driver = read("workload/k6/m10-r3b-garage-endpoint.js")
+r3b_runner = read("scripts/reliability/run-m10-r3b.sh")
+
+for token in [
+    "profile: 'r3b-garage-endpoint'",
+    "export function setup()",
+    "M10_R3B_STABLE_ATTACHMENT_READY",
+    "exec: 'attachmentContinuity'",
+    "exec: 'nonAttachmentContinuity'",
+    "m10_r3b_attachment_attempts",
+    "m10_r3b_existing_download_errors",
+    "m10_r3b_attachment_upload_errors",
+    "m10_r3b_uploaded_download_errors",
+    "m10_r3b_attachment_delete_errors",
+    "m10_r3b_non_attachment_errors",
+    "M10_R3B_ATTACHMENT_FAILURE",
+    "M10_R3B_ATTACHMENT_OK",
+    "M10_R3B_NON_ATTACHMENT_OK",
+]:
+    require(r3b_driver, token, "M10 R3b driver")
+
+for token in [
+    "ARP_CONFIRM_M10_DATASET_RESET",
+    "ARP_CONFIRM_M8_DATASET_RESET=yes",
+    "ARP_M8_DATASET_PROFILE=M",
+    "http://10.40.0.41:3900",
+    "docker stop --time 10 garage",
+    "docker start garage",
+    "hold bounded endpoint node outage for 60 seconds",
+    "M10_R3B_STORAGE01_REMOVED_FROM_HEALTHY_SET=PASS",
+    "M10_R3B_ENDPOINT_AVAILABILITY_GAP=",
+    "M10_R3B_NON_ATTACHMENT_CONTINUITY=",
+    "M10_R3B_HYPOTHESIS=",
+    "M10_R3B_DURING_PARTIAL_ATTACHMENT_STATE=",
+    "M10_R3B_PARTIAL_STATE_RETAINED=",
+    "M10_R3B_TELEMETRY_NODE_ISOLATION=PASS",
+    "M10_R3B_APPLICATION_STABLE=PASS",
+    "deploy/cloud-smoke.sh",
+    "m10-db-invariants.sql",
+    "db-invariants-during-fault.txt",
+    "capture-m10-prometheus.py",
+    '"scenario": "R3b-garage-endpoint-node-loss"',
+    '"fault_target": "storage-01/garage"',
+    "EMERGENCY_RECOVERY: storage-01 Garage may still be stopped; starting it.",
+]:
+    require(r3b_runner, token, "M10 R3b runner")
+
+for forbidden in [
+    '"${ssh_s2[@]}" sudo docker stop --time 10 garage',
+    '"${ssh_s3[@]}" sudo docker stop --time 10 garage',
+    "systemctl stop arp.service",
+    "systemctl stop postgresql",
+    "gcloud compute instances stop",
+    "tofu apply",
+    "StrictHostKeyChecking=no",
+]:
+    if forbidden in r3b_runner:
+        raise SystemExit(f"M10 R3b runner must not contain: {forbidden}")
+
+require(
+    r3b_runner,
+    '"${ssh_s1[@]}" sudo docker stop --time 10 garage',
+    "R3b endpoint-only fault target",
+)
+
+subprocess.run(
+    ["node", "--check", str(ROOT / "workload/k6/m10-r3b-garage-endpoint.js")],
+    check=True,
+)
+subprocess.run(
+    ["bash", "-n", str(ROOT / "scripts/reliability/run-m10-r3b.sh")],
+    check=True,
+)
+
+print("M10 reliability foundation and R1/R2/R3a/R3b contracts: PASS")
