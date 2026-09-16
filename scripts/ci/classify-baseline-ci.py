@@ -122,6 +122,7 @@ def classify(paths: set[str], *, force_full: bool = False) -> dict[str, bool]:
             "deploy/tofu-init-plan.sh",
             "scripts/deploy/test-delivery-identity-contract.sh",
             "scripts/deploy/test-m11-backup-foundation.py",
+            "scripts/deploy/test-m11-full-dr-infrastructure.py",
         ),
     )
 
@@ -271,6 +272,10 @@ def self_test() -> None:
     m11_restore_contract = classify({"scripts/deploy/test-m11-pitr-execution.py"})
     assert m11_restore_contract["m11_recovery_static"]
     assert not m11_restore_contract["m4_infrastructure_static"]
+
+    m11_full_dr_infra = classify({"scripts/deploy/test-m11-full-dr-infrastructure.py"})
+    assert m11_full_dr_infra["m4_infrastructure_static"]
+    assert not m11_full_dr_infra["release_publish"]
 
     ci_config = classify({
         ".github/workflows/baseline-ci.yml",
