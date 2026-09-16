@@ -182,4 +182,83 @@ subprocess.run(
     check=True,
 )
 
-print("M10 reliability foundation and R1 contracts: PASS")
+
+r2_driver = read("workload/k6/m10-r2-postgresql-outage.js")
+r2_runner = read("scripts/reliability/run-m10-r2.sh")
+
+for token in [
+    "profile: 'r2-postgresql-outage'",
+    "exec: 'listDetail'",
+    "vus: 12",
+    "exec: 'createSave'",
+    "vus: 4",
+    "exec: 'submitResubmit'",
+    "vus: 3",
+    "exec: 'reviewerQueueDetail'",
+    "vus: 6",
+    "exec: 'reviewAction'",
+    "exec: 'attachment'",
+    "vus: 2",
+    "exec: 'persistedSessionProbe'",
+    "exec: 'publicApiProbe'",
+    "exec: 'staticEdgeProbe'",
+    "new Counter(`m10_r2_${family}_attempts`)",
+    "m10_r2_session_login_attempts",
+    "M10_R2_SESSION_READY",
+    "M10_R2_STATE|probe=",
+    "pace(started, 2.0)",
+    "pace(started, 1.777778)",
+    "pace(started, 1.0)",
+    "pace(started, 2.666667)",
+]:
+    require(r2_driver, token, "M10 R2 driver")
+
+for token in [
+    "ARP_CONFIRM_M10_DATASET_RESET",
+    "ARP_CONFIRM_M8_DATASET_RESET=yes",
+    "ARP_M8_DATASET_PROFILE=M",
+    "w2-interactive-overlay.sql",
+    "M10_DURATION='5m'",
+    "systemctl stop postgresql@16-main.service",
+    "systemctl start postgresql@16-main.service",
+    "hold bounded PostgreSQL outage for 60 seconds",
+    "sleep 60",
+    "M10_R2_BUSINESS_ATTEMPTS",
+    "M10_R2_DB_RESTORE=PASS",
+    "M10_R2_APPLICATION_RECOVERED_WITHOUT_RESTART=PASS",
+    "M10_R2_STATIC_EDGE_OUTAGE=NOT_OBSERVED",
+    "M10_R2_TELEMETRY_BLAST_RADIUS=PASS",
+    "deploy/cloud-smoke.sh",
+    "m10-db-invariants.sql",
+    "capture-m10-prometheus.py",
+    '"scenario": "R2-postgresql-outage"',
+    '"fault_injected": True',
+    "5m; intentionally not exercised by this bounded 60s outage",
+    "EMERGENCY_RECOVERY: PostgreSQL cluster unit may still be stopped; starting it.",
+]:
+    require(r2_runner, token, "M10 R2 runner")
+
+for forbidden in [
+    "systemctl stop postgresql.service",
+    "systemctl stop arp.service",
+    "systemctl kill",
+    "kill -9",
+    "pkill",
+    "gcloud compute instances stop",
+    "tofu apply",
+    "StrictHostKeyChecking=no",
+    "sleep 300",
+]:
+    if forbidden in r2_runner:
+        raise SystemExit(f"M10 R2 runner must not contain: {forbidden}")
+
+subprocess.run(
+    ["node", "--check", str(ROOT / "workload/k6/m10-r2-postgresql-outage.js")],
+    check=True,
+)
+subprocess.run(
+    ["bash", "-n", str(ROOT / "scripts/reliability/run-m10-r2.sh")],
+    check=True,
+)
+
+print("M10 reliability foundation and R1/R2 contracts: PASS")
