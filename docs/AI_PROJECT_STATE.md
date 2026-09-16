@@ -146,6 +146,10 @@ Retained Seoul runtime:
 - ops-01
 - obs-01
 
+Temporary M11 backup runtime:
+
+- backup-01 — Tokyo `10.60.0.10`, independent 100 GB backup disk
+
 Retained `storage-03` overrides:
 
 - machine: `e2-small`;
@@ -255,21 +259,26 @@ Frozen recovery scope:
 
 Current implementation state:
 
-- no pgBackRest configuration exists;
-- no backup-01 IaC/Ansible role exists;
-- no WAL archive implementation exists;
-- no object backup/manifest implementation exists;
-- `scripts/backup/` and `scripts/restore/` are empty foundations.
+- optional `backup-01` infrastructure is implemented and live;
+- pgBackRest remote repository configuration is installed;
+- PostgreSQL WAL archive is enabled and live-verified;
+- full backup `20260916-090503F` completed successfully;
+- post-backup WAL archive advanced through at least
+  `00000001000000020000007C`;
+- Garage object backup run `m11-phase1-20260916T090953Z` verified 21 objects;
+- retained manifest SHA-256:
+  `42ab06b602af75011bf081ae642d8b2308a0cbb531a324e8c5bef4267f083893`;
+- Phase 1 evidence:
+  `docs/operations/M11_PHASE1_BACKUP_FOUNDATION_EVIDENCE.md`.
 
 Immediate next boundary:
 
-**Phase 1 — backup/recovery foundation**
+**Phase 2 — independent PostgreSQL PITR experiment**
 
-Implement one repository slice that adds optional temporary backup-01/recovery infrastructure,
-pgBackRest/WAL archive configuration, object-backup manifest tooling, and focused static tests.
-
-Do not execute PITR or full DR in that first implementation slice. Before any OpenTofu apply,
-review the exact plan and reject any persistent Seoul resource replacement/destruction.
+Create/review only the minimum disposable recovery database infrastructure, record two
+distinguishable synthetic states around a PITR target, restore into the separate recovery VM,
+and measure/verify the recovered point. Do not overwrite retained `db-01` and do not begin
+full-system DR in this slice.
 
 ## Do not revisit unless new evidence requires it
 
@@ -288,9 +297,10 @@ review the exact plan and reject any persistent Seoul resource replacement/destr
 > `docs/plans/active/M11-disaster-recovery.md`를 읽고 current `main`을 source of truth로
 > 사용하라.  
 > M1–M10은 완료된 결과를 재설계하거나 재실행하지 마라.  
-> M11 Disaster Recovery는 ACTIVE이며 첫 작업은 Phase 1 backup/recovery foundation이다.  
+> M11 Disaster Recovery는 ACTIVE이며 Phase 1 backup/recovery foundation은 live 검증 완료, 현재 다음 작업은 Phase 2 independent PostgreSQL PITR이다.  
 > frozen baseline은 pgBackRest + WAL archive, backup-01 independent object backup/manifest,
 > independent DB PITR, verified maintenance checkpoint, new recovery VMs 기반 full DR이다.  
 > PostgreSQL HA, multi-region HA, 새 primary datastore/object store를 추가하지 마라.  
-> 첫 implementation slice에서는 backup-01/recovery IaC, pgBackRest/WAL, object manifest,
-> static tests까지만 구현하고 PITR/full DR 실행은 아직 하지 마라.
+> Phase 1 증거는 `docs/operations/M11_PHASE1_BACKUP_FOUNDATION_EVIDENCE.md`에 보존되어 있다.
+> 다음 slice에서는 retained db-01을 덮어쓰지 말고 disposable recovery VM에서 PITR만 검증하라.
+> full DR은 아직 시작하지 마라.
