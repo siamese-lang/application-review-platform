@@ -36,7 +36,7 @@ a milestone or technology list:
 
 Start with `docs/portfolio/PROJECT_PORTFOLIO.md`.
 
-Supporting selection rationale and detailed evidence remain under `docs/portfolio/`.
+Supporting selection rationale and detailed evidence remain under `docs/portfolio/`. For interview/application compression, see `docs/portfolio/INTERVIEW_PACKET.md`.
 
 
 ## Current target architecture
