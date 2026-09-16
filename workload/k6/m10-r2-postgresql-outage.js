@@ -302,7 +302,7 @@ function submittedId(slot) {
 export function listDetail() {
   const started = Date.now();
   if (!ensureRole('APPLICANT')) {
-    pace(started, 0.25);
+    pace(started, 2.0);
     return;
   }
 
@@ -325,7 +325,7 @@ export function listDetail() {
 export function createSave() {
   const started = Date.now();
   if (!ensureRole('APPLICANT')) {
-    pace(started, 0.25);
+    pace(started, 1.777778);
     return;
   }
   const unique = `${runId}-create-${exec.scenario.iterationInTest}`;
@@ -371,7 +371,7 @@ export function createSave() {
 export function submitResubmit() {
   const started = Date.now();
   if (!ensureRole('APPLICANT')) {
-    pace(started, 0.25);
+    pace(started, 1.0);
     return;
   }
 
@@ -395,7 +395,7 @@ export function submitResubmit() {
 export function reviewerQueueDetail() {
   const started = Date.now();
   if (!ensureRole('REVIEWER')) {
-    pace(started, 0.25);
+    pace(started, 2.0);
     return;
   }
 
@@ -418,7 +418,7 @@ export function reviewerQueueDetail() {
 export function reviewAction() {
   const started = Date.now();
   if (!ensureRole('REVIEWER')) {
-    pace(started, 0.25);
+    pace(started, 2.0);
     return;
   }
 
@@ -476,7 +476,7 @@ export function reviewAction() {
 export function attachment() {
   const started = Date.now();
   if (!ensureRole('APPLICANT')) {
-    pace(started, 0.25);
+    pace(started, 2.666667);
     return;
   }
 
@@ -485,7 +485,7 @@ export function attachment() {
 
   const token = supportCsrf();
   if (!token) {
-    pace(started, 0.25);
+    pace(started, 2.666667);
     return;
   }
   const uploaded = http.post(
