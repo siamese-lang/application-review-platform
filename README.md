@@ -5,39 +5,22 @@
 ## Current status
 
 - M0 design baseline: frozen, with accepted ADR amendments
-- P0-A tool onboarding: complete
-- P0-B repository bootstrap: complete
-- P0-C GCP readiness: complete
+- P0-A/P0-B/P0-C readiness/bootstrap work: complete
 - M1 Business MVP: complete
 - M2 Data Integrity: complete
 - M3 Attachment: complete
 - M4 Cloud Deployment: complete
-- M4 completed plan: `docs/plans/completed/M4-cloud-deployment.md`
-- M4 runtime evidence: `docs/operations/M4_RUNTIME_EVIDENCE.md`
-- M4 GCP runtime: verified and intentionally destroyed after evidence capture to control cost
-- ADR-001: REST API + React SPA browser boundary accepted
-- ADR-002: applicant self-registration + controlled reviewer/admin provisioning accepted
-- ADR-003: admin program publication + derived intake window + generalized audit subjects accepted
-- ADR-004: persistent Seoul runtime + temporary cross-region experiment/recovery placement accepted
 - M5 Web/API & Product Surface: complete
-- M5 completed plan: `docs/plans/completed/M5-web-api-product-surface.md`
-- M5 final implementation PR #30 merged as `d8c34ebfa5a39cf253c5f9e1908d9a48cfa5bd88`; exact-head workflow `34614094018` and post-merge `main` workflow `34614462225` passed
-- React SPA public/auth, applicant, reviewer, and admin workflows are implemented; real-stack Chromium E2E covers the applicant/reviewer business flow, and Nginx routing verification proves SPA fallback, fingerprinted-asset caching, and `/api` proxy isolation
-- Legacy Thymeleaf presentation code is removed; Spring Boot owns the `/api/v1` application boundary while Nginx owns browser presentation routing
-- M6 Operations & Delivery: complete
-- M6 completed plan: `docs/plans/completed/M6-operations-delivery.md`
-- M6 immutable release/rollback evidence: `docs/operations/M6_PHASE5_RELEASE_ROLLBACK_EVIDENCE.md`
-- M6 Phase 6 closeout evidence: `docs/operations/M6_PHASE6_CLOSEOUT_EVIDENCE.md`
-- M6 portfolio candidate: E5 in `docs/portfolio/M6_IMMUTABLE_RELEASE_ROLLBACK_EVIDENCE.md`
-- Final deployed M6 release SHA: `9d5fda9871e479e05dc4641fccf7dea3145d2ad6`
-- Final deployed M6 OCI digest: `sha256:13c3d117eef036c6987f00faf44e01b86845528c62bab1a3ea0914a234a103d4`
+- M6 Operations & Delivery: complete — immutable release/rollback E5 evidence retained
 - M7 Observability: complete
 - M8 Workload: complete
-- M9 Performance: complete
-- M9 PostgreSQL query-bottleneck evidence: E4 in `docs/portfolio/M8_POSTGRESQL_QUERY_BOTTLENECK_EVIDENCE.md`
-- Current implementation milestone: M10 Reliability
-- Active plan: `docs/plans/active/M10-reliability.md`
-- M10 current slice: Phase 1 reliability harness and healthy-control verification; no fault injection yet
+- M9 Performance: complete — PostgreSQL query-bottleneck evidence retained at E4
+- M10 Reliability: complete — Garage endpoint failover E5 evidence retained
+- M11 Disaster Recovery: complete — PITR/full-DR correctness E5 evidence retained
+- M11 completed plan: `docs/plans/completed/M11-disaster-recovery.md`
+- M11 closeout evidence: `docs/operations/M11_PHASE6_CLOSEOUT_EVIDENCE.md`
+- M11 portfolio evidence: `docs/portfolio/M11_DISASTER_RECOVERY_EVIDENCE.md`
+- Next planned milestone: M12 Portfolio
 - Repository visibility: public; `protect-main` ruleset active
 
 This project is **production-like**, not a claim of real production operation. All users, organizations, applications, documents, workloads, and measurements are synthetic unless explicitly recorded otherwise.
@@ -91,7 +74,7 @@ Public registration always creates `APPLICANT`; browser clients cannot self-assi
 - M4 proved the seven-role IaaS topology with HTTPS and end-to-end business/attachment smoke.
 - The live M4 runtime was destroyed after verification/merge to stop unnecessary trial-credit consumption.
 - M6 recreated and verified the same seven-role runtime. Final runtime and owner-bootstrap OpenTofu plans are no-drift.
-- The current persistent Seoul runtime is eight nodes including private `obs-01`; M9 removed the temporary Tokyo load generator after same-condition remeasurement.
+- The current persistent Seoul runtime is eight nodes including private `obs-01`; temporary M10 load-generation and M11 backup/PITR/full-DR resources were removed after their retained evidence was completed.
 - Resource placement follows `docs/architecture/ADR-004-gcp-resource-placement.md`: preserve the Seoul runtime and place later temporary load/backup/DR resources cross-region by default rather than collapsing roles for quota/cost reasons.
 - Repository OpenTofu/Ansible plus sanitized M4/M6 evidence remain the reproducible record.
 
@@ -115,6 +98,8 @@ Completed milestones retain their original numbering:
 
 M1 Business MVP → M2 Data Integrity → M3 Attachment → M4 Cloud Deployment
 
-Future plan after ADR-001/ADR-002/ADR-003/ADR-004:
+Completed sequence after ADR-001/ADR-002/ADR-003/ADR-004:
 
-M5 Web/API & Product Surface → M6 Operations & Delivery → M7 Observability → M8 Workload → M9 Performance → M10 Reliability → M11 DR → M12 Portfolio
+M5 Web/API & Product Surface → M6 Operations & Delivery → M7 Observability → M8 Workload → M9 Performance → M10 Reliability → M11 DR
+
+Next planned milestone: M12 Portfolio

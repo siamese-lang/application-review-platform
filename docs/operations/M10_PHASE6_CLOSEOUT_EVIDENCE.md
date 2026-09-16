@@ -13,7 +13,7 @@ The executed scope remained:
 - R2 PostgreSQL primary outage;
 - R3 Garage single-node loss, split into non-endpoint and endpoint-node cases;
 - R4 reused the already-completed M6 rollback evidence;
-- R5 logical corruption/PITR remains M11 scope.
+- R5 logical corruption/PITR is now satisfied by M11 Phase 2 independent PostgreSQL PITR evidence: the recovered database included the committed pre-target state, excluded the post-target state, preserved retained business invariants, measured DB PITR RTO at 27.229 seconds, and bounded the marker-granularity recovery gap to ≤1.087882 seconds.
 
 No second HA layer, PostgreSQL HA architecture, new object store, queue, cache, or managed
 application service was added.
@@ -266,7 +266,7 @@ M10 does not prove:
 - arbitrary network-partition tolerance;
 - multi-node simultaneous Garage loss;
 - disk corruption recovery;
-- backup/PITR correctness.
+- backup/PITR correctness beyond the bounded M11 evidence and stated M11 limitations.
 
 The single PostgreSQL primary remains the main documented availability limitation from M10
 and is not silently redesigned.
