@@ -169,3 +169,25 @@ variable "backup_data_disk_type" {
     error_message = "backup_data_disk_type must be pd-standard or pd-balanced."
   }
 }
+
+
+variable "enable_recovery_db" {
+  description = "Create the disposable M11 PostgreSQL PITR recovery VM only for an explicitly reviewed recovery experiment."
+  type        = bool
+  default     = false
+}
+variable "recovery_db_private_ip" {
+  description = "Stable private address for recovery-db-01 while the PITR experiment exists."
+  type        = string
+  default     = "10.60.0.20"
+}
+variable "recovery_db_machine_type" {
+  description = "Machine type for the disposable PITR recovery database VM."
+  type        = string
+  default     = "e2-medium"
+}
+variable "recovery_db_data_disk_size_gb" {
+  description = "Disposable PostgreSQL recovery data disk size."
+  type        = number
+  default     = 30
+}
