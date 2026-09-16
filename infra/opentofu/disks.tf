@@ -48,3 +48,31 @@ resource "google_compute_disk" "recovery_db" {
     role      = "recovery-db"
   }
 }
+
+resource "google_compute_disk" "full_dr_db" {
+  count = var.enable_full_dr ? 1 : 0
+  name  = "arp-dr-db-01-data"
+  zone  = local.full_dr_nodes["dr-db-01"].zone
+  type  = var.full_dr_data_disk_type
+  size  = var.full_dr_db_data_disk_size_gb
+
+  labels = {
+    lifecycle = "temporary"
+    milestone = "m11"
+    role      = "dr-db"
+  }
+}
+
+resource "google_compute_disk" "full_dr_storage" {
+  for_each = var.enable_full_dr ? local.full_dr_storage_nodes : {}
+  name     = "arp-${each.key}-data"
+  zone     = each.value.zone
+  type     = var.full_dr_data_disk_type
+  size     = var.full_dr_storage_data_disk_size_gb
+
+  labels = {
+    lifecycle = "temporary"
+    milestone = "m11"
+    role      = "dr-storage"
+  }
+}

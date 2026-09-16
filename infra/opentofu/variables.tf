@@ -191,3 +191,81 @@ variable "recovery_db_data_disk_size_gb" {
   type        = number
   default     = 30
 }
+
+variable "enable_full_dr" {
+  description = "Create the temporary M11 full-DR service topology only after an explicitly reviewed recovery plan."
+  type        = bool
+  default     = false
+}
+
+variable "full_dr_region" {
+  description = "Region for the temporary M11 full-DR service topology per ADR-004."
+  type        = string
+  default     = "asia-northeast1"
+}
+
+variable "full_dr_subnet_cidr" {
+  description = "Dedicated subnet for the temporary M11 full-DR service topology."
+  type        = string
+  default     = "10.70.0.0/24"
+}
+
+variable "full_dr_private_ips" {
+  description = "Stable private addresses used only while the temporary M11 full-DR topology exists."
+  type        = map(string)
+  default = {
+    edge       = "10.70.0.10"
+    app        = "10.70.0.20"
+    db         = "10.70.0.30"
+    storage-01 = "10.70.0.41"
+    storage-02 = "10.70.0.42"
+    storage-03 = "10.70.0.43"
+  }
+  validation {
+    condition = alltrue([
+      for key in ["edge", "app", "db", "storage-01", "storage-02", "storage-03"] :
+      contains(keys(var.full_dr_private_ips), key)
+    ])
+    error_message = "full_dr_private_ips must define edge, app, db, and all three storage nodes."
+  }
+}
+
+variable "full_dr_machine_types" {
+  description = "Machine types for the temporary M11 full-DR service tiers."
+  type        = map(string)
+  default = {
+    edge    = "e2-small"
+    app     = "e2-medium"
+    db      = "e2-medium"
+    storage = "e2-small"
+  }
+  validation {
+    condition = alltrue([
+      for role in ["edge", "app", "db", "storage"] :
+      contains(keys(var.full_dr_machine_types), role)
+    ])
+    error_message = "full_dr_machine_types must define edge, app, db, and storage."
+  }
+}
+
+variable "full_dr_db_data_disk_size_gb" {
+  description = "Fresh PostgreSQL data disk size for dr-db-01."
+  type        = number
+  default     = 30
+}
+
+variable "full_dr_storage_data_disk_size_gb" {
+  description = "Fresh Garage data disk size for each full-DR storage node."
+  type        = number
+  default     = 30
+}
+
+variable "full_dr_data_disk_type" {
+  description = "Persistent disk type for temporary full-DR data disks."
+  type        = string
+  default     = "pd-standard"
+  validation {
+    condition     = contains(["pd-standard", "pd-balanced"], var.full_dr_data_disk_type)
+    error_message = "full_dr_data_disk_type must be pd-standard or pd-balanced."
+  }
+}

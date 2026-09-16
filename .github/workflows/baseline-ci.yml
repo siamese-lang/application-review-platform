@@ -795,6 +795,8 @@ jobs:
         run: python3 scripts/deploy/test-m11-pitr-execution.py
       - name: Validate M11 Phase 3 checkpoint foundation contract
         run: python3 scripts/deploy/test-m11-checkpoint-foundation.py
+      - name: Validate M11 Phase 4 full DR infrastructure contract
+        run: python3 scripts/deploy/test-m11-full-dr-infrastructure.py
       - name: Verify M4 bootstrap wiring
         shell: bash
         run: |

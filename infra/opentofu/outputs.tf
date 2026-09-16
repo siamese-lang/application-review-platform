@@ -71,6 +71,13 @@ output "ssh_inventory" {
         zone       = google_compute_instance.recovery_db[0].zone
         private_ip = google_compute_instance.recovery_db[0].network_interface[0].network_ip
       }
+    } : {},
+    var.enable_full_dr ? {
+      for name, node in local.full_dr_nodes : name => {
+        role       = node.role
+        zone       = google_compute_instance.full_dr[name].zone
+        private_ip = google_compute_instance.full_dr[name].network_interface[0].network_ip
+      }
     } : {}
   )
 }
@@ -91,5 +98,30 @@ output "recovery_db" {
     region     = var.backup_region
     zone       = google_compute_instance.recovery_db[0].zone
     private_ip = google_compute_instance.recovery_db[0].network_interface[0].network_ip
+  } : null
+}
+
+output "full_dr_inventory" {
+  value = var.enable_full_dr ? {
+    for name, node in local.full_dr_nodes : name => {
+      role       = node.role
+      zone       = google_compute_instance.full_dr[name].zone
+      private_ip = google_compute_instance.full_dr[name].network_interface[0].network_ip
+    }
+  } : {}
+}
+
+output "full_dr" {
+  value = var.enable_full_dr ? {
+    region         = var.full_dr_region
+    subnet_cidr    = var.full_dr_subnet_cidr
+    edge_public_ip = google_compute_address.full_dr_edge[0].address
+    nodes = {
+      for name, node in local.full_dr_nodes : name => {
+        role       = node.role
+        zone       = google_compute_instance.full_dr[name].zone
+        private_ip = google_compute_instance.full_dr[name].network_interface[0].network_ip
+      }
+    }
   } : null
 }

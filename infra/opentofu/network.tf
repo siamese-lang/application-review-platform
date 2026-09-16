@@ -94,3 +94,39 @@ resource "google_compute_router_nat" "backup" {
     source_ip_ranges_to_nat = ["ALL_IP_RANGES"]
   }
 }
+
+resource "google_compute_subnetwork" "full_dr" {
+  count                    = var.enable_full_dr ? 1 : 0
+  name                     = "arp-m11-dr-${var.full_dr_region}"
+  region                   = var.full_dr_region
+  network                  = google_compute_network.m4.id
+  ip_cidr_range            = var.full_dr_subnet_cidr
+  private_ip_google_access = true
+}
+
+resource "google_compute_router" "full_dr" {
+  count   = var.enable_full_dr ? 1 : 0
+  name    = "arp-m11-dr-router"
+  region  = var.full_dr_region
+  network = google_compute_network.m4.id
+}
+
+resource "google_compute_router_nat" "full_dr" {
+  count                              = var.enable_full_dr ? 1 : 0
+  name                               = "arp-m11-dr-nat"
+  router                             = google_compute_router.full_dr[0].name
+  region                             = var.full_dr_region
+  nat_ip_allocate_option             = "AUTO_ONLY"
+  source_subnetwork_ip_ranges_to_nat = "LIST_OF_SUBNETWORKS"
+
+  subnetwork {
+    name                    = google_compute_subnetwork.full_dr[0].id
+    source_ip_ranges_to_nat = ["ALL_IP_RANGES"]
+  }
+}
+
+resource "google_compute_address" "full_dr_edge" {
+  count  = var.enable_full_dr ? 1 : 0
+  name   = "arp-m11-dr-edge-01-ipv4"
+  region = var.full_dr_region
+}
