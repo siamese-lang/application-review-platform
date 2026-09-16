@@ -83,9 +83,14 @@ Current repository backup/restore implementation state:
 - Garage object-backup tooling and manifest verification are implemented;
 - retained Phase 1 evidence:
   `docs/operations/M11_PHASE1_BACKUP_FOUNDATION_EVIDENCE.md`;
-- `scripts/restore/` remains the next implementation boundary for Phase 2 PITR.
+- disposable `recovery-db-01` is implemented and live-verified;
+- independent PostgreSQL PITR completed successfully from backup `20260916-090503F`;
+- verified PITR RTO: 27.229 seconds;
+- marker-granularity recovery gap: ≤ 1.087882 seconds before the requested target;
+- retained Phase 2 evidence:
+  `docs/operations/M11_PHASE2_PITR_EVIDENCE.md`.
 
-M11 now proceeds to independent PITR before the verified whole-system checkpoint/full DR phases.
+M11 now proceeds to the verified whole-system checkpoint/full DR phases.
 
 ## Guardrails
 
@@ -164,7 +169,7 @@ Do not execute PITR until this healthy backup foundation is proven.
 
 ## Phase 2 — independent PostgreSQL PITR experiment
 
-Status: NEXT
+Status: COMPLETE
 
 Goal: measure whether a PostgreSQL point-in-time restore can recover a known synthetic
 business state into a separate recovery database environment.
@@ -200,7 +205,7 @@ Do not overwrite the retained db-01 solely to exercise PITR.
 
 ## Phase 3 — verified whole-system checkpoint backup
 
-Status: PLANNED
+Status: NEXT
 
 Goal: create one DB/object backup set with an explicit cross-store consistency boundary.
 
@@ -320,20 +325,30 @@ Likely M11 implementation areas:
 
 ## Immediate next work
 
-Execute **Phase 2 — independent PostgreSQL PITR experiment**.
+Execute **Phase 3 — verified whole-system checkpoint backup**.
 
-Start from the verified Phase 1 backup foundation:
+Phase 2 independent PITR is complete and retained in:
 
-- pgBackRest full backup: `20260916-090503F`;
-- WAL archive status: healthy through at least `00000001000000020000007C`;
-- Phase 1 object manifest:
-  `42ab06b602af75011bf081ae642d8b2308a0cbb531a324e8c5bef4267f083893`.
+`docs/operations/M11_PHASE2_PITR_EVIDENCE.md`
 
-The next slice must:
+Measured Phase 2 result:
 
-- define/review only the minimum disposable PostgreSQL recovery VM needed for PITR;
-- record two distinguishable committed synthetic states around a target timestamp;
-- restore into the separate recovery VM, never overwrite retained `db-01`;
-- measure restore start, PostgreSQL ready, and business/data verification completion;
-- retain expected pre-target inclusion and post-target exclusion evidence;
-- do not start full-system DR or change the frozen backup architecture.
+- target: `2026-09-16T10:44:13.321143+00`;
+- recovered marker state: PRE included / POST excluded;
+- verified DB PITR RTO: 27.229 seconds;
+- marker-granularity recovery gap: ≤ 1.087882 seconds before the requested target.
+
+The next slice must implement only the frozen cross-store checkpoint sequence:
+
+1. block new mutations temporarily;
+2. let in-flight mutations finish;
+3. verify attachment `PENDING` count is zero;
+4. create the PostgreSQL checkpoint backup;
+5. copy Garage objects to `backup-01`;
+6. generate and verify the object manifest;
+7. retain exact checkpoint/backup identities;
+8. resume writes and prove the mutation block was removed;
+9. run representative business smoke after writes resume.
+
+Do not start full-system DR until the checkpoint backup is independently verified.
+Do not change the frozen backup architecture.
