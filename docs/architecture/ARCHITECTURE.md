@@ -2,7 +2,7 @@
 
 Status: FROZEN EXCEPT AS AMENDED BY ACCEPTED ADRS
 
-The original M0 architecture remains the baseline. Accepted ADRs supersede only the boundaries they explicitly amend. `ADR-001-web-api-spa.md` replaces the original final-browser choice, while `ADR-004-gcp-resource-placement.md` records the quota-driven regional placement strategy. Other M0 boundaries remain in force.
+The original M0 architecture remains the baseline. Accepted ADRs supersede only the boundaries they explicitly amend. `ADR-001-web-api-spa.md` replaces the original final-browser choice, `ADR-004-gcp-resource-placement.md` records the quota-driven regional placement strategy, and `ADR-005-garage-endpoint-failover.md` replaces the fixed single-node Garage client endpoint with an app-local proxy over all three Garage S3 nodes. Other M0 boundaries remain in force.
 
 ## Architectural boundaries
 
@@ -27,7 +27,8 @@ edge-01: Nginx
   ├─ /, /assets/** → versioned React/Vite static release
   └─ /api/v1/**    → app-01: Spring Boot REST API + Spring Security + Spring Session JDBC
                           ├─ JDBC → db-01: PostgreSQL
-                          └─ S3 API → Garage: storage-01 / storage-02 / storage-03
+                          └─ S3 API → app-local Nginx Garage proxy
+                                      └─ storage-01 / storage-02 / storage-03
 
 DB backup/WAL ─────┐
 Garage object copy ├→ backup-01
@@ -104,7 +105,7 @@ See `ADR-004-gcp-resource-placement.md`.
 
 ## Failure-domain principle
 
-Do not collapse Nginx, Spring, PostgreSQL, Garage, and observability into one all-in-one VM for final operational tests. Known single points of failure such as the single PostgreSQL primary and `obs-01` are documented limitations, not hidden claims of HA.
+Do not collapse Nginx, Spring, PostgreSQL, Garage, and observability into one all-in-one VM for final operational tests. Known single points of failure such as the single PostgreSQL primary and `obs-01` are documented limitations, not hidden claims of HA. After ADR-005, the application no longer intentionally binds Garage attachment traffic to storage-01 alone; app-01 uses a loopback Nginx proxy across all three Garage S3 endpoints.
 
 The frontend static files do not create a meaningful independent runtime failure domain and therefore do not justify a separate VM.
 
@@ -113,3 +114,8 @@ The frontend static files do not create a meaningful independent runtime failure
 The browser/API boundary must be settled before Operations, Observability, Workload, and Performance milestones build around it.
 
 Backend and frontend are separate artifacts from the same repository revision. Later deployment automation must be able to identify and roll back both artifacts while respecting additive database migration policy.
+
+
+## Garage client endpoint amendment
+
+ADR-005 makes `http://127.0.0.1:3910` on app-01 the application S3 endpoint. The local Nginx proxy routes to all three Garage S3 nodes and is part of the app failure domain. The Garage storage topology, replication factor, and object-store product remain unchanged. App-to-Garage firewall access therefore targets the `arp-storage` role rather than one designated endpoint node.
