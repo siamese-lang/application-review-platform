@@ -22,6 +22,13 @@ output "inventory" {
         zone       = google_compute_instance.backup[0].zone
         private_ip = google_compute_instance.backup[0].network_interface[0].network_ip
       }
+    } : {},
+    var.enable_recovery_db ? {
+      "recovery-db-01" = {
+        role       = "recovery_db"
+        zone       = google_compute_instance.recovery_db[0].zone
+        private_ip = google_compute_instance.recovery_db[0].network_interface[0].network_ip
+      }
     } : {}
   )
 }
@@ -67,5 +74,15 @@ output "backup" {
     region     = var.backup_region
     zone       = google_compute_instance.backup[0].zone
     private_ip = google_compute_instance.backup[0].network_interface[0].network_ip
+  } : null
+}
+
+
+output "recovery_db" {
+  value = var.enable_recovery_db ? {
+    name       = google_compute_instance.recovery_db[0].name
+    region     = var.backup_region
+    zone       = google_compute_instance.recovery_db[0].zone
+    private_ip = google_compute_instance.recovery_db[0].network_interface[0].network_ip
   } : null
 }
