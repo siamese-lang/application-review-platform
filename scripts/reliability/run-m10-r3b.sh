@@ -5,6 +5,24 @@ umask 077
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$root"
 
+r3b_mode=${ARP_M10_R3B_MODE:-baseline}
+case "$r3b_mode" in
+  baseline)
+    expected_garage_endpoint="http://10.40.0.41:3900"
+    run_prefix="m10-r3b"
+    application_endpoint_manifest="storage-01:3900"
+    ;;
+  retest)
+    expected_garage_endpoint="http://127.0.0.1:3910"
+    run_prefix="m10-r3b-retest"
+    application_endpoint_manifest="127.0.0.1:3910"
+    ;;
+  *)
+    echo "ERROR: ARP_M10_R3B_MODE must be baseline or retest." >&2
+    exit 1
+    ;;
+esac
+
 : "${ARP_EXPECTED_SOURCE_SHA:?Set ARP_EXPECTED_SOURCE_SHA to the reviewed 40-character main SHA}"
 [[ $ARP_EXPECTED_SOURCE_SHA =~ ^[0-9a-f]{40}$ ]] || {
   echo "ERROR: ARP_EXPECTED_SOURCE_SHA must be a 40-character lowercase Git SHA." >&2
@@ -184,8 +202,8 @@ PY
 )
 
 garage_endpoint=$("${ssh_app[@]}" "sudo awk -F= '\$1==\"GARAGE_ENDPOINT\" {print \$2}' /etc/arp/arp.env")
-[[ "$garage_endpoint" == "http://10.40.0.41:3900" ]] || {
-  echo "ERROR: application Garage endpoint is not storage-01: $garage_endpoint" >&2
+[[ "$garage_endpoint" == "$expected_garage_endpoint" ]] || {
+  echo "ERROR: application Garage endpoint mismatch: expected $expected_garage_endpoint, got $garage_endpoint" >&2
   exit 1
 }
 
@@ -205,7 +223,7 @@ print(*values)
 PY
 )
 
-run_id="m10-r3b-$(date -u +%Y%m%dT%H%M%SZ)-${actual_sha:0:8}"
+run_id="${run_prefix}-$(date -u +%Y%m%dT%H%M%SZ)-${actual_sha:0:8}"
 run_dir="$root/build/reliability/runs/$run_id"
 mkdir -p "$run_dir"
 
@@ -434,11 +452,12 @@ fi
 scenario_finished_at=$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)
 
 probe_summary=$(
-  python3 - "$run_dir/k6-summary.json" <<'PY'
+  python3 - "$run_dir/k6-summary.json" "$r3b_mode" <<'PY'
 import json
 import sys
 
 metrics = json.load(open(sys.argv[1], encoding="utf-8")).get("metrics", {})
+mode = sys.argv[2]
 
 def value(name, field):
     metric = metrics.get(name)
@@ -469,6 +488,14 @@ unaffected_paths_healthy = (
     and support_errors == 0.0
 )
 supported = availability_gap and unaffected_paths_healthy
+attachment_continuity = (
+    attachment_errors == 0.0
+    and existing_download_errors == 0.0
+    and upload_errors == 0.0
+    and uploaded_download_errors == 0.0
+    and delete_errors == 0.0
+)
+corrective_change_verified = attachment_continuity and unaffected_paths_healthy
 
 print(f"M10_R3B_ATTACHMENT_ATTEMPTS={int(attachment_attempts)}")
 print(f"M10_R3B_ATTACHMENT_ERROR_RATE={attachment_errors:.6f}")
@@ -479,12 +506,22 @@ print(f"M10_R3B_ATTACHMENT_DELETE_ERROR_RATE={delete_errors:.6f}")
 print(f"M10_R3B_NON_ATTACHMENT_ATTEMPTS={int(non_attachment_attempts)}")
 print(f"M10_R3B_NON_ATTACHMENT_ERROR_RATE={non_attachment_errors:.6f}")
 print(f"M10_R3B_SUPPORT_ERROR_RATE={support_errors:.6f}")
-print(f"M10_R3B_ENDPOINT_AVAILABILITY_GAP={'OBSERVED' if availability_gap else 'NOT_OBSERVED'}")
-print(f"M10_R3B_NON_ATTACHMENT_CONTINUITY={'PASS' if unaffected_paths_healthy else 'FAIL'}")
-print(f"M10_R3B_HYPOTHESIS={'SUPPORTED' if supported else 'NOT_SUPPORTED'}")
+if mode == "baseline":
+    print(f"M10_R3B_ENDPOINT_AVAILABILITY_GAP={'OBSERVED' if availability_gap else 'NOT_OBSERVED'}")
+    print(f"M10_R3B_NON_ATTACHMENT_CONTINUITY={'PASS' if unaffected_paths_healthy else 'FAIL'}")
+    print(f"M10_R3B_HYPOTHESIS={'SUPPORTED' if supported else 'NOT_SUPPORTED'}")
+else:
+    print(f"M10_R3B_RETEST_ATTACHMENT_CONTINUITY={'PASS' if attachment_continuity else 'FAIL'}")
+    print(f"M10_R3B_RETEST_NON_ATTACHMENT_CONTINUITY={'PASS' if unaffected_paths_healthy else 'FAIL'}")
+    print(f"M10_R3B_RETEST_CORRECTIVE_CHANGE={'VERIFIED' if corrective_change_verified else 'NOT_VERIFIED'}")
 PY
 )
 printf '%s\n' "$probe_summary" | tee "$run_dir/probe-summary.txt"
+if [[ "$r3b_mode" == retest ]] &&
+   ! grep -q '^M10_R3B_RETEST_CORRECTIVE_CHANGE=VERIFIED$' <<<"$probe_summary"; then
+  echo "ERROR: ADR-005 R3b retest observed an attachment or unaffected-path continuity failure." >&2
+  exit 1
+fi
 
 echo "STEP: retain exact-window Prometheus evidence"
 "${ssh_obs[@]}" python3 - "$obs_ip" "$started_at" "$scenario_finished_at" \
@@ -575,8 +612,10 @@ cat "$root/scripts/reliability/m10-db-invariants.sql" |
   > "$run_dir/db-invariants-after.txt"
 
 post_invariant_summary=$(
-  python3 - "$run_dir/db-invariants-after.txt" <<'PY'
+  python3 - "$run_dir/db-invariants-after.txt" "$r3b_mode" <<'PY'
 import sys
+
+mode = sys.argv[2]
 
 required_zero = {
     "non_draft_latest_history_mismatch",
@@ -610,9 +649,16 @@ clean = all(values.get(key, 0) == 0 for key in lifecycle)
 print("M10_R3B_DB_CORE_INVARIANTS=PASS")
 print(f"M10_R3B_ATTACHMENT_LIFECYCLE_CLEAN={'PASS' if clean else 'FAIL'}")
 print(f"M10_R3B_PARTIAL_STATE_RETAINED={'NO' if clean else 'YES'}")
+if mode == "retest":
+    print(f"M10_R3B_RETEST_ATTACHMENT_LIFECYCLE_CLEAN={'PASS' if clean else 'FAIL'}")
 PY
 )
 printf '%s\n' "$post_invariant_summary" | tee "$run_dir/post-invariant-summary.txt"
+if [[ "$r3b_mode" == retest ]] &&
+   ! grep -q '^M10_R3B_RETEST_ATTACHMENT_LIFECYCLE_CLEAN=PASS$' <<<"$post_invariant_summary"; then
+  echo "ERROR: ADR-005 R3b retest left new attachment lifecycle residue." >&2
+  exit 1
+fi
 
 finished_at=$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)
 
@@ -621,7 +667,8 @@ python3 - \
   "$backend_release_sha" "$frontend_release_sha" \
   "$ARP_M10_DATASET_MANIFEST_SHA" "$overlay_sha" "$K6_VERSION" \
   "$started_at" "$fault_at" "$stopped_at" "$restore_at" "$recovered_at" \
-  "$scenario_finished_at" "$finished_at" "$fixture_sha" "$node1_id" <<'PY'
+  "$scenario_finished_at" "$finished_at" "$fixture_sha" "$node1_id" \
+  "$r3b_mode" "$application_endpoint_manifest" <<'PY'
 import json
 import sys
 
@@ -630,6 +677,7 @@ import sys
     dataset_manifest_sha, overlay_sha, k6_version,
     started_at, fault_at, stopped_at, restore_at, recovered_at,
     scenario_finished_at, finished_at, fixture_sha, node1_id,
+    mode, application_endpoint,
 ) = sys.argv[1:]
 
 manifest = {
@@ -663,7 +711,8 @@ manifest = {
         "fault_target": "storage-01/garage",
         "fault_node_id": node1_id,
         "fault_mechanism": "docker stop --time 10 garage; docker start garage",
-        "application_endpoint": "storage-01:3900",
+        "application_endpoint": application_endpoint,
+        "mode": mode,
         "fault_at": fault_at,
         "container_stopped_at": stopped_at,
         "restore_at": restore_at,
@@ -695,6 +744,7 @@ echo "$probe_summary"
 echo "$during_invariant_summary"
 echo "$telemetry_summary"
 echo "$post_invariant_summary"
+echo "M10_R3B_MODE=$r3b_mode"
 echo "M10_R3B_RUN_ID=$run_id"
 echo "M10_R3B_SOURCE_SHA=$actual_sha"
 echo "M10_R3B_BACKEND_RELEASE_SHA=$backend_release_sha"
@@ -705,4 +755,8 @@ echo "M10_R3B_FAULT_AT=$fault_at"
 echo "M10_R3B_RESTORE_AT=$restore_at"
 echo "M10_R3B_STORAGE01_HEALTHY_AT=$recovered_at"
 echo "M10_R3B_ARTIFACT_DIR=$run_dir"
-echo "PASS: M10 R3b experiment retained endpoint Garage fault, attachment/non-attachment observations, node telemetry, recovery, business smoke, and DB state."
+if [[ "$r3b_mode" == retest ]]; then
+  echo "PASS: M10 R3b ADR-005 retest retained the storage-01 fault and verified proxy-backed attachment continuity, unaffected paths, telemetry, recovery, business smoke, and DB state."
+else
+  echo "PASS: M10 R3b experiment retained endpoint Garage fault, attachment/non-attachment observations, node telemetry, recovery, business smoke, and DB state."
+fi

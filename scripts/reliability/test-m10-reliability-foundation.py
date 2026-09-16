@@ -326,6 +326,7 @@ subprocess.run(
 
 r3b_driver = read("workload/k6/m10-r3b-garage-endpoint.js")
 r3b_runner = read("scripts/reliability/run-m10-r3b.sh")
+r3b_retest = read("scripts/reliability/run-m10-r3b-retest.sh")
 
 for token in [
     "profile: 'r3b-garage-endpoint'",
@@ -357,6 +358,10 @@ for token in [
     "M10_R3B_ENDPOINT_AVAILABILITY_GAP=",
     "M10_R3B_NON_ATTACHMENT_CONTINUITY=",
     "M10_R3B_HYPOTHESIS=",
+    "ARP_M10_R3B_MODE",
+    "http://127.0.0.1:3910",
+    "M10_R3B_RETEST_CORRECTIVE_CHANGE=",
+    "M10_R3B_RETEST_ATTACHMENT_LIFECYCLE_CLEAN=",
     "M10_R3B_DURING_PARTIAL_ATTACHMENT_STATE=",
     "M10_R3B_PARTIAL_STATE_RETAINED=",
     "M10_R3B_TELEMETRY_NODE_ISOLATION=PASS",
@@ -393,8 +398,18 @@ subprocess.run(
     ["node", "--check", str(ROOT / "workload/k6/m10-r3b-garage-endpoint.js")],
     check=True,
 )
+for token in [
+    "export ARP_M10_R3B_MODE=retest",
+    'exec "$root/scripts/reliability/run-m10-r3b.sh" "$@"',
+]:
+    require(r3b_retest, token, "M10 R3b retest wrapper")
+
 subprocess.run(
     ["bash", "-n", str(ROOT / "scripts/reliability/run-m10-r3b.sh")],
+    check=True,
+)
+subprocess.run(
+    ["bash", "-n", str(ROOT / "scripts/reliability/run-m10-r3b-retest.sh")],
     check=True,
 )
 
