@@ -745,6 +745,8 @@ jobs:
         run: bash scripts/deploy/test-m10-garage-endpoint-proxy.sh
       - name: Validate M11 backup/recovery foundation contract
         run: python3 scripts/deploy/test-m11-backup-foundation.py
+      - name: Validate M11 Phase 2 PITR infrastructure contract
+        run: python3 scripts/deploy/test-m11-pitr-infrastructure.py
       - name: Verify M4 bootstrap wiring
         shell: bash
         run: |
