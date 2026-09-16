@@ -1,0 +1,33 @@
+---
+- name: Install local Garage endpoint proxy
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+
+- name: Remove default Nginx site on app host
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Reload Garage endpoint proxy
+
+- name: Install Garage endpoint proxy configuration
+  ansible.builtin.template:
+    src: garage-s3-proxy.conf.j2
+    dest: /etc/nginx/conf.d/arp-garage-s3-proxy.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload Garage endpoint proxy
+
+- name: Validate Garage endpoint proxy configuration
+  ansible.builtin.command: nginx -t
+  changed_when: false
+
+- name: Enable and start Garage endpoint proxy
+  ansible.builtin.systemd:
+    name: nginx
+    state: started
+    enabled: true
+
+- name: Apply Garage endpoint proxy changes before application configuration
+  ansible.builtin.meta: flush_handlers

@@ -1,0 +1,5 @@
+---
+- name: Reload Garage endpoint proxy
+  ansible.builtin.systemd:
+    name: nginx
+    state: reloaded

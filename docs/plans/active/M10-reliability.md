@@ -506,7 +506,26 @@ Decision after R3:
 
 ### Phase 5 — residual reliability decision
 
-Status: ACTIVE
+Status: ACTIVE — CORRECTIVE CHANGE SELECTED
+
+Decision:
+
+- R1 requires no corrective change: systemd recovered the application process and business
+  state without data-service disruption;
+- R2 confirms a known single-PostgreSQL-primary availability limitation, but database HA is a
+  larger frozen-architecture change and is not introduced in M10;
+- R3a requires no corrective change: one non-endpoint Garage node loss had no observed
+  business impact;
+- R3b exposed a measured fixed Garage endpoint SPOF while two replicas remained healthy;
+- select exactly one bounded corrective change: ADR-005 app-local Nginx Garage S3 proxy over
+  storage-01/02/03;
+- retain FAILED attachment rows as explicit failure evidence rather than redefining M3
+  lifecycle semantics;
+- after deployment, rerun the same storage-01 Garage fault and compare against the retained
+  R3b baseline.
+
+The correction is successful only if equivalent R3b attachment operations remain available
+while storage-01 is absent and no new lifecycle residue is created.
 
 After R1–R3:
 

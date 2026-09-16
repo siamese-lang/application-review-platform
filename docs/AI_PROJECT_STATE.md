@@ -220,24 +220,19 @@ Current phase:
 
 Immediate next boundary:
 
-1. retain R3b as complete:
-   - run `m10-r3b-20260916T061256Z-11b3a54f`;
-   - fixed endpoint storage-01 left and returned to Garage `HEALTHY NODES`;
-   - attachment overall error 28.6920%, existing-download error 27.8481%, upload error
-     27.0042%;
-   - non-attachment 480 attempts with 0% error;
-   - PostgreSQL/application probe/storage-02/storage-03 stayed healthy;
-   - application PID stayed `42960`;
-   - fault-time partial state: FAILED 22 / DELETE_PENDING 2;
-   - immediate post-run partial state: FAILED 64 / DELETE_PENDING 2;
-   - later row-level capture retained 64 FAILED rows, all created inside the endpoint outage;
-2. treat storage-01 fixed client endpoint as an observed attachment-availability SPOF;
-3. treat the 64 persistent FAILED attachment rows as a separate lifecycle-residue finding;
-4. evaluate Phase 5 without silently adding PostgreSQL HA or Garage endpoint HA;
-5. if the justified corrective action crosses a frozen architecture boundary, require an
-   explicit ADR/architecture decision; otherwise retain the limitation and proceed to closeout.
+1. Phase 5 decision selected one corrective change:
+   - ADR-005 app-local Nginx Garage S3 proxy;
+   - application endpoint becomes `http://127.0.0.1:3910`;
+   - proxy upstreams are storage-01/02/03:3900;
+   - app-to-S3 firewall targets all `arp-storage` nodes;
+2. no PostgreSQL HA is added in M10; R2 remains a documented single-primary limitation;
+3. the 64 R3b FAILED rows remain explicit failure evidence and M3 FAILED semantics are not
+   silently redefined;
+4. merge and deploy ADR-005/proxy configuration;
+5. rerun the same storage-01 R3b fault and require attachment continuity plus clean new
+   lifecycle state before calling the corrective change verified.
 
-No HA architecture change is authorized in advance.
+No second corrective change or additional HA layer is authorized before the ADR-005 R3b retest.
 
 ## Do not revisit unless new evidence requires it
 
@@ -255,11 +250,10 @@ No HA architecture change is authorized in advance.
 > 먼저 `AGENTS.md`, `docs/AI_PROJECT_STATE.md`, `docs/plans/active/M10-reliability.md`
 > 를 읽고 repository 실제 상태를 source of truth로 사용하라.  
 > M1–M9은 완료되었으므로 재설계하거나 재실행하지 마라.  
-> M10 Reliability Phase 1과 R1-R3는 완료되었다. 현재 Phase 5 residual
-> reliability decision이 다음 작업이다. R3a에서는 non-endpoint storage-02 loss를
-> 무중단으로 통과했지만, R3b run `m10-r3b-20260916T061256Z-11b3a54f`에서는 fixed
-> endpoint storage-01 loss가 attachment availability gap과 persistent FAILED attachment
-> rows를 만들었다. DB/app/non-attachment path는 정상 유지됐다. endpoint HA를 자동으로
-> 추가하지 말고 evidence 기반 Phase 5 결정을 수행하라.  
+> M10 Reliability R1-R3는 완료됐고 Phase 5에서 ADR-005 app-local Nginx Garage
+> endpoint proxy를 유일한 corrective change로 선택했다. R3b baseline
+> `m10-r3b-20260916T061256Z-11b3a54f`의 storage-01 endpoint fault를 동일하게 재실행해
+> attachment continuity가 회복되는지 검증해야 한다. PostgreSQL HA나 두 번째 HA 변경을
+> 추가하지 마라.  
 > R1 app failure, R2 PostgreSQL failure, R3 Garage node failure만 초기 고정 범위로
 > 수행하고 R4는 M6 evidence를 재사용하며 R5/PITR은 M11로 남겨라.
