@@ -41,6 +41,13 @@ for forbidden in [
         raise SystemExit(f"full DR Garage wrapper violates isolation boundary: {forbidden}")
 
 require(
+    "config/ansible/group_vars/all/main.yml",
+    "garage_rpc_port: 3901",
+    "garage_s3_port: 3900",
+    "garage_bucket: application-review",
+)
+
+require(
     "config/ansible/full-dr-garage-restore.yml",
     "hosts: storage",
     "Require exactly three DR Garage nodes",
