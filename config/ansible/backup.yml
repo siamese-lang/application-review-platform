@@ -1,0 +1,8 @@
+---
+- hosts: backup
+  become: true
+  roles: [common, backup]
+
+- hosts: db
+  become: true
+  roles: [pgbackrest_db]
