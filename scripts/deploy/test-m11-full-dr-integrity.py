@@ -23,7 +23,6 @@ require(
     "full-dr-integrity.yml",
     "m11_checkpoint_cutoff",
     "m11_expected_checkpoint_available",
-    "StrictHostKeyChecking=no",
 )
 wrapper = read("deploy/verify-m11-full-dr-integrity.sh")
 if "StrictHostKeyChecking=no" in wrapper:
