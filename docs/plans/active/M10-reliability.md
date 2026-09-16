@@ -290,7 +290,7 @@ phases. Do not label such runs as W2 unless they actually preserve the W2 runner
 
 ### Phase 1 — reliability harness and healthy-control verification
 
-Status: ACTIVE
+Status: COMPLETE
 
 Goal: create the minimum repeatable tooling needed to execute R1–R3 without ad-hoc manual
 timing or unretained evidence.
@@ -315,9 +315,35 @@ Done condition:
 - harness records enough evidence to distinguish client, edge, app, DB, and Garage effects;
 - no fault has yet been injected.
 
+Retained Phase 1 result:
+
+- run: `m10-control-20260916T025311Z-6d5f6ae8`;
+- source: `6d5f6ae8849ae8b70a369eb58ee48ddd666b447f`;
+- backend/frontend release:
+  `d90eb558bdb6317d49b0a7ce82148ddeb4b5babf`;
+- Dataset M manifest:
+  `9e174ead7c9ae7b77d5adc18c93e336b4cac5e30b5962bf47c31de4f42bea696`;
+- overlay:
+  `f93dfb6a030fa552de3dd4c7b9c022368079680bf2b16b13c05883e8b678aae1`;
+- business requests: 8,905;
+- non-file success: 100%;
+- non-file p95: 90.339 ms;
+- business mix remained within the intended 40/15/10/20/10/5 proportions;
+- full post-control HTTPS business smoke passed;
+- all retained M10 DB invariants were zero/PASS;
+- exact-window Prometheus telemetry was retained with the run artifacts;
+- no fault was injected.
+
+Temporary loadgen lifecycle for Phase 1:
+
+- reviewed create plan: exactly four temporary loadgen create actions;
+- apply: 4 added / 0 changed / 0 destroyed;
+- loadgen Ansible configuration: failed=0 / unreachable=0;
+- runtime preflight: HTTPS edge path and outbound DNS passed.
+
 ### Phase 2 — R1 application process failure
 
-Status: PLANNED
+Status: ACTIVE
 
 Execute one bounded backend process crash.
 
