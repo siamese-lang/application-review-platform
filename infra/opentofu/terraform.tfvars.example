@@ -13,3 +13,14 @@ project_id = "application-review-platform"
 # loadgen_subnet_cidr   = "10.50.0.0/24"
 # loadgen_private_ip    = "10.50.0.10"
 # loadgen_machine_type  = "e2-standard-2"
+
+# M11 full DR is opt-in and requires enable_backup=true so the verified checkpoint source remains available.
+# enable_full_dr      = true
+# full_dr_region      = "asia-northeast1"
+# full_dr_subnet_cidr = "10.70.0.0/24"
+# full_dr_machine_types = {
+#   edge    = "e2-small"
+#   app     = "e2-medium"
+#   db      = "e2-medium"
+#   storage = "e2-small"
+# }
