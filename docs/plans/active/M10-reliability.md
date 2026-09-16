@@ -382,7 +382,7 @@ Retained R1 result:
 
 ### Phase 3 — R2 PostgreSQL outage during normal workload
 
-Status: ACTIVE
+Status: COMPLETE
 
 Execute one bounded outage of the actual live PostgreSQL cluster/service while normal M10
 traffic is active.
@@ -408,9 +408,40 @@ Record alert firing/clear timing if exercised.
 A single-primary outage is expected to be a service outage. Do not classify that expected
 architecture limit as a failed experiment.
 
+Retained R2 result:
+
+- run: `m10-r2-20260916T041420Z-67f15273`;
+- source: `67f15273333ff0f4d6f4d30533179f691f8ddb57`;
+- actual fault target: `db-01/postgresql@16-main.service`;
+- bounded outage hold: 60 s;
+- postmaster PID: `23479 → 96466`;
+- restore command → DB ready: 4.543 s;
+- restore command → public API recovery: 3.660 s;
+- restore command → persisted session recovery: 3.734 s;
+- application PID/NRestarts unchanged, so recovery required no app restart or redeploy;
+- static edge error rate: 0%;
+- Prometheus: `pg_up 0→1`, application probe `0→1`, Hikari pending max 61,
+  Garage remained up;
+- full post-recovery HTTPS business smoke: PASS;
+- all retained core DB invariants: zero/PASS;
+- no PostgreSQL HA change justified within M10;
+- five-minute PostgreSQL alert intentionally not exercised by extending the outage.
+
+R2 workload caveat:
+
+- the runner preserved Dataset M, 30 business VUs, workload families, and W2-derived pacing;
+- fault-time latency changed constant-VU iteration throughput, so observed attempt proportions
+  did not preserve an exact 40/15/10/20/10/5 mix;
+- do not describe the R2 observed attempt percentages as an arrival-rate-controlled W2 mix.
+
+Follow-up before R3:
+
+- R2 stop/start emitted a systemd daemon-reload warning;
+- inspect `NeedDaemonReload` before the next fault and do not silently ignore it.
+
 ### Phase 4 — R3 Garage single-node failure
 
-Status: PLANNED
+Status: ACTIVE
 
 Run R3a first, restore health, then run R3b.
 

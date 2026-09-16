@@ -216,24 +216,26 @@ Fixed scenario scope:
 
 Current phase:
 
-**Phase 3 — R2 PostgreSQL outage during normal workload**
+**Phase 4 — R3 Garage single-node failure**
 
 Immediate next boundary:
 
-1. retain R1 as complete:
-   - run `m10-r1-20260916T032112Z-c6847aa8`;
-   - systemd restart observed after about 1.361 s;
-   - fault → public API recovery about 22.988 s;
-   - persisted session recovered without re-login;
-   - static edge remained available;
-   - PostgreSQL/Garage remained healthy;
-   - post-recovery business smoke and DB invariants PASS;
-2. keep temporary Tokyo `loadgen-01` while R2/R3 remain active;
-3. inspect db-01 live PostgreSQL service/cluster and exporter state before any R2 fault;
-4. implement/review the bounded R2 runner against the confirmed live service boundary;
-5. execute one PostgreSQL outage under normal synthetic workload and restore it before R3;
-6. do not add PostgreSQL failover architecture merely because the expected single-primary
-   outage causes service unavailability.
+1. retain R2 as complete:
+   - run `m10-r2-20260916T041420Z-67f15273`;
+   - DB restore readiness 4.543 s;
+   - API/session recovered about 3.7 s after restore command;
+   - app PID/NRestarts unchanged;
+   - static edge stayed available;
+   - `pg_up` and application probe captured 0→1;
+   - Hikari pending max 61;
+   - Garage stayed healthy;
+   - post-recovery smoke and DB invariants PASS;
+2. do not claim the faulted constant-VU run preserved exact 40/15/10/20/10/5 observed
+   proportions; preserve only the 30-VU allocation/business-family/pacing semantics claim;
+3. inspect the R2 systemd daemon-reload warning via `NeedDaemonReload`;
+4. inspect live Garage container/service and cluster state on storage-01/02/03;
+5. confirm storage-01 remains the configured application S3 endpoint;
+6. execute R3a non-endpoint failure first and restore/verify health before R3b endpoint loss.
 
 No HA architecture change is authorized in advance.
 
@@ -253,8 +255,8 @@ No HA architecture change is authorized in advance.
 > 먼저 `AGENTS.md`, `docs/AI_PROJECT_STATE.md`, `docs/plans/active/M10-reliability.md`
 > 를 읽고 repository 실제 상태를 source of truth로 사용하라.  
 > M1–M9은 완료되었으므로 재설계하거나 재실행하지 마라.  
-> M10 Reliability Phase 1과 Phase 2 R1은 완료되었다. 현재 Phase 3 R2 PostgreSQL
-> outage를 진행하되, fault 전에 db-01의 실제 PostgreSQL service/cluster/exporter 상태를
-> 먼저 확인하라.  
+> M10 Reliability Phase 1, R1, R2는 완료되었다. 현재 Phase 4 R3 Garage node failure를
+> 진행하되 R3a non-endpoint부터 시작하고, 그 전에 R2의 systemd daemon-reload warning과
+> storage-01/02/03의 실제 Garage container/cluster 상태를 확인하라.  
 > R1 app failure, R2 PostgreSQL failure, R3 Garage node failure만 초기 고정 범위로
 > 수행하고 R4는 M6 evidence를 재사용하며 R5/PITR은 M11로 남겨라.
