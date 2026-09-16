@@ -9,7 +9,6 @@ locals {
     ops-01     = { role = "ops", zone = "${var.region}-a", ip = "10.40.0.50" }
     obs-01     = { role = "observability", zone = "${var.region}-a", ip = "10.40.0.60" }
   }
-  storage_nodes = { for name, node in local.nodes : name => node if node.role == "storage" }
 
   full_dr_nodes = {
     dr-edge-01    = { role = "edge", zone = "${var.full_dr_region}-a", ip = var.full_dr_private_ips["edge"] }
@@ -19,7 +18,8 @@ locals {
     dr-storage-02 = { role = "storage", zone = "${var.full_dr_region}-b", ip = var.full_dr_private_ips["storage-02"] }
     dr-storage-03 = { role = "storage", zone = "${var.full_dr_region}-c", ip = var.full_dr_private_ips["storage-03"] }
   }
+  storage_nodes                   = { for name, node in local.nodes : name => node if node.role == "storage" }
   full_dr_storage_nodes           = { for name, node in local.full_dr_nodes : name => node if node.role == "storage" }
-  ops_service_account_email      = "arp-m4-ops@${var.project_id}.iam.gserviceaccount.com"
+  ops_service_account_email       = "arp-m4-ops@${var.project_id}.iam.gserviceaccount.com"
   workload_service_account_email = "arp-m4-workload@${var.project_id}.iam.gserviceaccount.com"
 }
