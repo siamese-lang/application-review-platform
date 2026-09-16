@@ -64,7 +64,7 @@ resource "google_compute_firewall" "app_garage" {
   network     = google_compute_network.m4.name
   direction   = "INGRESS"
   source_tags = ["arp-app"]
-  target_tags = ["arp-garage-endpoint"]
+  target_tags = ["arp-storage"]
   allow {
     protocol = "tcp"
     ports    = ["3900"]
