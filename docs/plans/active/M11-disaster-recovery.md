@@ -238,7 +238,7 @@ attempting full DR.
 
 ## Phase 4 — full DR rebuild and business recovery
 
-Status: ACTIVE
+Status: COMPLETE
 
 Goal: restore the verified checkpoint into newly created recovery infrastructure and prove the
 business system, not only the processes, is recovered.
@@ -381,7 +381,7 @@ Live result:
 
 ### Phase 4 fifth slice — public HTTPS recovery boundary
 
-Status: ACTIVE
+Status: COMPLETE (LIVE)
 
 Implementation boundary:
 
@@ -390,6 +390,45 @@ Implementation boundary:
 - reconcile only the DR edge role after certificate installation;
 - keep normal TLS verification enabled and never use `curl -k` / `--insecure`;
 - require a successful public HTTPS programs API request before the representative business smoke.
+
+Live result:
+
+- DR public URL: `https://34.146.142.122`;
+- normal TLS verification remained enabled; no `curl -k` / `--insecure`;
+- public programs API passed;
+- result: `M11_FULL_DR_HTTPS=PASS`.
+
+### Phase 4 sixth slice — representative business and restored integrity verification
+
+Status: COMPLETE (LIVE)
+
+Live result:
+
+- existing `deploy/cloud-smoke.sh` passed the complete applicant/reviewer workflow on the DR URL;
+- recovered workflow final application: `10412`, APPROVED with required history;
+- newly uploaded attachment passed applicant and reviewer SHA-256 verification;
+- repository-owned restored integrity verifier passed;
+- reviewer/state mismatch: 0;
+- reviewer/history ownership mismatch: 0;
+- history transition mismatch: 0;
+- history chain mismatch: 0;
+- audit subject mismatch: 0;
+- audit actor ownership mismatch: 0;
+- checkpoint attachment uploader mismatch: 0;
+- checkpoint PENDING/FAILED/DELETE_PENDING: 0/0/0;
+- checkpoint AVAILABLE attachment rows: 17;
+- all 17 DB-referenced checkpoint attachment objects matched manifest and restored Garage key/size/SHA-256;
+- checkpoint manifest object count: 21;
+- current DR target object count: 22;
+- exactly one post-checkpoint attachment row/object is the recovery-smoke addition and is not treated as checkpoint data;
+- result: `M11_FULL_DR_INTEGRITY=PASS`;
+- retained evidence: `docs/operations/M11_PHASE4_FULL_DR_EVIDENCE.md`.
+
+Timing boundary:
+
+- DB restore/invariant component: 16.051 seconds to verification;
+- Garage restore/verification component: 0.766 seconds;
+- no end-to-end full DR RTO or effective full-system RPO is claimed because the exercise did not retain one authoritative recovery start and business-ready end boundary.
 
 Required sequence:
 
@@ -424,7 +463,7 @@ Internal design target RTO ≤ 60 minutes becomes a claim only if measured.
 
 ## Phase 5 — residual recovery decision
 
-Status: PLANNED
+Status: ACTIVE
 
 After PITR and full DR evidence:
 
@@ -473,36 +512,20 @@ Likely M11 implementation areas:
 
 ## Immediate next work
 
-Execute **Phase 4 — full DR rebuild and business recovery**.
+Execute **Phase 5 — residual recovery decision**.
 
-Phase 3 whole-system checkpoint is complete and retained in:
+Phase 4 full DR recovery correctness and business readiness are live-verified and retained in:
 
-`docs/operations/M11_PHASE3_CHECKPOINT_EVIDENCE.md`
+`docs/operations/M11_PHASE4_FULL_DR_EVIDENCE.md`
 
-Verified Phase 3 recovery source:
+Do not repeat the successful DB restore, Garage restore, HTTPS smoke, representative business
+workflow, or restored checkpoint integrity verification merely for confirmation.
 
-- checkpoint ID: `m11-checkpoint-20260916T121255Z`;
-- PostgreSQL full backup: `20260916-121314F`;
-- backup start/stop WAL segment: `000000010000000200000087`;
-- Garage object count: 21;
-- Garage manifest SHA-256:
-  `b6749631671f489160740c6e27c30d4aedb69e8cc80914cfc8253129ed0607c8`;
-- frozen start → complete backup verification: 76.718 seconds;
-- frozen start → writes resumed: 98.711 seconds;
-- post-resume representative HTTPS business smoke: PASS.
+Phase 5 must:
 
-The temporary full-DR topology, exact checkpoint database restore, matching Garage object restore, and exact release activation are now live-verified.
-The immediate next work is establishing the DR public HTTPS boundary before final business/integrity verification.
+1. compare the verified Phase 2 PITR result and Phase 4 full-DR result with the frozen recovery targets;
+2. retain the lack of authoritative end-to-end full-DR RTO/effective RPO measurement as an explicit limitation rather than inventing a value;
+3. identify at most one bounded corrective change only if the recovery evidence itself justifies it;
+4. otherwise record that no corrective implementation is justified and proceed to Phase 6 closeout.
 
-Phase 4 must:
-
-1. configure the six recovery service nodes through the dedicated repository-owned DR automation;
-2. restore PostgreSQL from `20260916-121314F` without replaying later WAL beyond the checkpoint boundary;
-3. restore Garage objects from the matching checkpoint manifest;
-4. activate the intended application/frontend release against only the recovery data path;
-5. verify business and attachment invariants;
-6. run representative HTTPS workflow against the recovered environment;
-7. measure checkpoint age/effective RPO and full DR RTO.
-
-Do not restore into the retained Seoul runtime.
-Do not change the frozen backup architecture.
+Do not add PostgreSQL HA, multi-region HA, another backup platform, or another storage layer.

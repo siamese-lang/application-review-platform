@@ -249,79 +249,67 @@ Active plan:
 
 `docs/plans/active/M11-disaster-recovery.md`
 
-Frozen recovery scope:
+Phases 1–4 are complete from their defined live-verification boundaries.
 
-- pgBackRest manages PostgreSQL backup, WAL archiving, restore, and PITR;
-- DB PITR is verified independently before full DR;
-- `backup-01` holds an independent Garage object backup and key/size/SHA-256/timestamp manifest;
-- whole-system backup uses the frozen maintenance checkpoint sequence;
-- full DR restores into newly created recovery infrastructure, not the retained live VMs;
-- PostgreSQL automatic failover and multi-region HA remain out of scope.
+Primary evidence:
 
-Current implementation state:
-
-- optional `backup-01` infrastructure is implemented and live;
-- pgBackRest remote repository configuration is installed;
-- PostgreSQL WAL archive is enabled and live-verified;
-- historical Phase 1 full backup `20260916-090503F` completed successfully and supported the
-  verified Phase 2 PITR experiment; it was later expired by the repository's two-full retention
-  policy during Phase 3;
-- Phase 1 post-backup WAL archive advanced through at least
-  `00000001000000020000007C`;
-- Garage object backup run `m11-phase1-20260916T090953Z` verified 21 objects;
-- retained manifest SHA-256:
-  `42ab06b602af75011bf081ae642d8b2308a0cbb531a324e8c5bef4267f083893`;
-- Phase 1 evidence:
+- Phase 1 backup foundation:
   `docs/operations/M11_PHASE1_BACKUP_FOUNDATION_EVIDENCE.md`;
-- disposable `recovery-db-01` is live and isolated from the retained Seoul database;
-- independent PITR target:
-  `2026-09-16T10:44:13.321143+00`;
-- recovered marker state: PRE included / POST excluded;
-- verified DB PITR RTO: 27.229 seconds;
-- marker-granularity recovery gap: ≤ 1.087882 seconds before the target;
-- retained live marker was cleaned from `db-01`;
-- Phase 2 evidence:
+- Phase 2 independent PostgreSQL PITR:
   `docs/operations/M11_PHASE2_PITR_EVIDENCE.md`;
-- M11 restore-only CI now uses lightweight `m11-recovery-static`; validation run
-  `35087862266` completed successfully in about 7 seconds.
+- Phase 3 verified whole-system checkpoint:
+  `docs/operations/M11_PHASE3_CHECKPOINT_EVIDENCE.md`;
+- Phase 4 full DR recovery:
+  `docs/operations/M11_PHASE4_FULL_DR_EVIDENCE.md`.
 
-Phase 3 retained result:
+Phase 4 retained recovery identities:
 
-- checkpoint ID: `m11-checkpoint-20260916T121255Z`;
-- successful checkpoint repository main:
-  `7bdf3b51d25d7caceade2d9ce09a6a587960bff3`;
-- mutation gate drained 2 Nginx workers before the frozen interval;
-- app process stopped to freeze scheduled attachment reconciliation;
-- attachment counts before/after backup:
-  `PENDING=0, DELETE_PENDING=0, AVAILABLE=17, FAILED=0, TOTAL=17`;
-- pgBackRest full backup: `20260916-121314F`;
-- backup start/stop WAL:
-  `000000010000000200000087`;
-- Garage backup verified 21 objects;
-- manifest SHA-256:
+- checkpoint: `m11-checkpoint-20260916T121255Z`;
+- frozen checkpoint boundary: `2026-09-16T12:13:11.077Z`;
+- PostgreSQL backup: `20260916-121314F`;
+- Garage manifest SHA-256:
   `b6749631671f489160740c6e27c30d4aedb69e8cc80914cfc8253129ed0607c8`;
-- frozen start → backup verification: 76.718 seconds;
-- frozen start → writes resumed: 98.711 seconds;
-- application health recovered;
-- final mutation gate: DISABLED;
-- representative post-resume HTTPS business smoke: PASS;
-- Phase 3 evidence:
-  `docs/operations/M11_PHASE3_CHECKPOINT_EVIDENCE.md`.
+- release:
+  `d90eb558bdb6317d49b0a7ce82148ddeb4b5babf`;
+- public DR HTTPS boundary: PASS;
+- representative applicant/reviewer workflow: PASS;
+- restored checkpoint full integrity: `M11_FULL_DR_INTEGRITY=PASS`.
 
-Retention note:
+Checkpoint integrity result:
 
-- successful Phase 3 backup creation expired historical Phase 1 backup
-  `20260916-090503F` under `repo1-retention-full=2`;
-- the Phase 2 PITR evidence remains valid historical evidence;
-- Phase 4 recovery source is the verified checkpoint backup `20260916-121314F`.
+- reviewer/state ownership mismatches: 0;
+- reviewer/history ownership mismatches: 0;
+- history transition/chain mismatches: 0/0;
+- audit subject/actor ownership mismatches: 0/0;
+- checkpoint PENDING/FAILED/DELETE_PENDING: 0/0/0;
+- checkpoint AVAILABLE attachment rows: 17;
+- all 17 DB-referenced checkpoint attachments matched manifest and restored Garage key/size/SHA-256;
+- checkpoint manifest objects: 21;
+- current DR target objects: 22;
+- one post-checkpoint attachment row/object is the representative recovery-smoke addition and
+  remains explicitly separated from checkpoint data.
+
+Measured component timings:
+
+- DB restore command: 10.961 seconds;
+- DB ready: 15.006 seconds;
+- DB initial invariant verification: 16.051 seconds;
+- Garage restore + complete target verification: 0.766 seconds.
+
+Do not claim full-DR RTO or effective full-system RPO from these component measurements. The
+exercise did not retain one authoritative end-to-end recovery start and business-ready end
+boundary.
+
+PR #163 final head `6e68b320b4bee3c84244a9588ec0bf5ef5d2b733` passed CI
+`35113214792`; merged main `6b964f62fdc2c606446865d4bcdace8defc56de6` passed post-merge CI `35113354947`.
 
 Immediate next boundary:
 
-**Phase 4 — full DR rebuild and business recovery**
+**Phase 5 — residual recovery decision.**
 
-Start from the verified Phase 3 checkpoint. Review the temporary recovery topology before
-apply, restore into new recovery infrastructure only, and measure recovery through business-ready
-verification. Do not alter or restore over the retained Seoul runtime.
+Decide from the retained evidence whether one bounded corrective change is justified. Do not
+repeat successful Phase 4 recovery paths merely for confirmation. If no corrective change is
+evidence-supported, record that decision and proceed to Phase 6 closeout.
 
 ## Do not revisit unless new evidence requires it
 
