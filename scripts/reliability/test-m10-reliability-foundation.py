@@ -127,4 +127,59 @@ subprocess.run(
     check=True,
 )
 
-print("M10 Phase 1 reliability foundation contract: PASS")
+
+r1_driver = read("workload/k6/m10-r1-process-failure.js")
+r1_runner = read("scripts/reliability/run-m10-r1.sh")
+
+for token in [
+    "profile: 'r1-process-failure'",
+    "exec: 'sessionContinuity'",
+    "exec: 'publicApiProbe'",
+    "exec: 'staticEdgeProbe'",
+    "m10_r1_session_login_attempts",
+    "M10_R1_SESSION_READY",
+    "M10_R1_STATE|probe=",
+    "sleep(0.25)",
+]:
+    require(r1_driver, token, "M10 R1 probe driver")
+
+for token in [
+    "systemctl kill --kill-who=main --signal=SIGKILL arp.service",
+    "Restart=on-failure",
+    "M10_R1_SYSTEMD_AUTO_RESTART=PASS",
+    "M10_R1_PERSISTED_SESSION_RECOVERY=PASS",
+    "M10_R1_STATIC_EDGE_OUTAGE=NOT_OBSERVED",
+    "M10_R1_UNRELATED_DATA_SERVICES_HEALTHY=PASS",
+    "deploy/cloud-smoke.sh",
+    "m10-db-invariants.sql",
+    "capture-m10-prometheus.py",
+    '"scenario": "R1-application-process-failure"',
+    '"fault_injected": True',
+    "EMERGENCY_RECOVERY: arp.service is not active; starting it.",
+]:
+    require(r1_runner, token, "M10 R1 runner")
+
+for forbidden in [
+    "systemctl stop arp.service",
+    "pkill",
+    "kill -9",
+    "tofu apply",
+    "gcloud compute instances stop",
+    "StrictHostKeyChecking=no",
+]:
+    if forbidden in r1_runner:
+        raise SystemExit(f"M10 R1 runner must not contain: {forbidden}")
+
+if r1_driver.count("sessionLoginAttempts.add(1)") != 1:
+    raise SystemExit("R1 session probe must perform a single explicit login path")
+
+subprocess.run(
+    ["node", "--check", str(ROOT / "workload/k6/m10-r1-process-failure.js")],
+    check=True,
+)
+subprocess.run(
+    ["bash", "-n", str(ROOT / "scripts/reliability/run-m10-r1.sh")],
+    check=True,
+)
+
+print("M10 reliability foundation and R1 contracts: PASS")
