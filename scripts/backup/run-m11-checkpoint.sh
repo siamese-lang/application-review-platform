@@ -11,7 +11,8 @@ if [[ ! $checkpoint_id =~ ^[A-Za-z0-9._-]+$ || ${#checkpoint_id} -gt 80 ]]; then
 fi
 
 if [[ -z ${ARP_OSLOGIN_USER:-} || -z ${ARP_OSLOGIN_SSH_KEY:-} || -z ${ARP_OSLOGIN_KNOWN_HOSTS:-} ]]; then
-  exec "$root/deploy/with-oslogin-ssh.py" --ttl-seconds 1800 -- "$0" "$checkpoint_id"
+  exec "$root/deploy/with-oslogin-ssh.py" --ttl-seconds 1800 -- \
+    "$root/scripts/backup/run-m11-checkpoint.sh" "$checkpoint_id"
 fi
 
 for command in ansible-playbook curl python3 ssh tofu; do
@@ -207,16 +208,16 @@ chmod 0600 "$secret_vars"
 
 echo "M11_CHECKPOINT_ID=$checkpoint_id"
 
+gate_enabled=true
 gate_output=$(run_gate enable)
 printf '%s\n' "$gate_output"
-gate_enabled=true
 grep -Fq 'M11_MUTATION_GATE=ENABLED' <<<"$gate_output" || {
   echo "mutation gate enable did not return the expected state" >&2
   exit 1
 }
 
-ssh_node "$app_ip" sudo systemctl stop arp
 app_stopped=true
+ssh_node "$app_ip" sudo systemctl stop arp
 stopped_state=$(ssh_node "$app_ip" systemctl is-active arp || true)
 [[ $stopped_state == inactive ]] || {
   echo "arp.service did not reach inactive state: $stopped_state" >&2
@@ -284,7 +285,6 @@ echo "M11_CHECKPOINT_APP_STATE=HEALTHY"
 
 disable_output=$(run_gate disable)
 printf '%s\n' "$disable_output"
-gate_enabled=false
 grep -Fq 'M11_MUTATION_GATE=DISABLED' <<<"$disable_output" || {
   echo "mutation gate disable did not return the expected state" >&2
   exit 1
@@ -296,6 +296,7 @@ grep -Fq 'M11_MUTATION_GATE=DISABLED' <<<"$final_gate" || {
   echo "mutation gate is not disabled after checkpoint" >&2
   exit 1
 }
+gate_enabled=false
 
 writes_resumed_at=$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)
 echo "M11_CHECKPOINT_WRITES_RESUMED_AT=$writes_resumed_at"
