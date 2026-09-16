@@ -29,6 +29,7 @@ require(
 
 require(
     "deploy/closeout-m11-backup.sh",
+    "inventory_file=$(mktemp --suffix=.yml)",
     "output -json inventory",
     "generate-inventory.py",
     "with-oslogin-ssh.py",

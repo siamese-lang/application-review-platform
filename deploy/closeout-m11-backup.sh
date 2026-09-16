@@ -3,7 +3,7 @@ set -euo pipefail
 umask 077
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-inventory_file=$(mktemp)
+inventory_file=$(mktemp --suffix=.yml)
 trap 'rm -f "$inventory_file"' EXIT
 
 tofu -chdir="$root/infra/opentofu" output -json inventory \
