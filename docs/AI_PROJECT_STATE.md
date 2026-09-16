@@ -117,11 +117,13 @@ automatically mean it must be selected.
 
 ## Next milestone
 
-Next planned milestone: **M12 Portfolio**.
+Current milestone: **M12 Portfolio — ACTIVE**.
 
-M12 has not been started by this M11 closeout. Its purpose is to select and compress the
-strongest retained evidence into portfolio/resume/interview material without inventing new
-technical depth.
+Active plan:
+
+`docs/plans/active/M12-portfolio.md`
+
+Current slice: Phase 1 — normalize M6/M9/M10/M11 evidence and select only 2–3 non-overlapping primary stories. No new technical implementation or experiment is planned.
 
 ## Do not revisit unless new evidence requires it
 
@@ -138,4 +140,4 @@ technical depth.
 > @GitHub `siamese-lang/application-review-platform` 작업을 계속한다.  
 > 먼저 `AGENTS.md`와 `docs/AI_PROJECT_STATE.md`를 읽고 current `main`을 source of truth로 사용하라.  
 > M1–M11은 완료되었으므로 성공한 구현·부하·장애·복구 실험을 재실행하거나 재설계하지 마라.  
-> 다음 계획 milestone은 M12 Portfolio다. `docs/portfolio/PORTFOLIO_EVIDENCE_MAP.md`와 기존 E5/E4 evidence cards를 기준으로 최종 2–3개 문제해결 스토리를 선별하고, 새 기술을 추가하지 말고 기존 증거를 이력서·포트폴리오·면접 설명으로 압축하라.
+> M12 Portfolio가 ACTIVE다. `docs/plans/active/M12-portfolio.md`와 `docs/portfolio/PORTFOLIO_EVIDENCE_MAP.md`를 기준으로 Phase 1부터 진행하라. 먼저 M6/M9/M10/M11 후보를 같은 증거 기준으로 비교하고 최종 2–3개 문제해결 스토리를 선별하라. 새 기술이나 새 실험을 추가하지 마라.
