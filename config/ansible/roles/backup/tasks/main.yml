@@ -1,7 +1,7 @@
 ---
 - name: Install backup repository packages
   ansible.builtin.apt:
-    name: [pgbackrest, python3-boto3]
+    name: [acl, pgbackrest, python3-boto3]
     state: present
     update_cache: true
 
