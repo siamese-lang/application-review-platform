@@ -1,0 +1,57 @@
+---
+- name: Remove temporary M11 PostgreSQL archive wiring after backup teardown
+  hosts: db
+  become: true
+  tasks:
+    - name: Detect PostgreSQL major version
+      ansible.builtin.shell: "set -o pipefail && pg_config --version | awk '{print $2}' | cut -d. -f1"
+      args:
+        executable: /bin/bash
+      register: m11_closeout_pg_major
+      changed_when: false
+
+    - name: Remove M11 pgBackRest archive drop-in
+      ansible.builtin.file:
+        path: "/etc/postgresql/{{ m11_closeout_pg_major.stdout }}/main/conf.d/pgbackrest-archive.conf"
+        state: absent
+      register: m11_archive_dropin
+
+    - name: Read current PostgreSQL archive settings
+      ansible.builtin.command:
+        argv:
+          - psql
+          - -Atqc
+          - "SELECT current_setting('archive_mode') || '|' || current_setting('archive_command');"
+      become_user: postgres
+      register: m11_archive_state_before
+      changed_when: false
+
+    - name: Restart PostgreSQL after removing temporary archive wiring
+      ansible.builtin.service:
+        name: "postgresql@{{ m11_closeout_pg_major.stdout }}-main.service"
+        state: restarted
+        enabled: true
+      when: m11_archive_dropin.changed or m11_archive_state_before.stdout != 'off|'
+
+    - name: Verify PostgreSQL archive wiring is disabled
+      ansible.builtin.command:
+        argv:
+          - psql
+          - -Atqc
+          - "SELECT current_setting('archive_mode') || '|' || current_setting('archive_command');"
+      become_user: postgres
+      register: m11_archive_state_after
+      changed_when: false
+
+    - name: Require standalone PostgreSQL archive state
+      ansible.builtin.assert:
+        that:
+          - m11_archive_state_after.stdout == 'off|'
+        fail_msg: >-
+          PostgreSQL still has temporary M11 archive wiring:
+          {{ m11_archive_state_after.stdout }}
+
+    - name: Remove stale database-host pgBackRest repository configuration
+      ansible.builtin.file:
+        path: /etc/pgbackrest/pgbackrest.conf
+        state: absent

@@ -543,10 +543,11 @@ Closeout sequence:
 2. generate and review the OpenTofu destroy plan for temporary M11 recovery resources only;
 3. destroy only the reviewed temporary recovery resources;
 4. restore retained Seoul VMs stopped for the Phase 4 quota workaround as required;
-5. verify the retained service path and final persistent OpenTofu no-drift;
-6. retain sanitized M11 closeout evidence and unresolved limitations;
-7. update the portfolio evidence map and create an M11 evidence card only if the recovery story
+5. remove the temporary M11 PostgreSQL WAL-archive wiring after `backup-01` teardown, then verify `archive_mode=off` and an empty `archive_command`;
+6. verify the retained service path and final persistent OpenTofu no-drift;
+7. retain sanitized M11 closeout evidence and unresolved limitations;
+8. update the portfolio evidence map and create an M11 evidence card only if the recovery story
    meets the repository evidence standard;
-8. move the M11 plan to completed and require exact-head plus post-merge main CI success.
+9. move the M11 plan to completed and require exact-head plus post-merge main CI success.
 
 Do not destroy retained Seoul persistent disks or retained service definitions.
