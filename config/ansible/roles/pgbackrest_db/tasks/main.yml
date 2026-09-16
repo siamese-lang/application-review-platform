@@ -1,7 +1,7 @@
 ---
 - name: Install pgBackRest on PostgreSQL host
   ansible.builtin.apt:
-    name: pgbackrest
+    name: [acl, pgbackrest]
     state: present
     update_cache: true
 

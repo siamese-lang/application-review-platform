@@ -74,6 +74,7 @@ require(
 )
 require(
     "config/ansible/roles/backup/tasks/main.yml",
+    "acl",
     "pgbackrest",
     "python3-boto3",
     "/srv/backup/pgbackrest",
@@ -85,6 +86,7 @@ require(
 )
 require(
     "config/ansible/roles/pgbackrest_db/tasks/main.yml",
+    "name: [acl, pgbackrest]",
     "Authorize repository service on database for pgBackRest only",
     "Authorize database service on repository for pgBackRest only",
     "no-agent-forwarding,no-X11-forwarding,no-port-forwarding",
