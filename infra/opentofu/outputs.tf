@@ -64,6 +64,13 @@ output "ssh_inventory" {
         zone       = google_compute_instance.backup[0].zone
         private_ip = google_compute_instance.backup[0].network_interface[0].network_ip
       }
+    } : {},
+    var.enable_recovery_db ? {
+      "recovery-db-01" = {
+        role       = "recovery_db"
+        zone       = google_compute_instance.recovery_db[0].zone
+        private_ip = google_compute_instance.recovery_db[0].network_interface[0].network_ip
+      }
     } : {}
   )
 }
