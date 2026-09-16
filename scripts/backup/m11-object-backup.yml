@@ -1,0 +1,51 @@
+---
+- name: Run M11 checkpoint Garage object backup
+  hosts: backup
+  gather_facts: false
+  become: true
+  vars:
+    m11_checkpoint_root: "/srv/backup/objects/checkpoints/{{ m11_checkpoint_id }}"
+    m11_object_root: "{{ m11_checkpoint_root }}/data"
+    m11_manifest_path: "{{ m11_checkpoint_root }}/manifest.json"
+  tasks:
+    - name: Validate checkpoint object-backup inputs
+      ansible.builtin.assert:
+        that:
+          - m11_checkpoint_id is match('^[A-Za-z0-9._-]+$')
+          - garage_app_access_key | length > 0
+          - garage_app_secret_key | length > 0
+          - m11_garage_endpoint | length > 0
+          - m11_garage_bucket | length > 0
+      no_log: true
+
+    - name: Inspect checkpoint object-backup destination
+      ansible.builtin.stat:
+        path: "{{ m11_checkpoint_root }}"
+      register: m11_checkpoint_object_destination
+
+    - name: Refuse to overwrite an existing checkpoint object backup
+      ansible.builtin.assert:
+        that:
+          - not m11_checkpoint_object_destination.stat.exists
+        fail_msg: >-
+          Checkpoint object-backup destination already exists. Preserve the partial/previous
+          evidence and use a new checkpoint id.
+
+    - name: Copy Garage objects into the independent checkpoint repository
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/python3
+          - /usr/local/lib/arp/garage_object_backup.py
+          - --endpoint
+          - "{{ m11_garage_endpoint }}"
+          - --bucket
+          - "{{ m11_garage_bucket }}"
+          - --output-root
+          - "{{ m11_object_root }}"
+          - --manifest
+          - "{{ m11_manifest_path }}"
+      environment:
+        GARAGE_ACCESS_KEY: "{{ garage_app_access_key }}"
+        GARAGE_SECRET_KEY: "{{ garage_app_secret_key }}"
+      become_user: pgbackrest
+      no_log: true
