@@ -27,6 +27,7 @@ jobs:
       m8_workload_foundation_static: ${{ steps.classify.outputs.m8_workload_foundation_static }}
       m8_dataset_tooling_static: ${{ steps.classify.outputs.m8_dataset_tooling_static }}
       m10_reliability_static: ${{ steps.classify.outputs.m10_reliability_static }}
+      m11_recovery_static: ${{ steps.classify.outputs.m11_recovery_static }}
       release_publish: ${{ steps.classify.outputs.release_publish }}
     steps:
       - uses: actions/checkout@v4
@@ -106,6 +107,18 @@ jobs:
           bash -n scripts/reliability/run-m10-control.sh
           python3 -m py_compile scripts/reliability/capture-m10-prometheus.py
           node --check workload/k6/m10-normal.js
+
+  m11-recovery-static:
+    needs: changes
+    if: needs.changes.outputs.m11_recovery_static == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate M11 PITR execution tooling
+        run: |
+          python3 scripts/deploy/test-m11-pitr-execution.py
+          bash -n scripts/restore/run-m11-pitr-marker.sh
+          bash -n scripts/restore/run-m11-pitr-restore.sh
 
   m7-observability-infrastructure-static:
     needs: changes
@@ -722,10 +735,19 @@ jobs:
         run: bash scripts/deploy/test-delivery-identity-contract.sh
       - name: Verify provider locks were not rewritten
         run: git diff --exit-code -- infra/opentofu/.terraform.lock.hcl infra/opentofu/bootstrap/.terraform.lock.hcl
+      - name: Cache Ansible collections
+        id: ansible-collections-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ansible/collections
+          key: ansible-collections-${{ runner.os }}-${{ hashFiles('config/ansible/requirements.yml') }}
       - name: Install Ansible and required collections
+        shell: bash
         run: |
           python -m pip install 'ansible-core>=2.17,<2.20'
-          ansible-galaxy collection install -r config/ansible/requirements.yml
+          if [[ "${{ steps.ansible-collections-cache.outputs.cache-hit }}" != "true" ]]; then
+            ansible-galaxy collection install -r config/ansible/requirements.yml
+          fi
       - name: Check Ansible syntax
         working-directory: config/ansible
         run: |
