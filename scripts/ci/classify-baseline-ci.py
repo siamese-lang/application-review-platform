@@ -117,12 +117,14 @@ def classify(paths: set[str], *, force_full: bool = False) -> dict[str, bool]:
             "deploy/with-oslogin-ssh.py",
             "deploy/build-and-configure.sh",
             "deploy/bootstrap-garage.sh",
+            "deploy/configure-m11-full-dr-foundation.sh",
             "deploy/check-prerequisites.sh",
             "deploy/tofu-bootstrap-plan.sh",
             "deploy/tofu-init-plan.sh",
             "scripts/deploy/test-delivery-identity-contract.sh",
             "scripts/deploy/test-m11-backup-foundation.py",
             "scripts/deploy/test-m11-full-dr-infrastructure.py",
+            "scripts/deploy/test-m11-full-dr-foundation.py",
         ),
     )
 
@@ -139,6 +141,7 @@ def classify(paths: set[str], *, force_full: bool = False) -> dict[str, bool]:
         (
             "scripts/restore/**",
             "scripts/deploy/test-m11-pitr-execution.py",
+            "scripts/deploy/test-m11-full-dr-foundation.py",
         ),
     )
 
@@ -276,6 +279,11 @@ def self_test() -> None:
     m11_full_dr_infra = classify({"scripts/deploy/test-m11-full-dr-infrastructure.py"})
     assert m11_full_dr_infra["m4_infrastructure_static"]
     assert not m11_full_dr_infra["release_publish"]
+
+    m11_full_dr_foundation = classify({"scripts/deploy/test-m11-full-dr-foundation.py"})
+    assert m11_full_dr_foundation["m4_infrastructure_static"]
+    assert m11_full_dr_foundation["m11_recovery_static"]
+    assert not m11_full_dr_foundation["release_publish"]
 
     ci_config = classify({
         ".github/workflows/baseline-ci.yml",
