@@ -127,7 +127,7 @@ def classify(paths: set[str], *, force_full: bool = False) -> dict[str, bool]:
             "scripts/deploy/test-m11-full-dr-infrastructure.py",
             "scripts/deploy/test-m11-full-dr-foundation.py",
             "scripts/deploy/test-m11-full-dr-garage-restore.py",
-            "scripts/restore/m11-full-dr-garage-restore.yml",
+            "config/ansible/full-dr-garage-restore.yml",
         ),
     )
 
@@ -147,6 +147,7 @@ def classify(paths: set[str], *, force_full: bool = False) -> dict[str, bool]:
             "scripts/deploy/test-m11-full-dr-foundation.py",
             "scripts/deploy/test-m11-full-dr-garage-restore.py",
             "deploy/restore-m11-full-dr-garage.sh",
+            "config/ansible/full-dr-garage-restore.yml",
         ),
     )
 

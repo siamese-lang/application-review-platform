@@ -60,4 +60,4 @@ printf '%s\n' "$inventory_json" | "$root/deploy/generate-inventory.py" >"$invent
 sops --decrypt "$ARP_SECRETS_FILE" >"$secret_vars"
 
 cd "$root/config/ansible"
-"$root/deploy/with-oslogin-ssh.py" -- ansible-playbook   --inventory "$inventory_file"   "$root/scripts/restore/m11-full-dr-garage-restore.yml"   --extra-vars "@$secret_vars"   --extra-vars "m11_checkpoint_id=$checkpoint_id"   --extra-vars "m11_manifest_sha256=$manifest_sha256"
+"$root/deploy/with-oslogin-ssh.py" -- ansible-playbook   --inventory "$inventory_file"   full-dr-garage-restore.yml   --extra-vars "@$secret_vars"   --extra-vars "m11_checkpoint_id=$checkpoint_id"   --extra-vars "m11_manifest_sha256=$manifest_sha256"
