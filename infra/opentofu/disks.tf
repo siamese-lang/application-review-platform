@@ -33,3 +33,18 @@ resource "google_compute_disk" "backup" {
     role      = "backup"
   }
 }
+
+
+resource "google_compute_disk" "recovery_db" {
+  count = var.enable_recovery_db ? 1 : 0
+  name  = "arp-recovery-db-01-data"
+  zone  = var.backup_zone
+  type  = "pd-standard"
+  size  = var.recovery_db_data_disk_size_gb
+
+  labels = {
+    lifecycle = "temporary"
+    milestone = "m11"
+    role      = "recovery-db"
+  }
+}
