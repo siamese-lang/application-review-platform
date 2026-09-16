@@ -145,6 +145,15 @@
   loop:
     - /var/log/nginx/arp-access.log
     - /var/log/nginx/arp-error.log
+- name: Install default-disabled M11 mutation guard
+  ansible.builtin.copy:
+    src: arp-mutation-guard.conf
+    dest: /etc/nginx/snippets/arp-mutation-guard.conf
+    owner: root
+    group: root
+    mode: '0644'
+    force: false
+
 - name: Install SPA and API routing contract
   ansible.builtin.copy:
     src: arp-spa.conf
