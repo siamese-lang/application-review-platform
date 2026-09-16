@@ -16,7 +16,7 @@
   roles: [garage, alloy]
 - hosts: app
   become: true
-  roles: [release_runtime, app, alloy]
+  roles: [release_runtime, garage_proxy, app, alloy]
 - hosts: edge
   become: true
   roles: [release_runtime, edge, alloy]
