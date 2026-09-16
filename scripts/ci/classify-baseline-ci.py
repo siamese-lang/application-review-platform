@@ -125,6 +125,9 @@ def classify(paths: set[str], *, force_full: bool = False) -> dict[str, bool]:
             "deploy/tofu-bootstrap-plan.sh",
             "deploy/tofu-init-plan.sh",
             "scripts/deploy/test-delivery-identity-contract.sh",
+            "scripts/deploy/test-m11-backup-foundation.py",
+            "scripts/backup/**",
+            "scripts/restore/**",
         ),
     )
 
@@ -236,6 +239,10 @@ def self_test() -> None:
     assert infra["m4_infrastructure_static"]
     assert infra["m8_workload_foundation_static"]
     assert not infra["release_publish"]
+
+    m11_backup = classify({"scripts/backup/garage_object_backup.py"})
+    assert m11_backup["m4_infrastructure_static"]
+    assert not m11_backup["release_publish"]
 
     full = classify({".github/workflows/baseline-ci.yml"})
     assert all(value for key, value in full.items() if key != "release_publish")
