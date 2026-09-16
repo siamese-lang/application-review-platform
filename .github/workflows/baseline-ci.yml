@@ -733,6 +733,7 @@ jobs:
           ansible-playbook --inventory 'localhost,' bootstrap-ops.yml --syntax-check
           ansible-playbook --inventory 'loadgen,' loadgen.yml --syntax-check
           ansible-playbook --inventory inventory/example.yml backup.yml --syntax-check
+          ansible-playbook --inventory inventory/example.yml recovery-db.yml --syntax-check
           ansible-playbook --inventory inventory/example.yml release.yml --syntax-check \
             --extra-vars 'arp_release_sha=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa arp_release_bundle_dir=/tmp/bundle'
           ansible-playbook --inventory inventory/example.yml rollback.yml --syntax-check \
@@ -747,6 +748,8 @@ jobs:
         run: python3 scripts/deploy/test-m11-backup-foundation.py
       - name: Validate M11 Phase 2 PITR infrastructure contract
         run: python3 scripts/deploy/test-m11-pitr-infrastructure.py
+      - name: Validate M11 Phase 2 recovery DB foundation contract
+        run: python3 scripts/deploy/test-m11-pitr-recovery-foundation.py
       - name: Verify M4 bootstrap wiring
         shell: bash
         run: |
