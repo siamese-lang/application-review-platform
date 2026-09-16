@@ -1,0 +1,110 @@
+---
+- name: Install pgBackRest on PostgreSQL host
+  ansible.builtin.apt:
+    name: pgbackrest
+    state: present
+    update_cache: true
+
+- name: Find PostgreSQL major version for pgBackRest configuration
+  ansible.builtin.shell: "set -o pipefail && pg_config --version | awk '{print $2}' | cut -d. -f1"
+  args:
+    executable: /bin/bash
+  register: pgbackrest_pg_major
+  changed_when: false
+
+- name: Create PostgreSQL service SSH directory
+  ansible.builtin.file:
+    path: /var/lib/postgresql/.ssh
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: '0700'
+
+- name: Create PostgreSQL service SSH key once
+  ansible.builtin.command:
+    argv:
+      - ssh-keygen
+      - -q
+      - -t
+      - rsa
+      - -b
+      - "4096"
+      - -N
+      - ""
+      - -f
+      - /var/lib/postgresql/.ssh/id_rsa
+  args:
+    creates: /var/lib/postgresql/.ssh/id_rsa
+  become_user: postgres
+
+- name: Read PostgreSQL service public key
+  ansible.builtin.slurp:
+    src: /var/lib/postgresql/.ssh/id_rsa.pub
+  register: pgbackrest_db_public_key_raw
+
+- name: Authorize repository service on database for pgBackRest only
+  ansible.posix.authorized_key:
+    user: postgres
+    key: "{{ hostvars['backup-01']['pgbackrest_repo_public_key'] }}"
+    key_options: 'no-agent-forwarding,no-X11-forwarding,no-port-forwarding,command="/usr/bin/pgbackrest ${SSH_ORIGINAL_COMMAND#* }"'
+    state: present
+
+- name: Authorize database service on repository for pgBackRest only
+  ansible.posix.authorized_key:
+    user: pgbackrest
+    key: "{{ pgbackrest_db_public_key_raw.content | b64decode | trim }}"
+    key_options: 'no-agent-forwarding,no-X11-forwarding,no-port-forwarding,command="/usr/bin/pgbackrest ${SSH_ORIGINAL_COMMAND#* }"'
+    state: present
+  delegate_to: backup-01
+
+- name: Pin backup host key for PostgreSQL service
+  ansible.builtin.known_hosts:
+    name: "{{ backup_private_ip }}"
+    path: /var/lib/postgresql/.ssh/known_hosts
+    key: >-
+      {{ backup_private_ip }}
+      {{ hostvars['backup-01']['pgbackrest_repo_host_key'].split()[0] }}
+      {{ hostvars['backup-01']['pgbackrest_repo_host_key'].split()[1] }}
+    state: present
+  become_user: postgres
+
+- name: Write database-host pgBackRest configuration
+  ansible.builtin.template:
+    src: pgbackrest.conf.j2
+    dest: /etc/pgbackrest/pgbackrest.conf
+    owner: root
+    group: postgres
+    mode: '0640'
+
+- name: Configure PostgreSQL WAL archiving through pgBackRest
+  ansible.builtin.template:
+    src: postgresql-archive.conf.j2
+    dest: "/etc/postgresql/{{ pgbackrest_pg_major.stdout }}/main/conf.d/pgbackrest-archive.conf"
+    owner: postgres
+    group: postgres
+    mode: '0644'
+  notify: Restart PostgreSQL cluster for pgBackRest
+
+- name: Flush PostgreSQL archive configuration
+  ansible.builtin.meta: flush_handlers
+
+- name: Create pgBackRest stanza from repository host
+  ansible.builtin.command:
+    argv: [pgbackrest, --stanza=arp, stanza-create]
+  become_user: pgbackrest
+  delegate_to: backup-01
+  register: pgbackrest_stanza_create
+  changed_when: "'already exists' not in pgbackrest_stanza_create.stdout"
+
+- name: Check pgBackRest from PostgreSQL host
+  ansible.builtin.command:
+    argv: [pgbackrest, --stanza=arp, check]
+  become_user: postgres
+  changed_when: false
+
+- name: Check pgBackRest from repository host
+  ansible.builtin.command:
+    argv: [pgbackrest, --stanza=arp, check]
+  become_user: pgbackrest
+  delegate_to: backup-01
+  changed_when: false
