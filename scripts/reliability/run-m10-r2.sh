@@ -514,17 +514,33 @@ print(f"M10_R2_PUBLIC_API_PROBE_ERROR_RATE={api_error:.6f}")
 print(f"M10_R2_STATIC_EDGE_ERROR_RATE={static_error:.6f}")
 print(f"M10_R2_SUPPORT_ERROR_RATE={support_error:.6f}")
 print(f"M10_R2_NON_FILE_ERROR_RATE={non_file_error:.6f}")
-for family in [
-    "list_detail",
-    "create_save",
-    "submit_resubmit",
-    "reviewer_queue_detail",
-    "review_action",
-    "attachment",
-]:
+
+families = [
+    ("list_detail", 40.0),
+    ("create_save", 15.0),
+    ("submit_resubmit", 10.0),
+    ("reviewer_queue_detail", 20.0),
+    ("review_action", 10.0),
+    ("attachment", 5.0),
+]
+attempts = {
+    family: value(f"m10_r2_{family}_attempts", "count")
+    for family, _ in families
+}
+total_attempts = sum(attempts.values())
+if total_attempts <= 0:
+    raise SystemExit("R2 workload recorded no business attempts")
+
+print(f"M10_R2_BUSINESS_ATTEMPTS={int(total_attempts)}")
+for family, target in families:
     count = value(f"m10_r2_{family}_requests", "count")
     error = value(f"m10_r2_{family}_errors", "value")
-    print(f"M10_R2_FAMILY_{family.upper()}=requests={int(count)} error_rate={error:.6f}")
+    observed = attempts[family] / total_attempts * 100.0
+    print(
+        f"M10_R2_FAMILY_{family.upper()}="
+        f"attempts={int(attempts[family])} requests={int(count)} "
+        f"offered_pct={observed:.2f} target_pct={target:.2f} error_rate={error:.6f}"
+    )
 print("M10_R2_EXPECTED_DB_DEPENDENT_OUTAGE_OBSERVED=PASS")
 PY
 )
