@@ -1,13 +1,12 @@
 # M10 Reliability Evidence
 
-Status: ACTIVE / PHASE 1 HEALTHY CONTROL COMPLETE
+Status: ACTIVE / R1 COMPLETE / R2 NEXT
 
 ## Scope
 
 M10 verifies bounded runtime failure behavior against the deployed Application Review Platform.
-Phase 1 establishes the healthy control and evidence harness before any fault is injected.
-
-No R1/R2/R3 fault has been injected yet.
+Phase 1 established the healthy control and evidence harness before fault injection.
+R1 application process failure has now been executed and retained. R2/R3 have not yet been injected.
 
 ## Repository/runtime identity
 
@@ -190,19 +189,159 @@ The healthy control passed before any deliberate fault was introduced.
 
 M10 may therefore proceed to Phase 2 / R1 application process failure.
 
-## Next evidence boundary — R1
+## Phase 2 / R1 application process failure
 
-Before fault injection, inspect and retain the live app-01 systemd state:
+Run:
 
-- exact unit name;
-- MainPID;
-- ActiveState/SubState;
-- Restart policy;
-- RestartSec;
-- NRestarts;
-- current backend release identity.
+`m10-r1-20260916T032112Z-c6847aa8`
 
-The initial R1 failure mechanism must exercise `Restart=on-failure`; an intentional
-`systemctl stop` is not an equivalent crash test.
+Artifact directory on ops-01:
 
-Do not inject the fault until the live unit/process state is confirmed.
+`/srv/arp/repo/build/reliability/runs/m10-r1-20260916T032112Z-c6847aa8`
+
+Source and release identity:
+
+- source SHA: `c6847aa83eabc8fafad700c09e78bbfd3f290a94`;
+- backend release: `d90eb558bdb6317d49b0a7ce82148ddeb4b5babf`.
+
+Pre-fault live state:
+
+- unit: `arp.service`;
+- state: `active/running`;
+- MainPID: `39661`;
+- `Restart=on-failure`;
+- effective restart delay reported by systemd: 100 ms;
+- `NRestarts=0`.
+
+Fault mechanism:
+
+`systemctl kill --kill-who=main --signal=SIGKILL arp.service`
+
+The VM, PostgreSQL, Garage, and Nginx were not intentionally stopped.
+
+Fault timestamp:
+
+`2026-09-16T03:21:48.378Z`
+
+Systemd automatic restart observation:
+
+- new MainPID: `42960`;
+- restart observed at: `2026-09-16T03:21:49.739Z`;
+- fault → new active MainPID observation: **1.361 s**;
+- `NRestarts: 0 → 1`;
+- automatic restart check: **PASS**.
+
+This distinction matters: systemd restarted the Java process quickly, but process existence
+was not treated as service recovery.
+
+### Observed client blast radius and business recovery
+
+Public API:
+
+- first observed DOWN:
+  `2026-09-16T03:21:49.362Z`;
+- first observed UP after the outage:
+  `2026-09-16T03:22:11.366Z`;
+- observed DOWN→UP interval: **22.004 s**;
+- fault → first recovered public API observation: **22.988 s**;
+- R1 public-API probe error rate across the full run: **12.1113%**.
+
+Persisted applicant session:
+
+- first observed DOWN:
+  `2026-09-16T03:21:49.378Z`;
+- first observed UP:
+  `2026-09-16T03:22:11.380Z`;
+- observed DOWN→UP interval: **22.002 s**;
+- session probe error rate across the full run: **12.2720%**;
+- login attempts during the probe run: **1**.
+
+The session probe did not reauthenticate after the crash. The pre-existing PostgreSQL-backed
+session became usable again after the application recovered, so persisted-session recovery
+passed.
+
+Static edge:
+
+- static-edge probe error rate: **0%**;
+- no static-edge DOWN transition was observed.
+
+The measured blast radius therefore matched the service boundaries: the backend API/session
+path was interrupted while the Nginx-served static edge remained available.
+
+### Unrelated data-service state
+
+Exact-window Prometheus evidence retained:
+
+- PostgreSQL `pg_up`: 13 samples, all healthy;
+- Garage `up`: 39 node samples, all healthy.
+
+Result:
+
+`M10_R1_UNRELATED_DATA_SERVICES_HEALTHY=PASS`
+
+This supports attribution of the observed outage to the application process failure rather
+than a coincident PostgreSQL or Garage outage.
+
+### Post-recovery business verification
+
+The full deployed HTTPS smoke passed after R1 and exercised:
+
+- SPA/API routing;
+- applicant registration and session;
+- application create/edit/submit;
+- Garage attachment upload/download SHA-256 integrity;
+- reviewer start/approve;
+- final status/history.
+
+The retained smoke application ID was `9885`.
+
+Post-R1 database invariants:
+
+- attachment DELETE_PENDING: 0;
+- attachment FAILED: 0;
+- attachment PENDING: 0;
+- audit subject-count violations: 0;
+- AVAILABLE attachment metadata incomplete: 0;
+- IN_REVIEW application without reviewer: 0;
+- non-DRAFT application/latest-history status mismatch: 0.
+
+Overall:
+
+`M10_R1_DB_INVARIANTS=PASS`
+
+### R1 conclusion
+
+The original R1 hypothesis was supported by the retained run:
+
+- a Java-process crash interrupted API/session access;
+- systemd automatically restarted the service without redeployment;
+- the process itself was observed restarted after about 1.36 s;
+- actual externally observed API/session recovery took about 23 s;
+- the existing PostgreSQL-backed session survived and required no re-login;
+- the static edge remained available;
+- PostgreSQL and Garage remained healthy;
+- the representative business flow and retained database invariants were correct after
+  recovery.
+
+No corrective change is justified from R1 alone. In particular, no redundant application
+replica is added merely to eliminate a bounded single-process restart interval.
+
+The useful reliability result is the gap between **process restart time** and **business
+recovery time**: operational recovery must be measured at the user/API boundary, not from
+`systemctl active` alone.
+
+## Next evidence boundary — R2
+
+Before injecting a PostgreSQL outage, inspect and retain the actual db-01 service/cluster
+state and select the reversible service-level stop/start command from that live state.
+
+Confirm at minimum:
+
+- PostgreSQL service/unit or cluster identity;
+- active/running state;
+- PostgreSQL version/cluster/port;
+- current postmaster PID;
+- exporter state separately from the database service;
+- application service remains healthy before the fault.
+
+Do not inject R2 until the live database service boundary is confirmed.

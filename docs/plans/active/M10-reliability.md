@@ -343,7 +343,7 @@ Temporary loadgen lifecycle for Phase 1:
 
 ### Phase 2 — R1 application process failure
 
-Status: ACTIVE
+Status: COMPLETE
 
 Execute one bounded backend process crash.
 
@@ -362,9 +362,27 @@ Decision after observation:
 - if restart/session/recovery behavior fails, identify the smallest causal fix and rerun R1;
 - do not add redundant application replicas solely to make R1 look more sophisticated.
 
+Retained R1 result:
+
+- run: `m10-r1-20260916T032112Z-c6847aa8`;
+- source: `c6847aa83eabc8fafad700c09e78bbfd3f290a94`;
+- fault: SIGKILL to `arp.service` MainPID only;
+- MainPID: `39661 → 42960`;
+- `NRestarts: 0 → 1`;
+- systemd automatic restart observed after about 1.361 s;
+- public API DOWN→UP interval: 22.004 s;
+- fault → first recovered public API observation: 22.988 s;
+- persisted-session DOWN→UP interval: 22.002 s;
+- session login attempts remained 1, so recovery did not depend on re-login;
+- static edge error rate: 0%;
+- PostgreSQL and Garage telemetry remained healthy;
+- full post-recovery HTTPS business smoke: PASS;
+- all retained M10 DB invariants: zero/PASS;
+- no corrective change justified by R1.
+
 ### Phase 3 — R2 PostgreSQL outage during normal workload
 
-Status: PLANNED
+Status: ACTIVE
 
 Execute one bounded outage of the actual live PostgreSQL cluster/service while normal M10
 traffic is active.
