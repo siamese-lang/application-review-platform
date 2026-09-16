@@ -750,6 +750,8 @@ jobs:
         run: python3 scripts/deploy/test-m11-pitr-infrastructure.py
       - name: Validate M11 Phase 2 recovery DB foundation contract
         run: python3 scripts/deploy/test-m11-pitr-recovery-foundation.py
+      - name: Validate M11 Phase 2 PITR execution tooling contract
+        run: python3 scripts/deploy/test-m11-pitr-execution.py
       - name: Verify M4 bootstrap wiring
         shell: bash
         run: |
