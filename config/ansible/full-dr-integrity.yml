@@ -1,0 +1,299 @@
+---
+- name: Capture restored full DR missing integrity invariants
+  hosts: db
+  gather_facts: false
+  become: true
+  any_errors_fatal: true
+  tasks:
+    - name: Query reviewer, audit, history, and checkpoint attachment invariants
+      ansible.builtin.shell: |
+        set -euo pipefail
+        sudo -u postgres psql \
+          --no-psqlrc \
+          --set=ON_ERROR_STOP=1 \
+          --set=checkpoint_cutoff="$CHECKPOINT_CUTOFF" \
+          --dbname=arp \
+          -At <<'SQL'
+        SELECT json_build_object(
+          'reviewer_state_mismatch', (
+            SELECT count(*)
+            FROM applications a
+            JOIN users applicant ON applicant.id = a.applicant_id
+            LEFT JOIN users reviewer ON reviewer.id = a.reviewer_id
+            WHERE applicant.role <> 'APPLICANT'
+               OR (a.reviewer_id IS NOT NULL AND reviewer.role <> 'REVIEWER')
+               OR (a.status = 'DRAFT' AND a.reviewer_id IS NOT NULL)
+               OR (
+                 a.status IN ('IN_REVIEW','NEEDS_REVISION','APPROVED','REJECTED')
+                 AND a.reviewer_id IS NULL
+               )
+          ),
+          'reviewer_history_ownership_mismatch', (
+            SELECT count(*)
+            FROM application_status_history h
+            JOIN applications a ON a.id = h.application_id
+            JOIN users actor ON actor.id = h.changed_by
+            WHERE (
+                h.from_status IN ('DRAFT','NEEDS_REVISION')
+                AND h.to_status = 'SUBMITTED'
+                AND (h.changed_by <> a.applicant_id OR actor.role <> 'APPLICANT')
+              )
+               OR (
+                h.from_status = 'SUBMITTED'
+                AND h.to_status = 'IN_REVIEW'
+                AND (
+                  a.reviewer_id IS NULL
+                  OR h.changed_by <> a.reviewer_id
+                  OR actor.role <> 'REVIEWER'
+                )
+              )
+               OR (
+                h.from_status = 'IN_REVIEW'
+                AND h.to_status IN ('NEEDS_REVISION','APPROVED','REJECTED')
+                AND (
+                  a.reviewer_id IS NULL
+                  OR h.changed_by <> a.reviewer_id
+                  OR actor.role <> 'REVIEWER'
+                )
+              )
+          ),
+          'history_transition_mismatch', (
+            SELECT count(*)
+            FROM application_status_history h
+            WHERE NOT (
+              (h.from_status = 'DRAFT' AND h.to_status = 'SUBMITTED')
+              OR (h.from_status = 'NEEDS_REVISION' AND h.to_status = 'SUBMITTED')
+              OR (h.from_status = 'SUBMITTED' AND h.to_status = 'IN_REVIEW')
+              OR (
+                h.from_status = 'IN_REVIEW'
+                AND h.to_status IN ('NEEDS_REVISION','APPROVED','REJECTED')
+              )
+            )
+          ),
+          'history_chain_mismatch', (
+            SELECT count(*)
+            FROM (
+              SELECT
+                application_id,
+                from_status,
+                row_number() OVER (
+                  PARTITION BY application_id
+                  ORDER BY changed_at, id
+                ) AS sequence_no,
+                lag(to_status) OVER (
+                  PARTITION BY application_id
+                  ORDER BY changed_at, id
+                ) AS previous_to_status
+              FROM application_status_history
+            ) ordered
+            WHERE (sequence_no = 1 AND from_status <> 'DRAFT')
+               OR (sequence_no > 1 AND previous_to_status <> from_status)
+          ),
+          'audit_subject_mismatch', (
+            SELECT count(*)
+            FROM audit_events e
+            WHERE (
+                e.event_type IN (
+                  'APPLICATION_CREATED','APPLICATION_EDITED','APPLICATION_SUBMITTED',
+                  'REVIEW_STARTED','REVISION_REQUESTED','APPLICATION_APPROVED','APPLICATION_REJECTED'
+                )
+                AND (
+                  e.application_id IS NULL
+                  OR e.program_id IS NOT NULL
+                  OR e.subject_user_id IS NOT NULL
+                )
+              )
+               OR (
+                e.event_type = 'USER_REGISTERED'
+                AND (
+                  e.subject_user_id IS NULL
+                  OR e.application_id IS NOT NULL
+                  OR e.program_id IS NOT NULL
+                )
+              )
+               OR (
+                e.event_type IN ('PROGRAM_CREATED','PROGRAM_UPDATED','PROGRAM_PUBLISHED')
+                AND (
+                  e.program_id IS NULL
+                  OR e.application_id IS NOT NULL
+                  OR e.subject_user_id IS NOT NULL
+                )
+              )
+          ),
+          'audit_actor_ownership_mismatch', (
+            SELECT count(*)
+            FROM audit_events e
+            JOIN users actor ON actor.id = e.actor_id
+            LEFT JOIN applications a ON a.id = e.application_id
+            WHERE (
+                e.event_type IN ('APPLICATION_CREATED','APPLICATION_EDITED','APPLICATION_SUBMITTED')
+                AND (
+                  a.id IS NULL
+                  OR e.actor_id <> a.applicant_id
+                  OR actor.role <> 'APPLICANT'
+                )
+              )
+               OR (
+                e.event_type IN (
+                  'REVIEW_STARTED','REVISION_REQUESTED','APPLICATION_APPROVED','APPLICATION_REJECTED'
+                )
+                AND (
+                  a.id IS NULL
+                  OR a.reviewer_id IS NULL
+                  OR e.actor_id <> a.reviewer_id
+                  OR actor.role <> 'REVIEWER'
+                )
+              )
+               OR (
+                e.event_type = 'USER_REGISTERED'
+                AND (
+                  e.subject_user_id IS NULL
+                  OR e.actor_id <> e.subject_user_id
+                  OR actor.role <> 'APPLICANT'
+                )
+              )
+               OR (
+                e.event_type IN ('PROGRAM_CREATED','PROGRAM_UPDATED','PROGRAM_PUBLISHED')
+                AND actor.role <> 'ADMIN'
+              )
+          ),
+          'checkpoint_attachment_uploader_mismatch', (
+            SELECT count(*)
+            FROM attachments att
+            JOIN applications a ON a.id = att.application_id
+            JOIN users uploader ON uploader.id = att.uploaded_by
+            WHERE att.created_at <= :'checkpoint_cutoff'::timestamptz
+              AND (
+                att.uploaded_by <> a.applicant_id
+                OR uploader.role <> 'APPLICANT'
+              )
+          ),
+          'checkpoint_pending_attachments', (
+            SELECT count(*)
+            FROM attachments
+            WHERE created_at <= :'checkpoint_cutoff'::timestamptz
+              AND status = 'PENDING'
+          ),
+          'checkpoint_failed_attachments', (
+            SELECT count(*)
+            FROM attachments
+            WHERE created_at <= :'checkpoint_cutoff'::timestamptz
+              AND status = 'FAILED'
+          ),
+          'checkpoint_delete_pending_attachments', (
+            SELECT count(*)
+            FROM attachments
+            WHERE created_at <= :'checkpoint_cutoff'::timestamptz
+              AND status = 'DELETE_PENDING'
+          ),
+          'post_checkpoint_attachment_rows', (
+            SELECT count(*)
+            FROM attachments
+            WHERE created_at > :'checkpoint_cutoff'::timestamptz
+          ),
+          'checkpoint_available_attachments', COALESCE((
+            SELECT json_agg(
+              json_build_object(
+                'id', id,
+                'application_id', application_id,
+                'object_key', object_key,
+                'size_bytes', size_bytes,
+                'sha256', sha256
+              )
+              ORDER BY id
+            )
+            FROM attachments
+            WHERE status = 'AVAILABLE'
+              AND created_at <= :'checkpoint_cutoff'::timestamptz
+          ), '[]'::json)
+        )::text;
+        SQL
+      args:
+        executable: /bin/bash
+      environment:
+        CHECKPOINT_CUTOFF: "{{ m11_checkpoint_cutoff }}"
+      register: m11_full_dr_db_snapshot
+      changed_when: false
+
+- name: Verify restored checkpoint attachment metadata against Garage and manifest
+  hosts: backup
+  gather_facts: false
+  become: true
+  any_errors_fatal: true
+  vars:
+    m11_checkpoint_root: "/srv/backup/objects/checkpoints/{{ m11_checkpoint_id }}"
+    m11_manifest_path: "{{ m11_checkpoint_root }}/manifest.json"
+    m11_integrity_db_snapshot: /run/arp-m11-full-dr-db-snapshot.json
+    m11_integrity_secret_file: /run/arp-m11-full-dr-integrity.env
+    m11_dr_garage_endpoint: "http://{{ hostvars[groups['storage'][0]].ansible_host }}:{{ garage_s3_port }}"
+  tasks:
+    - name: Validate full DR integrity inputs
+      ansible.builtin.assert:
+        that:
+          - m11_checkpoint_id is match('^[A-Za-z0-9._-]+$')
+          - m11_manifest_sha256 is match('^[0-9a-f]{64}$')
+          - m11_checkpoint_cutoff is match('^[0-9]{4}-[0-9]{2}-[0-9]{2}T')
+          - m11_expected_checkpoint_available | int > 0
+          - garage_app_access_key | length > 0
+          - garage_app_secret_key | length > 0
+      no_log: true
+
+    - name: Install full DR integrity verifier
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../../scripts/restore/verify_m11_full_dr_integrity.py"
+        dest: /usr/local/lib/arp/verify_m11_full_dr_integrity.py
+        owner: root
+        group: pgbackrest
+        mode: '0750'
+
+    - name: Verify full DR checkpoint attachment integrity with temporary credentials
+      block:
+        - name: Write database invariant snapshot
+          ansible.builtin.copy:
+            dest: "{{ m11_integrity_db_snapshot }}"
+            owner: pgbackrest
+            group: pgbackrest
+            mode: '0600'
+            content: "{{ hostvars[groups['db'][0]].m11_full_dr_db_snapshot.stdout }}\n"
+
+        - name: Write temporary Garage integrity credential file
+          ansible.builtin.copy:
+            dest: "{{ m11_integrity_secret_file }}"
+            owner: pgbackrest
+            group: pgbackrest
+            mode: '0600'
+            content: |
+              GARAGE_ACCESS_KEY={{ garage_app_access_key }}
+              GARAGE_SECRET_KEY={{ garage_app_secret_key }}
+          no_log: true
+
+        - name: Verify checkpoint attachment metadata and restored objects
+          ansible.builtin.shell: |
+            set -euo pipefail
+            . "{{ m11_integrity_secret_file }}"
+            export GARAGE_ACCESS_KEY GARAGE_SECRET_KEY
+            /usr/bin/python3 /usr/local/lib/arp/verify_m11_full_dr_integrity.py \
+              --db-snapshot "{{ m11_integrity_db_snapshot }}" \
+              --manifest "{{ m11_manifest_path }}" \
+              --manifest-sha256 "{{ m11_manifest_sha256 }}" \
+              --endpoint "{{ m11_dr_garage_endpoint }}" \
+              --bucket "{{ garage_bucket }}" \
+              --expected-checkpoint-available "{{ m11_expected_checkpoint_available }}"
+          args:
+            executable: /bin/bash
+          become_user: pgbackrest
+          register: m11_full_dr_integrity
+          changed_when: false
+
+        - name: Report sanitized full DR integrity result
+          ansible.builtin.debug:
+            var: m11_full_dr_integrity.stdout_lines
+      always:
+        - name: Remove temporary integrity files
+          ansible.builtin.file:
+            path: "{{ item }}"
+            state: absent
+          loop:
+            - "{{ m11_integrity_db_snapshot }}"
+            - "{{ m11_integrity_secret_file }}"
+          no_log: true
