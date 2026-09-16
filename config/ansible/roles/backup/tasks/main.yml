@@ -13,6 +13,14 @@
     home: /var/lib/pgbackrest
     shell: /bin/bash
 
+- name: Normalize pgBackRest service home ownership
+  ansible.builtin.file:
+    path: /var/lib/pgbackrest
+    state: directory
+    owner: pgbackrest
+    group: pgbackrest
+    mode: '0750'
+
 - name: Create backup mount point
   ansible.builtin.file:
     path: /srv/backup

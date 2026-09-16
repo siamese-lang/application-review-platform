@@ -77,6 +77,8 @@ require(
     "acl",
     "pgbackrest",
     "python3-boto3",
+    "Normalize pgBackRest service home ownership",
+    "path: /var/lib/pgbackrest",
     "/srv/backup/pgbackrest",
     "/srv/backup/objects",
     "ssh-keygen",
