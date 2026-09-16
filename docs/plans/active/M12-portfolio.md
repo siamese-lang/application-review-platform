@@ -96,7 +96,7 @@ and overlap/trade-offs instead.
 
 ## Phase 1 — candidate normalization and final story selection
 
-Status: ACTIVE
+Status: COMPLETE
 
 Required work:
 
@@ -121,7 +121,7 @@ No résumé bullets are written before this selection is committed.
 
 ## Phase 2 — portfolio master narrative
 
-Status: PENDING
+Status: ACTIVE
 
 Create one reviewer-facing project narrative that explains the final system, not the milestone
 history.
@@ -223,12 +223,29 @@ M12 is complete when:
 - active plan is moved to completed;
 - exact-head and post-merge main CI pass.
 
+## Phase 1 result
+
+Final primary stories:
+
+1. M9 PostgreSQL query bottleneck — E5;
+2. M10 Garage fixed-endpoint reliability — E5;
+3. M11 disaster recovery correctness — E5.
+
+M6 immutable release/rollback remains a high-value supporting story.
+
+Selection evidence:
+
+`docs/portfolio/M12_STORY_SELECTION.md`
+
+M9 was promoted from E4 to E5 without a new experiment because its retained M9 section already
+contains the complete E5 chain: observed problem, SQL/plan analysis, rejected alternative,
+bounded intervention, same-condition W2/W3 remeasurement, and retained trade-offs.
+
 ## Immediate next work
 
-Execute **Phase 1 — candidate normalization and final story selection**.
+Execute **Phase 2 — portfolio master narrative**.
 
-Do not edit résumé bullets or portfolio prose yet.
-
-First produce the evidence-based comparison of M6, M9, M10, and M11, including whether M9
-qualifies for E5 from its already-retained evidence and which 2–3 stories provide the strongest
-non-overlapping coverage.
+Create `docs/portfolio/PROJECT_PORTFOLIO.md` as a final-system narrative. Do not organize it
+as M1 → M11 history. Lead with the support-program workflow and final architecture, then use
+M9/M10/M11 as the three evidence-backed problem-solving cases. M6 should appear as delivery
+support, not a fourth headline story.
