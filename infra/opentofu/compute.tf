@@ -126,10 +126,5 @@ resource "google_compute_instance" "backup" {
     block-project-ssh-keys  = "TRUE"
   }
 
-  service_account {
-    email  = local.workload_service_account_email
-    scopes = ["https://www.googleapis.com/auth/cloud-platform"]
-  }
-
   allow_stopping_for_update = true
 }
