@@ -889,3 +889,44 @@ boundaries:
 Do not add database HA or a Garage endpoint load balancer/failover path silently. If a
 corrective change crosses the frozen architecture boundary, document an ADR/explicit
 architecture decision first. Otherwise retain the limitation and proceed to M10 closeout.
+
+
+## Phase 5 decision — one bounded corrective change
+
+R1-R3 evidence was reviewed before selecting any repair.
+
+Decision:
+
+- R1 application-process failure: no architecture change. Existing systemd restart behavior
+  recovered the service and retained business state.
+- R2 PostgreSQL outage: retain the single-primary availability limitation. PostgreSQL HA
+  would be a materially larger database architecture change and is not introduced in M10.
+- R3a non-endpoint Garage loss: no correction; observed attachment and non-attachment
+  continuity remained clean.
+- R3b fixed storage-01 endpoint loss: correct this measured mismatch between Garage replica
+  availability and application attachment availability.
+
+Accepted corrective design:
+
+`ADR-005 — Use an app-local Nginx proxy for Garage S3 endpoint failover`
+
+The application will use `http://127.0.0.1:3910`; Nginx on app-01 will proxy to all three
+Garage S3 nodes. GCP app-to-S3 firewall access changes from the storage-01-specific endpoint
+tag to the existing `arp-storage` role tag.
+
+This is the only Phase 5 corrective change selected before retest.
+
+The 64 retained FAILED rows are not themselves treated as a new lifecycle bug: M3 explicitly
+defines FAILED as the durable classification for an upload/storage/verification failure.
+They remain evidence of the R3b endpoint outage. DELETE_PENDING retry behavior remains the
+reconciliation responsibility already defined by M3.
+
+Required revalidation:
+
+- deploy ADR-005 implementation;
+- rerun the same storage-01 Garage-container fault;
+- compare against R3b baseline;
+- require attachment existing-read/upload/download/delete continuity with 0% observed error;
+- require non-attachment/support continuity;
+- retain telemetry isolation and DB lifecycle evidence;
+- do not add another HA layer if the retest fails; preserve the result first.
