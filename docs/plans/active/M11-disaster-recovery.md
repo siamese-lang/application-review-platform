@@ -243,6 +243,57 @@ Status: NEXT
 Goal: restore the verified checkpoint into newly created recovery infrastructure and prove the
 business system, not only the processes, is recovered.
 
+### Phase 4 first slice — temporary full-DR topology
+
+Goal:
+
+- define the recovery service topology in OpenTofu before any create/apply;
+- preserve the production service boundaries required for business recovery;
+- keep retained Seoul runtime and backup-01 unchanged.
+
+Files/components:
+
+- `infra/opentofu/variables.tf`;
+- `infra/opentofu/network.tf`;
+- `infra/opentofu/compute.tf`;
+- `infra/opentofu/disks.tf`;
+- `infra/opentofu/firewall.tf`;
+- `infra/opentofu/outputs.tf`;
+- focused M11 infrastructure contract test/CI wiring.
+
+Planned recovery service topology:
+
+- dedicated Tokyo subnet `10.70.0.0/24`;
+- `dr-edge-01` — public HTTPS ingress only;
+- `dr-app-01` — private Spring/application tier;
+- `dr-db-01` — private PostgreSQL tier with a fresh recovery data disk;
+- `dr-storage-01/02/03` — private three-node Garage tier with fresh data disks;
+- retained `ops-01` remains the controller only;
+- retained `backup-01` remains the backup source only;
+- no duplicate observability or operations VM is required for the recovery service path.
+
+Constraints:
+
+- `enable_full_dr=false` by default;
+- no reused Seoul service VM or persistent data disk;
+- no public IP on app/db/storage nodes;
+- no workload service account on temporary DR VMs;
+- DR service tags/firewalls remain separate from retained service tags so production service
+  traffic cannot accidentally target recovery service nodes;
+- full DR requires `enable_backup=true`;
+- PostgreSQL restore traffic is limited to backup-01 ↔ dr-db-01 SSH;
+- Garage restore traffic is limited to backup-01 → dr-storage S3;
+- application traffic is limited to dr-edge → dr-app → dr-db/dr-storage;
+- Garage RPC is limited to the DR storage tier;
+- existing ops-01 SSH control path may reach DR nodes through the existing managed-host SSH rule.
+
+Verification before apply:
+
+- exact-head OpenTofu format/validate and M11 topology contract pass;
+- reviewed plan creates only the explicitly enabled temporary DR resources;
+- no retained Seoul resource is changed or destroyed;
+- no Phase 4 restore begins until the create plan is reviewed.
+
 Required sequence:
 
 1. create the reviewed temporary DR topology through IaC;
