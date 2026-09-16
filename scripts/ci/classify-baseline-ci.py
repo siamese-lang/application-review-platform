@@ -21,6 +21,7 @@ OUTPUTS = (
     "m8_workload_foundation_static",
     "m8_dataset_tooling_static",
     "m10_reliability_static",
+    "m11_backup_static",
     "m11_recovery_static",
     "release_publish",
 )
@@ -121,7 +122,14 @@ def classify(paths: set[str], *, force_full: bool = False) -> dict[str, bool]:
             "deploy/tofu-init-plan.sh",
             "scripts/deploy/test-delivery-identity-contract.sh",
             "scripts/deploy/test-m11-backup-foundation.py",
+        ),
+    )
+
+    m11_backup = any_match(
+        paths,
+        (
             "scripts/backup/**",
+            "scripts/deploy/test-m11-checkpoint-foundation.py",
         ),
     )
 
@@ -195,6 +203,7 @@ def classify(paths: set[str], *, force_full: bool = False) -> dict[str, bool]:
         "m8_workload_foundation_static": m8_workload,
         "m8_dataset_tooling_static": m8_dataset,
         "m10_reliability_static": m10_reliability,
+        "m11_backup_static": m11_backup,
         "m11_recovery_static": m11_recovery,
         "release_publish": release_material,
     }
@@ -244,9 +253,14 @@ def self_test() -> None:
     assert not infra["release_publish"]
 
     m11_backup = classify({"scripts/backup/garage_object_backup.py"})
-    assert m11_backup["m4_infrastructure_static"]
+    assert m11_backup["m11_backup_static"]
+    assert not m11_backup["m4_infrastructure_static"]
     assert not m11_backup["m11_recovery_static"]
     assert not m11_backup["release_publish"]
+
+    m11_checkpoint = classify({"scripts/backup/run-m11-mutation-gate.sh"})
+    assert m11_checkpoint["m11_backup_static"]
+    assert not m11_checkpoint["m4_infrastructure_static"]
 
     m11_restore = classify({"scripts/restore/run-m11-pitr-restore.sh"})
     assert m11_restore["m11_recovery_static"]

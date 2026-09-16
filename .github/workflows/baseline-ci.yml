@@ -27,6 +27,7 @@ jobs:
       m8_workload_foundation_static: ${{ steps.classify.outputs.m8_workload_foundation_static }}
       m8_dataset_tooling_static: ${{ steps.classify.outputs.m8_dataset_tooling_static }}
       m10_reliability_static: ${{ steps.classify.outputs.m10_reliability_static }}
+      m11_backup_static: ${{ steps.classify.outputs.m11_backup_static }}
       m11_recovery_static: ${{ steps.classify.outputs.m11_recovery_static }}
       release_publish: ${{ steps.classify.outputs.release_publish }}
     steps:
@@ -107,6 +108,24 @@ jobs:
           bash -n scripts/reliability/run-m10-control.sh
           python3 -m py_compile scripts/reliability/capture-m10-prometheus.py
           node --check workload/k6/m10-normal.js
+
+  m11-backup-static:
+    needs: changes
+    if: needs.changes.outputs.m11_backup_static == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate M11 backup and checkpoint tooling
+        run: |
+          python3 scripts/backup/test-m11-backup-tooling.py
+          python3 scripts/deploy/test-m11-checkpoint-foundation.py
+          bash -n scripts/backup/run-pgbackrest-full.sh
+          bash -n scripts/backup/run-m11-mutation-gate.sh
+          python3 -m py_compile \
+            scripts/backup/garage_object_backup.py \
+            scripts/backup/verify_object_backup.py \
+            scripts/backup/test-m11-backup-tooling.py \
+            scripts/deploy/test-m11-checkpoint-foundation.py
 
   m11-recovery-static:
     needs: changes
@@ -774,6 +793,8 @@ jobs:
         run: python3 scripts/deploy/test-m11-pitr-recovery-foundation.py
       - name: Validate M11 Phase 2 PITR execution tooling contract
         run: python3 scripts/deploy/test-m11-pitr-execution.py
+      - name: Validate M11 Phase 3 checkpoint foundation contract
+        run: python3 scripts/deploy/test-m11-checkpoint-foundation.py
       - name: Verify M4 bootstrap wiring
         shell: bash
         run: |
