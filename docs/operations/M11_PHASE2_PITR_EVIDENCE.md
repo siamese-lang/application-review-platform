@@ -2,7 +2,8 @@
 
 Status: VERIFIED LIVE  
 Milestone: M11 Disaster Recovery  
-Evidence date: 2026-09-16 UTC
+Evidence date: 2026-09-16 UTC  
+Successful restore repository main SHA: `947b9b387ec5f1974d5cf657dcd4cecd89207104`
 
 ## Scope
 
