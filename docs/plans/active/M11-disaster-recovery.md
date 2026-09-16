@@ -359,7 +359,7 @@ This timing is the Garage recovery component measurement, not the full-DR RTO.
 
 ### Phase 4 fourth slice — exact application/frontend release activation
 
-Status: ACTIVE
+Status: COMPLETE (LIVE)
 
 Implementation boundary:
 
@@ -371,6 +371,25 @@ Implementation boundary:
 - delegate migration work to `dr-db-01` through the DR `db` group;
 - activate frontend only after backend readiness succeeds;
 - do not target retained Seoul app/edge/db nodes.
+
+Live result:
+
+- retained bundle `d90eb558bdb6317d49b0a7ce82148ddeb4b5babf` passed the existing release manifest/checksum verifier on ops-01;
+- DR release activation completed with `dr-app-01` `failed=0/unreachable=0` and `dr-edge-01` `failed=0/unreachable=0`;
+- backend activation readiness passed before frontend activation;
+- result: `M11_DR_RELEASE_RC=0`.
+
+### Phase 4 fifth slice — public HTTPS recovery boundary
+
+Status: ACTIVE
+
+Implementation boundary:
+
+- bootstrap a Let's Encrypt short-lived IP certificate for the temporary `dr-edge-01` public address;
+- use `full_dr` / `full_dr_inventory` outputs only;
+- reconcile only the DR edge role after certificate installation;
+- keep normal TLS verification enabled and never use `curl -k` / `--insecure`;
+- require a successful public HTTPS programs API request before the representative business smoke.
 
 Required sequence:
 
@@ -472,8 +491,8 @@ Verified Phase 3 recovery source:
 - frozen start → writes resumed: 98.711 seconds;
 - post-resume representative HTTPS business smoke: PASS.
 
-The temporary full-DR topology, exact checkpoint database restore, and matching Garage object restore are now live-verified.
-The immediate next work is activating exact release `d90eb558bdb6317d49b0a7ce82148ddeb4b5babf` on the recovered app/edge path.
+The temporary full-DR topology, exact checkpoint database restore, matching Garage object restore, and exact release activation are now live-verified.
+The immediate next work is establishing the DR public HTTPS boundary before final business/integrity verification.
 
 Phase 4 must:
 
