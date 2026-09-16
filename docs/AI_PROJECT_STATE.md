@@ -216,25 +216,24 @@ Fixed scenario scope:
 
 Current phase:
 
-**Phase 2 — R1 application process failure**
+**Phase 3 — R2 PostgreSQL outage during normal workload**
 
 Immediate next boundary:
 
-1. retain the Phase 1 healthy-control result:
-   - `m10-control-20260916T025311Z-6d5f6ae8`;
-   - 8,905 business requests;
-   - non-file success 100%;
-   - non-file p95 90.339 ms;
-   - full HTTPS smoke PASS;
-   - DB invariants PASS;
-2. keep the recreated Tokyo `loadgen-01` as temporary M10 test infrastructure while R1–R3
-   are active;
-3. inspect app-01 live systemd state before any R1 fault:
-   exact unit, MainPID, restart policy, restart count, release identity;
-4. record the R1 hypothesis and expected blast radius before injecting the process failure;
-5. use a failure mechanism that exercises `Restart=on-failure`; do not use
-   `systemctl stop` as the initial R1 fault;
-6. return the runtime to verified healthy state before R2.
+1. retain R1 as complete:
+   - run `m10-r1-20260916T032112Z-c6847aa8`;
+   - systemd restart observed after about 1.361 s;
+   - fault → public API recovery about 22.988 s;
+   - persisted session recovered without re-login;
+   - static edge remained available;
+   - PostgreSQL/Garage remained healthy;
+   - post-recovery business smoke and DB invariants PASS;
+2. keep temporary Tokyo `loadgen-01` while R2/R3 remain active;
+3. inspect db-01 live PostgreSQL service/cluster and exporter state before any R2 fault;
+4. implement/review the bounded R2 runner against the confirmed live service boundary;
+5. execute one PostgreSQL outage under normal synthetic workload and restore it before R3;
+6. do not add PostgreSQL failover architecture merely because the expected single-primary
+   outage causes service unavailability.
 
 No HA architecture change is authorized in advance.
 
@@ -254,8 +253,8 @@ No HA architecture change is authorized in advance.
 > 먼저 `AGENTS.md`, `docs/AI_PROJECT_STATE.md`, `docs/plans/active/M10-reliability.md`
 > 를 읽고 repository 실제 상태를 source of truth로 사용하라.  
 > M1–M9은 완료되었으므로 재설계하거나 재실행하지 마라.  
-> M10 Reliability Phase 1 healthy control은 완료되었다. 현재 Phase 2 R1 application
-> process failure를 진행하되, fault 전에 app-01의 실제 systemd unit/PID/restart 상태를
+> M10 Reliability Phase 1과 Phase 2 R1은 완료되었다. 현재 Phase 3 R2 PostgreSQL
+> outage를 진행하되, fault 전에 db-01의 실제 PostgreSQL service/cluster/exporter 상태를
 > 먼저 확인하라.  
 > R1 app failure, R2 PostgreSQL failure, R3 Garage node failure만 초기 고정 범위로
 > 수행하고 R4는 M6 evidence를 재사용하며 R5/PITR은 M11로 남겨라.
