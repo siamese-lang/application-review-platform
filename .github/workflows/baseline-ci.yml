@@ -781,7 +781,7 @@ jobs:
           ansible-playbook --inventory inventory/example.yml backup.yml --syntax-check
           ansible-playbook --inventory inventory/example.yml recovery-db.yml --syntax-check
           ansible-playbook --inventory inventory/example.yml full-dr-foundation.yml --syntax-check
-          ansible-playbook --inventory inventory/example.yml ../../scripts/restore/m11-full-dr-garage-restore.yml --syntax-check
+          ansible-playbook --inventory inventory/example.yml full-dr-garage-restore.yml --syntax-check
           ansible-playbook --inventory inventory/example.yml release.yml --syntax-check \
             --extra-vars 'arp_release_sha=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa arp_release_bundle_dir=/tmp/bundle'
           ansible-playbook --inventory inventory/example.yml rollback.yml --syntax-check \
