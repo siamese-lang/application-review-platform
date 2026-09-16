@@ -6,7 +6,7 @@ import sys
 nodes = json.load(sys.stdin)
 groups = {
     name: {"hosts": {}}
-    for name in ("edge", "app", "db", "storage", "ops", "observability", "backup")
+    for name in ("edge", "app", "db", "storage", "ops", "observability", "backup", "recovery_db")
 }
 for name, node in sorted(nodes.items()):
     groups[node["role"]]["hosts"][name] = {
