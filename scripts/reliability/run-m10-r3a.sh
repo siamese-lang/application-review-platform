@@ -345,6 +345,20 @@ sleep 20
 "${ssh_s1[@]}" sudo docker exec garage /garage -c /etc/garage.toml status \
   > "$run_dir/garage-status-during-fault.txt" 2>&1
 
+python3 - "$run_dir/garage-status-during-fault.txt" "$node2_short" <<'PY'
+import sys
+text = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+short = sys.argv[2]
+if "==== HEALTHY NODES ====" not in text:
+    raise SystemExit("Garage fault-time status has no HEALTHY NODES section")
+healthy = text.split("==== HEALTHY NODES ====", 1)[1]
+if "====" in healthy:
+    healthy = healthy.split("====", 1)[0]
+if short in healthy:
+    raise SystemExit("storage-02 still appears in HEALTHY NODES during R3a fault")
+print("M10_R3A_STORAGE02_REMOVED_FROM_HEALTHY_SET=PASS")
+PY
+
 echo "STEP: retain database attachment lifecycle snapshot during R3a fault"
 cat "$root/scripts/reliability/m10-db-invariants.sql" |
   "${ssh_db[@]}" sudo -u postgres psql -d arp -v ON_ERROR_STOP=1 \
@@ -373,12 +387,10 @@ echo "STEP: start storage-02 Garage container at $restore_at"
 "${ssh_s2[@]}" sudo docker start garage >/dev/null
 
 recovered_at=$(
-  "${ssh_s1[@]}" bash -s -- "$node2_short" "$storage2_ip" <<'REMOTE'
+  "${ssh_s1[@]}" bash -s -- "$node2_short" <<'REMOTE'
 set -euo pipefail
 short=$1
-storage2_ip=$2
 for _ in $(seq 1 600); do
-  if ssh_opts=; then :; fi
   status=$(sudo docker exec garage /garage -c /etc/garage.toml status 2>&1 || true)
   healthy=$(awk '
     /==== HEALTHY NODES ====/ {inside=1; next}
