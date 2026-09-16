@@ -12,6 +12,7 @@ if [[ ! $target_time =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.]+[+-][0-9]{2}(:?[0-9]
   echo "invalid PITR target timestamp: $target_time" >&2
   exit 2
 fi
+pgbackrest_target_time=${target_time/T/ }
 if [[ ! $marker_code =~ ^M11-PITR-[A-Za-z0-9._-]+$ || ${#marker_code} -gt 50 ]]; then
   echo "invalid marker code" >&2
   exit 2
@@ -36,7 +37,7 @@ start_iso=$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)
 sudo -u postgres pgbackrest \
   --stanza=arp \
   --type=time \
-  "--target=$target_time" \
+  "--target=$pgbackrest_target_time" \
   --target-action=promote \
   restore
 
