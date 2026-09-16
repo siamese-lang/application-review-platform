@@ -1,0 +1,38 @@
+---
+- name: Prepare full DR service hosts
+  hosts: edge:app:db:storage
+  become: true
+  any_errors_fatal: true
+  roles: [common]
+
+- name: Prepare full DR PostgreSQL restore target
+  hosts: db
+  become: true
+  any_errors_fatal: true
+  vars:
+    recovery_db_disk_device: /dev/disk/by-id/google-arp-data
+    recovery_db_listen_addresses: "127.0.0.1,{{ hostvars[groups['db'][0]].ansible_host }}"
+    recovery_db_app_private_ip: "{{ hostvars[groups['app'][0]].ansible_host }}"
+  roles: [recovery_db]
+
+- name: Prepare empty full DR Garage tier
+  hosts: storage
+  become: true
+  any_errors_fatal: true
+  roles: [garage]
+
+- name: Prepare full DR application host without activating a release
+  hosts: app
+  become: true
+  any_errors_fatal: true
+  vars:
+    db_private_ip: "{{ hostvars[groups['db'][0]].ansible_host }}"
+  roles: [release_runtime, garage_proxy, app]
+
+- name: Prepare full DR edge host without activating a frontend release
+  hosts: edge
+  become: true
+  any_errors_fatal: true
+  vars:
+    app_private_ip: "{{ hostvars[groups['app'][0]].ansible_host }}"
+  roles: [release_runtime, edge]
