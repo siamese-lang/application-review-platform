@@ -128,3 +128,51 @@ resource "google_compute_instance" "backup" {
 
   allow_stopping_for_update = true
 }
+
+
+resource "google_compute_instance" "recovery_db" {
+  count        = var.enable_recovery_db ? 1 : 0
+  name         = "recovery-db-01"
+  zone         = var.backup_zone
+  machine_type = var.recovery_db_machine_type
+  tags         = ["arp-recovery-db", "arp-managed"]
+
+  labels = {
+    lifecycle = "temporary"
+    milestone = "m11"
+    role      = "recovery-db"
+  }
+
+  boot_disk {
+    initialize_params {
+      image = var.boot_image
+      size  = var.boot_disk_size_gb
+      type  = "pd-standard"
+    }
+  }
+
+  attached_disk {
+    source      = google_compute_disk.recovery_db[0].id
+    device_name = "arp-recovery-db-data"
+  }
+
+  network_interface {
+    subnetwork = var.enable_backup ? google_compute_subnetwork.backup[0].id : null
+    network_ip = var.recovery_db_private_ip
+  }
+
+  metadata = {
+    enable-oslogin          = "TRUE"
+    enable-guest-attributes = "TRUE"
+    block-project-ssh-keys  = "TRUE"
+  }
+
+  lifecycle {
+    precondition {
+      condition     = var.enable_backup
+      error_message = "enable_recovery_db=true requires enable_backup=true so the verified M11 backup repository/subnet is available."
+    }
+  }
+
+  allow_stopping_for_update = true
+}

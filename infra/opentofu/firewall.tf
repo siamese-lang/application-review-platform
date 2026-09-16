@@ -172,3 +172,32 @@ resource "google_compute_firewall" "backup_garage_s3" {
     ports    = ["3900"]
   }
 }
+
+
+resource "google_compute_firewall" "backup_recovery_db_ssh" {
+  count       = var.enable_recovery_db ? 1 : 0
+  name        = "arp-backup-to-recovery-db-pgbackrest"
+  network     = google_compute_network.m4.name
+  direction   = "INGRESS"
+  source_tags = ["arp-backup"]
+  target_tags = ["arp-recovery-db"]
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
+}
+
+resource "google_compute_firewall" "recovery_db_backup_ssh" {
+  count       = var.enable_recovery_db ? 1 : 0
+  name        = "arp-recovery-db-to-backup-pgbackrest"
+  network     = google_compute_network.m4.name
+  direction   = "INGRESS"
+  source_tags = ["arp-recovery-db"]
+  target_tags = ["arp-backup"]
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
+}
