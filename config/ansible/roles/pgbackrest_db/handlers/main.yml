@@ -1,0 +1,6 @@
+---
+- name: Restart PostgreSQL cluster for pgBackRest
+  ansible.builtin.service:
+    name: "postgresql@{{ pgbackrest_pg_major.stdout }}-main.service"
+    state: restarted
+    enabled: true
