@@ -74,6 +74,12 @@ require(
 )
 require(
     "config/ansible/roles/backup/tasks/main.yml",
+    "Create pgBackRest configuration directory",
+    "path: /etc/pgbackrest",
+)
+
+require(
+    "config/ansible/roles/backup/tasks/main.yml",
     "acl",
     "pgbackrest",
     "python3-boto3",
@@ -86,6 +92,12 @@ require(
     "garage_object_backup.py",
     "verify_object_backup.py",
 )
+require(
+    "config/ansible/roles/pgbackrest_db/tasks/main.yml",
+    "Create pgBackRest configuration directory",
+    "path: /etc/pgbackrest",
+)
+
 require(
     "config/ansible/roles/pgbackrest_db/tasks/main.yml",
     "name: [acl, pgbackrest]",
