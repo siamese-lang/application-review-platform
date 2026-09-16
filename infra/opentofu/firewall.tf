@@ -130,3 +130,45 @@ resource "google_compute_firewall" "iap_ssh" {
     ports    = ["22"]
   }
 }
+
+resource "google_compute_firewall" "db_backup_ssh" {
+  count       = var.enable_backup ? 1 : 0
+  name        = "arp-db-to-backup-pgbackrest"
+  network     = google_compute_network.m4.name
+  direction   = "INGRESS"
+  source_tags = ["arp-db"]
+  target_tags = ["arp-backup"]
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
+}
+
+resource "google_compute_firewall" "backup_db_ssh" {
+  count       = var.enable_backup ? 1 : 0
+  name        = "arp-backup-to-db-pgbackrest"
+  network     = google_compute_network.m4.name
+  direction   = "INGRESS"
+  source_tags = ["arp-backup"]
+  target_tags = ["arp-db"]
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
+}
+
+resource "google_compute_firewall" "backup_garage_s3" {
+  count       = var.enable_backup ? 1 : 0
+  name        = "arp-backup-to-garage-s3"
+  network     = google_compute_network.m4.name
+  direction   = "INGRESS"
+  source_tags = ["arp-backup"]
+  target_tags = ["arp-storage"]
+
+  allow {
+    protocol = "tcp"
+    ports    = ["3900"]
+  }
+}
