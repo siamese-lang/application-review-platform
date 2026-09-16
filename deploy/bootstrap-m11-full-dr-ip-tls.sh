@@ -3,7 +3,7 @@ set -euo pipefail
 umask 077
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-: "${ACME_EMAIL:?Set the Let's Encrypt account email address}"
+: "${ACME_EMAIL:?Set the Lets Encrypt account email address}"
 
 if [[ -z ${ARP_OSLOGIN_USER:-} || -z ${ARP_OSLOGIN_SSH_KEY:-} || -z ${ARP_OSLOGIN_KNOWN_HOSTS:-} ]]; then
   exec "$root/deploy/with-oslogin-ssh.py" -- "$0" "$@"
