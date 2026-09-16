@@ -21,14 +21,9 @@ OUTPUTS = (
     "m8_workload_foundation_static",
     "m8_dataset_tooling_static",
     "m10_reliability_static",
+    "m11_recovery_static",
     "release_publish",
 )
-
-FULL_REGRESSION_PATHS = {
-    ".github/workflows/baseline-ci.yml",
-    "scripts/ci/classify-baseline-ci.py",
-}
-
 
 def matches(path: str, patterns: Iterable[str]) -> bool:
     return any(fnmatch.fnmatch(path, pattern) for pattern in patterns)
@@ -39,7 +34,7 @@ def any_match(paths: set[str], patterns: Iterable[str]) -> bool:
 
 
 def classify(paths: set[str], *, force_full: bool = False) -> dict[str, bool]:
-    full = force_full or bool(paths & FULL_REGRESSION_PATHS)
+    full = force_full
 
     backend = any_match(
         paths,
@@ -127,7 +122,14 @@ def classify(paths: set[str], *, force_full: bool = False) -> dict[str, bool]:
             "scripts/deploy/test-delivery-identity-contract.sh",
             "scripts/deploy/test-m11-backup-foundation.py",
             "scripts/backup/**",
+        ),
+    )
+
+    m11_recovery = any_match(
+        paths,
+        (
             "scripts/restore/**",
+            "scripts/deploy/test-m11-pitr-execution.py",
         ),
     )
 
@@ -193,6 +195,7 @@ def classify(paths: set[str], *, force_full: bool = False) -> dict[str, bool]:
         "m8_workload_foundation_static": m8_workload,
         "m8_dataset_tooling_static": m8_dataset,
         "m10_reliability_static": m10_reliability,
+        "m11_recovery_static": m11_recovery,
         "release_publish": release_material,
     }
 
@@ -242,9 +245,26 @@ def self_test() -> None:
 
     m11_backup = classify({"scripts/backup/garage_object_backup.py"})
     assert m11_backup["m4_infrastructure_static"]
+    assert not m11_backup["m11_recovery_static"]
     assert not m11_backup["release_publish"]
 
-    full = classify({".github/workflows/baseline-ci.yml"})
+    m11_restore = classify({"scripts/restore/run-m11-pitr-restore.sh"})
+    assert m11_restore["m11_recovery_static"]
+    assert not m11_restore["m4_infrastructure_static"]
+    assert not m11_restore["m1_application"]
+    assert not m11_restore["release_publish"]
+
+    m11_restore_contract = classify({"scripts/deploy/test-m11-pitr-execution.py"})
+    assert m11_restore_contract["m11_recovery_static"]
+    assert not m11_restore_contract["m4_infrastructure_static"]
+
+    ci_config = classify({
+        ".github/workflows/baseline-ci.yml",
+        "scripts/ci/classify-baseline-ci.py",
+    })
+    assert not any(ci_config.values())
+
+    full = classify(set(), force_full=True)
     assert all(value for key, value in full.items() if key != "release_publish")
     assert not full["release_publish"]
 
