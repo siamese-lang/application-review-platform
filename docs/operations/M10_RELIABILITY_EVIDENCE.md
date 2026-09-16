@@ -1,6 +1,6 @@
 # M10 Reliability Evidence
 
-Status: ACTIVE / R1-R2-R3a COMPLETE / R3b NEXT
+Status: ACTIVE / R1-R3 COMPLETE / PHASE 5 NEXT
 
 ## Scope
 
@@ -688,16 +688,204 @@ This result demonstrates observed service continuity for one non-endpoint Garage
 It does **not** demonstrate application attachment availability when the fixed endpoint
 storage-01 itself is unavailable.
 
-## Next evidence boundary — R3b
+## Phase 4 / R3b Garage fixed-endpoint node loss
 
-R3b must test the distinct fixed-endpoint failure boundary:
+Run:
 
-1. retain storage-02 and storage-03 healthy;
-2. stop only the storage-01 `garage` container;
-3. preserve attachment and non-attachment observations during the endpoint outage;
-4. preserve any partial attachment lifecycle state before repair or reconciliation;
-5. restore storage-01 and verify cluster, object, business, and database state.
+`m10-r3b-20260916T061256Z-11b3a54f`
 
-If R3b exposes the fixed Garage endpoint as a single point of failure, retain the negative
-availability result first. Do not add a load balancer, alternate endpoint, proxy, or managed
-object store before the Phase 5 residual reliability decision.
+Artifact directory on ops-01:
+
+`/srv/arp/repo/build/reliability/runs/m10-r3b-20260916T061256Z-11b3a54f`
+
+Source/release/dataset identity:
+
+- source SHA: `11b3a54f7e0a2798089773beef05bab51d350077`;
+- backend release: `d90eb558bdb6317d49b0a7ce82148ddeb4b5babf`;
+- frontend release: `d90eb558bdb6317d49b0a7ce82148ddeb4b5babf`;
+- Dataset M manifest:
+  `9e174ead7c9ae7b77d5adc18c93e336b4cac5e30b5962bf47c31de4f42bea696`;
+- deterministic overlay:
+  `f93dfb6a030fa552de3dd4c7b9c022368079680bf2b16b13c05883e8b678aae1`.
+
+Pre-fault boundary:
+
+- application Garage endpoint remained fixed at `http://10.40.0.41:3900`;
+- fault target: `storage-01/garage`;
+- storage-02 and storage-03 remained peer nodes and were not intentionally stopped;
+- all three Garage containers were running `dxflrs/garage:v2.4.1`;
+- storage-01 was confirmed healthy before the fault;
+- application MainPID: `42960`;
+- application `NRestarts=1`.
+
+Fault mechanism:
+
+`docker stop --time 10 garage`
+
+Restore mechanism:
+
+`docker start garage`
+
+Observed timing:
+
+- fault command issued: `2026-09-16T06:13:28.722Z`;
+- storage-01 observed stopped: `2026-09-16T06:13:40.753Z`;
+- restore command issued: `2026-09-16T06:14:43.746Z`;
+- storage-01 returned to Garage `HEALTHY NODES`:
+  `2026-09-16T06:15:00.310Z`;
+- observed stopped-state interval before restore: about **62.993 s**;
+- restore command → healthy-set return: about **16.564 s**.
+
+Garage cluster verification passed:
+
+- storage-01 left `HEALTHY NODES` during the fault;
+- storage-01 returned after restore.
+
+### Endpoint availability blast radius
+
+The R3b driver created and verified a stable attachment before fault injection, then
+continuously tested both that existing object and new attachment uploads while a separate
+non-attachment flow remained active.
+
+Observed attachment operations:
+
+- attachment attempts: 237;
+- overall attachment error rate: **28.6920%**;
+- existing pre-fault attachment download error rate: **27.8481%**;
+- new attachment upload error rate: **27.0042%**;
+- download error rate for successfully uploaded objects: **0%**;
+- delete error rate for successfully uploaded objects: **1.1561%**.
+
+Observed unaffected paths:
+
+- non-attachment attempts: 480;
+- non-attachment error rate: **0%**;
+- support-path error rate: **0%**.
+
+Results:
+
+- `M10_R3B_ENDPOINT_AVAILABILITY_GAP=OBSERVED`;
+- `M10_R3B_NON_ATTACHMENT_CONTINUITY=PASS`;
+- `M10_R3B_HYPOTHESIS=SUPPORTED`.
+
+The result distinguishes object durability/replication from client-endpoint availability:
+replicas remained present on the surviving Garage nodes, but the application could not
+reliably access attachments while its single configured endpoint was unavailable.
+
+### Fault-time attachment lifecycle state
+
+While storage-01 was still absent from the healthy set, the retained database snapshot
+showed:
+
+- attachment DELETE_PENDING: 2;
+- attachment FAILED: 22;
+- attachment PENDING: 0;
+- audit subject-count violations: 0;
+- AVAILABLE attachment metadata incomplete: 0;
+- IN_REVIEW application without reviewer: 0;
+- non-DRAFT application/latest-history status mismatch: 0.
+
+Result:
+
+`M10_R3B_DURING_PARTIAL_ATTACHMENT_STATE=YES`
+
+After Garage recovery and the post-fault smoke:
+
+- attachment DELETE_PENDING: 2;
+- attachment FAILED: 64;
+- attachment PENDING: 0;
+- core business invariants still passed;
+- attachment lifecycle clean check failed.
+
+Results:
+
+- `M10_R3B_DB_CORE_INVARIANTS=PASS`;
+- `M10_R3B_ATTACHMENT_LIFECYCLE_CLEAN=FAIL`;
+- `M10_R3B_PARTIAL_STATE_RETAINED=YES`.
+
+The full deployed HTTPS business smoke still passed after storage-01 recovery, including
+new attachment upload/download SHA-256 integrity and the final application/history flow.
+The retained smoke application ID was `10409`.
+
+### Row-level residual evidence
+
+A follow-up read-only database capture was retained before any manual reconciliation or
+Dataset reset.
+
+At that capture:
+
+- FAILED rows: 64;
+- DELETE_PENDING rows: 0;
+- the 64 FAILED rows belonged only to the two R3b attachment-probe applications:
+  - application `8200093613`: 32 rows;
+  - application `8200093649`: 32 rows;
+- all 64 rows had size `117` bytes and the same fixture SHA-256
+  `205efb29fcde76a6b29a56a5f7e341f320d49e1afa0ecbc61d46a775e4c6a2bb`;
+- their `created_at` range was
+  `2026-09-16T06:13:41.785267Z` through
+  `2026-09-16T06:14:43.537981Z`.
+
+That row-creation interval lies entirely inside the observed storage-01 stopped interval
+(`06:13:40.753Z` through restore command `06:14:43.746Z`), tying the retained FAILED
+rows directly to the endpoint-outage upload attempts.
+
+The two DELETE_PENDING rows observed immediately after R3b were no longer present in the
+later read-only snapshot. The application reconciliation schedule is every ten minutes and
+its implementation retries DELETE_PENDING rows, so automatic reconciliation is consistent
+with that transition. No direct reconciliation execution log was retained, therefore the
+exact mechanism is **not claimed as proven**.
+
+The implementation does not automatically revisit FAILED rows during reconciliation.
+Accordingly, the 64 retained FAILED rows are a persistent lifecycle residue unless a later
+explicit cleanup/reset is performed.
+
+### Telemetry isolation and process stability
+
+Exact-window Prometheus evidence showed:
+
+- PostgreSQL `pg_up`: min 1;
+- application blackbox probe: min 1;
+- storage-01 Garage `up`: min 0 / max 1;
+- storage-02 Garage `up`: min 1 / max 1;
+- storage-03 Garage `up`: min 1 / max 1.
+
+Result:
+
+`M10_R3B_TELEMETRY_NODE_ISOLATION=PASS`
+
+The application process remained stable:
+
+- MainPID before/after: `42960 → 42960`;
+- no application restart was required.
+
+Result:
+
+`M10_R3B_APPLICATION_STABLE=PASS`
+
+### R3b conclusion
+
+The fixed Garage endpoint is a demonstrated application attachment-availability single
+point of failure in the current architecture:
+
+- one non-endpoint Garage node loss in R3a caused no observed attachment interruption;
+- loss of the fixed endpoint storage-01 in R3b caused existing-object read and new-upload
+  failures while PostgreSQL, the application process, non-attachment business flow, and the
+  other two Garage nodes remained healthy;
+- the endpoint outage also produced persistent FAILED attachment metadata rows;
+- recovery of storage-01 restored normal business smoke without application restart;
+- no HA architecture change has been made.
+
+This is a retained negative reliability result, not a failed experiment.
+
+## Next evidence boundary — Phase 5 residual reliability decision
+
+R1-R3 are complete. The next decision must evaluate the two observed residual reliability
+boundaries:
+
+1. the single PostgreSQL primary remains a known DB-dependent application availability SPOF;
+2. the fixed storage-01 Garage client endpoint is an observed attachment-availability SPOF
+   and can leave FAILED attachment lifecycle residue.
+
+Do not add database HA or a Garage endpoint load balancer/failover path silently. If a
+corrective change crosses the frozen architecture boundary, document an ADR/explicit
+architecture decision first. Otherwise retain the limitation and proceed to M10 closeout.

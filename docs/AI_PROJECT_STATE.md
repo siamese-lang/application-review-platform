@@ -216,27 +216,26 @@ Fixed scenario scope:
 
 Current phase:
 
-**Phase 4 — R3 Garage single-node failure**
+**Phase 5 — residual reliability decision**
 
 Immediate next boundary:
 
-1. retain R3a as complete:
-   - run `m10-r3a-20260916T055354Z-af5421e5`;
-   - storage-02 actually left and returned to Garage `HEALTHY NODES`;
-   - 240 attachment attempts with 0% upload/download/delete/overall error;
-   - 480 non-attachment attempts with 0% error;
-   - PostgreSQL and application probe remained up;
-   - Prometheus isolated storage-02 Garage `1→0→1` while storage-01/03 stayed up;
-   - fault-time and post-recovery attachment lifecycle states were all zero;
+1. retain R3b as complete:
+   - run `m10-r3b-20260916T061256Z-11b3a54f`;
+   - fixed endpoint storage-01 left and returned to Garage `HEALTHY NODES`;
+   - attachment overall error 28.6920%, existing-download error 27.8481%, upload error
+     27.0042%;
+   - non-attachment 480 attempts with 0% error;
+   - PostgreSQL/application probe/storage-02/storage-03 stayed healthy;
    - application PID stayed `42960`;
-   - full HTTPS business smoke and DB invariants passed;
-   - restore command → storage-02 healthy-set return about 14.485 s;
-2. R2 systemd warning is closed:
-   - `systemctl daemon-reload` cleared `NeedDaemonReload=yes` without restarting PostgreSQL;
-   - postmaster PID remained `96466`;
-3. prepare R3b against storage-01, the fixed application Garage endpoint;
-4. preserve any endpoint-fault partial state before cleanup or reconciliation;
-5. do not add endpoint HA before the Phase 5 evidence decision.
+   - fault-time partial state: FAILED 22 / DELETE_PENDING 2;
+   - immediate post-run partial state: FAILED 64 / DELETE_PENDING 2;
+   - later row-level capture retained 64 FAILED rows, all created inside the endpoint outage;
+2. treat storage-01 fixed client endpoint as an observed attachment-availability SPOF;
+3. treat the 64 persistent FAILED attachment rows as a separate lifecycle-residue finding;
+4. evaluate Phase 5 without silently adding PostgreSQL HA or Garage endpoint HA;
+5. if the justified corrective action crosses a frozen architecture boundary, require an
+   explicit ADR/architecture decision; otherwise retain the limitation and proceed to closeout.
 
 No HA architecture change is authorized in advance.
 
@@ -256,9 +255,11 @@ No HA architecture change is authorized in advance.
 > 먼저 `AGENTS.md`, `docs/AI_PROJECT_STATE.md`, `docs/plans/active/M10-reliability.md`
 > 를 읽고 repository 실제 상태를 source of truth로 사용하라.  
 > M1–M9은 완료되었으므로 재설계하거나 재실행하지 마라.  
-> M10 Reliability Phase 1, R1, R2, R3a는 완료되었다. 현재 Phase 4 R3b endpoint
-> Garage node failure가 다음 작업이다. R3a run `m10-r3a-20260916T055354Z-af5421e5`는
-> non-endpoint storage-02 loss에서 attachment/non-attachment 연속성과 clean DB state를
-> 입증했다. storage-01 fixed endpoint loss는 아직 검증하지 않았다.  
+> M10 Reliability Phase 1과 R1-R3는 완료되었다. 현재 Phase 5 residual
+> reliability decision이 다음 작업이다. R3a에서는 non-endpoint storage-02 loss를
+> 무중단으로 통과했지만, R3b run `m10-r3b-20260916T061256Z-11b3a54f`에서는 fixed
+> endpoint storage-01 loss가 attachment availability gap과 persistent FAILED attachment
+> rows를 만들었다. DB/app/non-attachment path는 정상 유지됐다. endpoint HA를 자동으로
+> 추가하지 말고 evidence 기반 Phase 5 결정을 수행하라.  
 > R1 app failure, R2 PostgreSQL failure, R3 Garage node failure만 초기 고정 범위로
 > 수행하고 R4는 M6 evidence를 재사용하며 R5/PITR은 M11로 남겨라.
