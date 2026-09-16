@@ -140,13 +140,17 @@ jobs:
           python3 scripts/deploy/test-m11-full-dr-garage-restore.py
           python3 scripts/deploy/test-m11-full-dr-release.py
           python3 scripts/deploy/test-m11-full-dr-https.py
+          python3 scripts/deploy/test-m11-full-dr-integrity.py
           bash -n scripts/restore/run-m11-pitr-marker.sh
           bash -n scripts/restore/run-m11-pitr-restore.sh
           bash -n scripts/restore/run-m11-full-dr-db-restore.sh
           bash -n deploy/restore-m11-full-dr-garage.sh
           bash -n deploy/deploy-m11-full-dr-release.sh
           bash -n deploy/bootstrap-m11-full-dr-ip-tls.sh
-          python3 -m py_compile scripts/restore/garage_object_restore.py
+          bash -n deploy/verify-m11-full-dr-integrity.sh
+          python3 -m py_compile \
+            scripts/restore/garage_object_restore.py \
+            scripts/restore/verify_m11_full_dr_integrity.py
 
   m7-observability-infrastructure-static:
     needs: changes
@@ -787,6 +791,7 @@ jobs:
           ansible-playbook --inventory inventory/example.yml full-dr-foundation.yml --syntax-check
           ansible-playbook --inventory inventory/example.yml full-dr-garage-restore.yml --syntax-check
           ansible-playbook --inventory inventory/example.yml full-dr-edge-https.yml --syntax-check
+          ansible-playbook --inventory inventory/example.yml full-dr-integrity.yml --syntax-check
           ansible-playbook --inventory inventory/example.yml release.yml --syntax-check \
             --extra-vars 'arp_release_sha=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa arp_release_bundle_dir=/tmp/bundle'
           ansible-playbook --inventory inventory/example.yml rollback.yml --syntax-check \
