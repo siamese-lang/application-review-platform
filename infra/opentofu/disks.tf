@@ -19,3 +19,17 @@ resource "google_compute_disk" "observability" {
   type = "pd-standard"
   size = var.observability_data_disk_size_gb
 }
+
+resource "google_compute_disk" "backup" {
+  count = var.enable_backup ? 1 : 0
+  name  = "arp-backup-01-data"
+  zone  = var.backup_zone
+  type  = var.backup_data_disk_type
+  size  = var.backup_data_disk_size_gb
+
+  labels = {
+    lifecycle = "temporary"
+    milestone = "m11"
+    role      = "backup"
+  }
+}

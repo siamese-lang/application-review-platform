@@ -124,3 +124,48 @@ variable "loadgen_machine_type" {
   type        = string
   default     = "e2-standard-2"
 }
+
+variable "enable_backup" {
+  description = "Create the temporary M11 cross-region backup repository only for explicitly reviewed backup/recovery work."
+  type        = bool
+  default     = false
+}
+variable "backup_region" {
+  description = "Region for temporary M11 backup/recovery infrastructure per ADR-004."
+  type        = string
+  default     = "asia-northeast1"
+}
+variable "backup_zone" {
+  description = "Zone for backup-01."
+  type        = string
+  default     = "asia-northeast1-a"
+}
+variable "backup_subnet_cidr" {
+  description = "Dedicated subnet for temporary M11 backup/recovery infrastructure."
+  type        = string
+  default     = "10.60.0.0/24"
+}
+variable "backup_private_ip" {
+  description = "Stable private address for backup-01 while M11 backup infrastructure exists."
+  type        = string
+  default     = "10.60.0.10"
+}
+variable "backup_machine_type" {
+  description = "Machine type for backup-01."
+  type        = string
+  default     = "e2-small"
+}
+variable "backup_data_disk_size_gb" {
+  description = "Independent backup repository disk size for pgBackRest and Garage object copies."
+  type        = number
+  default     = 100
+}
+variable "backup_data_disk_type" {
+  description = "Persistent disk type for the temporary backup repository."
+  type        = string
+  default     = "pd-standard"
+  validation {
+    condition     = contains(["pd-standard", "pd-balanced"], var.backup_data_disk_type)
+    error_message = "backup_data_disk_type must be pd-standard or pd-balanced."
+  }
+}

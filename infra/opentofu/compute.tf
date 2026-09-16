@@ -88,3 +88,43 @@ resource "google_compute_instance" "loadgen" {
 
   allow_stopping_for_update = true
 }
+
+resource "google_compute_instance" "backup" {
+  count        = var.enable_backup ? 1 : 0
+  name         = "backup-01"
+  zone         = var.backup_zone
+  machine_type = var.backup_machine_type
+  tags         = ["arp-backup", "arp-managed"]
+
+  labels = {
+    lifecycle = "temporary"
+    milestone = "m11"
+    role      = "backup"
+  }
+
+  boot_disk {
+    initialize_params {
+      image = var.boot_image
+      size  = var.boot_disk_size_gb
+      type  = "pd-standard"
+    }
+  }
+
+  attached_disk {
+    source      = google_compute_disk.backup[0].id
+    device_name = "arp-backup-data"
+  }
+
+  network_interface {
+    subnetwork = google_compute_subnetwork.backup[0].id
+    network_ip = var.backup_private_ip
+  }
+
+  metadata = {
+    enable-oslogin          = "TRUE"
+    enable-guest-attributes = "TRUE"
+    block-project-ssh-keys  = "TRUE"
+  }
+
+  allow_stopping_for_update = true
+}

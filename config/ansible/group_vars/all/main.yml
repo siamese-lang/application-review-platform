@@ -2,6 +2,7 @@
 timezone: Etc/UTC
 app_private_ip: 10.40.0.20
 db_private_ip: 10.40.0.30
+backup_private_ip: 10.60.0.10
 garage_rpc_port: 3901
 garage_s3_port: 3900
 garage_proxy_port: 3910

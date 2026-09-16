@@ -11,3 +11,4 @@ all:
         storage-03: { ansible_host: 10.40.0.43, garage_zone: asia-northeast3-c }
     ops: { hosts: { ops-01: { ansible_host: 10.40.0.50 } } }
     observability: { hosts: { obs-01: { ansible_host: 10.40.0.60 } } }
+    backup: { hosts: { backup-01: { ansible_host: 10.60.0.10, garage_zone: asia-northeast1-a } } }

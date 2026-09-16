@@ -1,0 +1,11 @@
+[arp]
+pg1-path=/srv/postgresql/data
+
+[global]
+repo1-host={{ backup_private_ip }}
+repo1-host-user=pgbackrest
+repo1-path=/srv/backup/pgbackrest
+repo1-retention-full=2
+start-fast=y
+process-max=2
+log-level-console=info
