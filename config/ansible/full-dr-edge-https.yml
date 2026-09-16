@@ -1,0 +1,8 @@
+---
+- name: Reconcile full DR edge after public IP certificate bootstrap
+  hosts: edge
+  become: true
+  any_errors_fatal: true
+  vars:
+    app_private_ip: "{{ hostvars[groups['app'][0]].ansible_host }}"
+  roles: [edge]
